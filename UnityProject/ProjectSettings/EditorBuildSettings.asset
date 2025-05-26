@@ -9,5 +9,7 @@ EditorBuildSettings:
     path: Assets/Scenes/main.unity
     guid: 2cda990e2423bbf4892e6590ba056729
   m_configObjects:
+    Unity.XR.PICO.LivePreview.Settings: {fileID: 11400000, guid: f7e4681063a41f84aaac66c6429b41a0, type: 2}
     Unity.XR.PXR.Settings: {fileID: 11400000, guid: ea40ccead13c64c4280707f34ea37756, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 54952450530f76d4daeadd16825e9bda, type: 2}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: b418841daa039884c9fb8700c49fd96c, type: 2}
