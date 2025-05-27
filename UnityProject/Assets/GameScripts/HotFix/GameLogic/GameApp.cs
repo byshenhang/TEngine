@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.Reflection;
+using GameConfig.item;
 using GameLogic;
 using TEngine;
+using static UnityEditor.Progress;
 #pragma warning disable CS0436
 
 
@@ -29,6 +31,7 @@ public partial class GameApp
     private static void StartGameLogic()
     {
         GameEvent.Get<ILoginUI>().ShowLoginUI();
+
         GameModule.UI.ShowUIAsync<BattleMainUI>();
     }
     
