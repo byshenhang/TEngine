@@ -66,6 +66,9 @@ namespace GameLogic
             GameObject.DontDestroyOnLoad(rootObj);
             _uiRoot = rootObj.transform;
             
+            // 添加应用程序退出时的清理逻辑
+            Application.quitting += OnApplicationQuit;
+            
             // 初始化资源加载器
             Resource = new UI3DResourceLoader();
             
@@ -94,12 +97,35 @@ namespace GameLogic
             
             // 资源无需手动释放，由 ResourceModule 管理
             
+            // 销毁 XR Event System
+#if UNITY_EDITOR || ENABLE_XR
+            var eventSystem = GameObject.FindObjectOfType<EventSystem>();
+            if (eventSystem != null && eventSystem.gameObject.name == "XR Event System")
+            {
+                Log.Info("Destroying XR Event System");
+                GameObject.DestroyImmediate(eventSystem.gameObject);
+            }
+            
+            // 销毁 Canvas Optimizer
+            var optimizer = GameObject.FindObjectOfType<CanvasOptimizer>();
+            if (optimizer != null)
+            {
+                Log.Info("Destroying UI3D Canvas Optimizer");
+                GameObject.DestroyImmediate(optimizer.gameObject);
+            }
+#endif
+            
             // 销毁根节点
             if (_uiRoot != null)
             {
-                GameObject.Destroy(_uiRoot.gameObject);
+                Log.Info("Destroying UI3DRoot");
+                GameObject.DestroyImmediate(_uiRoot.gameObject);
                 _uiRoot = null;
             }
+            
+            // 清理锁定点和窗口引用
+            _anchorPoints.Clear();
+            _activeWindows.Clear();
             
             Log.Info("UI3DModule released");
         }
@@ -346,13 +372,46 @@ namespace GameLogic
                 return null;
             }
             
-            T window = await ShowUI3DWindowInternal<T>(anchor.transform.position, anchor.transform.rotation, true, userDatas);
+            Type windowType = typeof(T);
             
-            if (window != null)
+            // 检查是否已存在相同类型窗口
+            if (_activeWindows.TryGetValue(windowType, out var existingWindow))
             {
-                // 设置为基于锚点位置模式
-                window.SetPositionMode(UI3DPositionMode.AnchorBased, anchor.transform);
+                // 已存在则直接设置为锚点模式
+                existingWindow.SetPositionMode(UI3DPositionMode.AnchorBased, anchor.transform);
+                return existingWindow as T;
             }
+            
+            // 获取资源路径
+            string assetPath = GetWindowAssetPath<T>();
+            if (string.IsNullOrEmpty(assetPath))
+            {
+                Log.Error($"UI3D window {windowType.Name} has no asset path defined");
+                return null;
+            }
+            
+            // 创建窗口实例
+            T window = new T();
+            
+            // 准备资源 - 在创建时将锚点作为父级
+            await window.PrepareAsync(assetPath, anchor.transform, userDatas);
+            
+            // 直接设置为锚点模式
+            window.SetPositionMode(UI3DPositionMode.AnchorBased, anchor.transform);
+            
+            // 配置交互模式
+            SetupWindowInteractionMode(window);
+            
+            // 添加到活动窗口集合
+            _activeWindows[windowType] = window;
+            
+            // 设置窗口深度
+            window.Depth = CalculateWindowDepth();
+            
+            // 确保窗口可见
+            window.Visible = true;
+            
+            Log.Info($"UI3D window {windowType.Name} created at anchor {anchorId}");
             
             return window;
         }
@@ -369,13 +428,46 @@ namespace GameLogic
                 return null;
             }
             
-            T window = ShowUI3DWindowInternal<T>(anchor.transform.position, anchor.transform.rotation, false, userDatas).GetAwaiter().GetResult();
+            Type windowType = typeof(T);
             
-            if (window != null)
+            // 检查是否已存在相同类型窗口
+            if (_activeWindows.TryGetValue(windowType, out var existingWindow))
             {
-                // 设置为基于锚点位置模式
-                window.SetPositionMode(UI3DPositionMode.AnchorBased, anchor.transform);
+                // 已存在则直接设置为锚点模式
+                existingWindow.SetPositionMode(UI3DPositionMode.AnchorBased, anchor.transform);
+                return existingWindow as T;
             }
+            
+            // 获取资源路径
+            string assetPath = GetWindowAssetPath<T>();
+            if (string.IsNullOrEmpty(assetPath))
+            {
+                Log.Error($"UI3D window {windowType.Name} has no asset path defined");
+                return null;
+            }
+            
+            // 创建窗口实例
+            T window = new T();
+            
+            // 准备资源 - 直接使用锚点作为父级
+            window.PrepareAsync(assetPath, anchor.transform, userDatas).GetAwaiter().GetResult();
+            
+            // 设置为锚点模式
+            window.SetPositionMode(UI3DPositionMode.AnchorBased, anchor.transform);
+            
+            // 配置交互模式
+            SetupWindowInteractionMode(window);
+            
+            // 添加到活动窗口集合
+            _activeWindows[windowType] = window;
+            
+            // 设置窗口深度
+            window.Depth = CalculateWindowDepth();
+            
+            // 确保窗口可见
+            window.Visible = true;
+            
+            Log.Info($"UI3D window {windowType.Name} created at anchor {anchorId} (sync)");
             
             return window;
         }
@@ -664,5 +756,55 @@ namespace GameLogic
         }
         
         #endregion
+        
+        /// <summary>
+        /// 应用程序退出时清理
+        /// </summary>
+        private void OnApplicationQuit()
+        {
+            Log.Info("UI3DModule: Application is quitting, cleaning up resources...");
+            
+            // 关闭所有窗口
+            CloseAllUI3D();
+            
+            // 手动清理所有DontDestroyOnLoad对象
+#if UNITY_EDITOR || ENABLE_XR
+            // 清理XR事件系统
+            var eventSystem = GameObject.FindObjectOfType<EventSystem>();
+            if (eventSystem != null && eventSystem.gameObject.name == "XR Event System")
+            {
+                Log.Info("Application quitting: Destroying XR Event System");
+                GameObject.DestroyImmediate(eventSystem.gameObject);
+            }
+            
+            // 清理Canvas Optimizer
+            var optimizer = GameObject.FindObjectOfType<CanvasOptimizer>();
+            if (optimizer != null)
+            {
+                Log.Info("Application quitting: Destroying UI3D Canvas Optimizer");
+                GameObject.DestroyImmediate(optimizer.gameObject);
+            }
+#endif
+            
+            // 清理UI3DRoot
+            if (_uiRoot != null)
+            {
+                Log.Info("Application quitting: Destroying UI3DRoot");
+                GameObject.DestroyImmediate(_uiRoot.gameObject);
+                _uiRoot = null;
+            }
+            
+            // 移除退出事件监听
+            Application.quitting -= OnApplicationQuit;
+            
+            // 清理对象引用
+            _anchorPoints.Clear();
+            _activeWindows.Clear();
+            _leftHandInteractor = null;
+            _rightHandInteractor = null;
+            _xrRig = null;
+            
+            Log.Info("UI3DModule cleanup completed");
+        }
     }
 }

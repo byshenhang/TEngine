@@ -80,7 +80,7 @@ namespace GameLogic
 #endif
         
         // 窗口状态
-        private bool _isGrabbable = true;
+        private bool _isGrabbable = false; // 默认不可抽取
         private bool _isFollowingUser = false;
         private Vector3 _relativePosition;
         private Quaternion _relativeRotation;
@@ -115,7 +115,7 @@ namespace GameLogic
             try
             {
                 // 使用UI3D特定的资源加载器
-                GameObject prefab = await UI3DModule.Resource.LoadGameObjectAsync(assetName);
+                GameObject prefab = await UI3DModule.Resource.LoadGameObjectAsync(assetName, parent);
                 if (prefab == null)
                 {
                     Log.Error($"Load 3D UI prefab failed: {assetName}");
@@ -124,7 +124,7 @@ namespace GameLogic
                 }
                 
                 // 实例化
-                gameObject = GameObject.Instantiate(prefab, parent);
+                gameObject = prefab;
                 transform = gameObject.transform;
                 
                 // 添加交互组件
@@ -270,6 +270,16 @@ namespace GameLogic
                 // 添加事件监听
                 _grabInteractable.selectEntered.AddListener(OnGrab);
                 _grabInteractable.selectExited.AddListener(OnRelease);
+                
+                // 确保 Rigidbody 不受重力影响
+                var rigidbody = gameObject.GetComponent<Rigidbody>();
+                if (rigidbody != null)
+                {
+                    rigidbody.isKinematic = true;  // 防止物理引擎影响位置
+                    rigidbody.useGravity = false;  // 禁用重力
+                    rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+                    rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+                }
                 
                 // 配置抓取交互区域
                 ConfigureGrabInteractionArea();
@@ -446,15 +456,20 @@ namespace GameLogic
         /// <summary>
         /// 设置是否可抓取
         /// </summary>
-        public void SetGrabbable(bool grabbable)
+        public void SetGrabbable(bool canGrab)
         {
-            _isGrabbable = grabbable;
-#if UNITY_EDITOR || ENABLE_XR
-            if (_grabInteractable != null)
+            _isGrabbable = canGrab;
+            SetupInteraction();
+            
+            // 如果设置为不可抓取，尝试移除Rigidbody
+            if (!canGrab)
             {
-                _grabInteractable.enabled = grabbable;
+                var rigidbody = gameObject.GetComponent<Rigidbody>();
+                if (rigidbody != null)
+                {
+                    GameObject.DestroyImmediate(rigidbody);
+                }
             }
-#endif
         }
         
         /// <summary>
@@ -486,9 +501,16 @@ namespace GameLogic
                     _isFollowingUser = false;
                     if (reference != null)
                     {
-                        transform.position = reference.position + reference.TransformDirection(offset);
-                        transform.rotation = reference.rotation;
-                        transform.SetParent(reference);
+                        // 检查是否已经是锚点的子对象，避免重复操作
+                        if (transform.parent != reference)
+                        {
+                            transform.position = reference.position + reference.TransformDirection(offset);
+                            transform.rotation = reference.rotation;
+                            transform.SetParent(reference);
+                            
+                            // 确保只有一个实例
+                            Log.Info($"UI3D window {WindowName} attached to anchor {reference.name}");
+                        }
                     }
                     break;
                     

@@ -34,7 +34,8 @@ public partial class GameApp
         GameEvent.Get<ILoginUI>().ShowLoginUI();
 
         //GameModule.UI.ShowUIAsync<BattleMainUI>();
-        GameModule.UI3D.ShowUI3D<BattleMainUI>(Vector3.zero, Quaternion.identity, null);
+        //GameModule.UI3D.ShowUI3D<BattleMainUI>(Vector3.zero, Quaternion.identity, null);
+        GameModule.UI3D.ShowUI3DAtAnchor<BattleMainUI>("MainUI", null);
     }
     
     private static void Release()

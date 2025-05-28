@@ -81,13 +81,13 @@ namespace GameLogic
         private void OnDrawGizmos()
         {
             Gizmos.color = Color.cyan;
-            Gizmos.DrawSphere(transform.position, 0.05f);
+            Gizmos.DrawSphere(transform.position, 0.1f);
             Gizmos.DrawRay(transform.position, transform.forward * 0.2f);
             
 #if UNITY_EDITOR
             // 显示锚点ID标签
             UnityEditor.Handles.color = Color.white;
-            UnityEditor.Handles.Label(transform.position + Vector3.up * 0.1f, _anchorId);
+            UnityEditor.Handles.Label(transform.position + Vector3.up * 0.2f, _anchorId);
 #endif
         }
         
