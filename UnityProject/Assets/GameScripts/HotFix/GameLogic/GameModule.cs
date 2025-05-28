@@ -91,6 +91,13 @@ public class GameModule
     public static UI3DModule UI3D => _ui3d ??= UI3DModule.Instance;
 
     private static UI3DModule _ui3d;
+    
+    /// <summary>
+    /// 获取XR玩家模块。
+    /// </summary>
+    public static XRPlayerModule XRPlayer => _xrPlayer ??= XRPlayerModule.Instance;
+
+    private static XRPlayerModule _xrPlayer;
     #endregion
     
     /// <summary>
@@ -122,5 +129,6 @@ public class GameModule
         _timer = null;
         _localization = null;
         _ui3d = null;
+        _xrPlayer = null;
     }
 }
