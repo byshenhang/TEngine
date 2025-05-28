@@ -98,6 +98,13 @@ public class GameModule
     public static XRPlayerModule XRPlayer => _xrPlayer ??= XRPlayerModule.Instance;
 
     private static XRPlayerModule _xrPlayer;
+    
+    ///// <summary>
+    ///// 获取XR交互模块。
+    ///// </summary>
+    //public static XRInteractionManager XRInteraction => _xrInteraction ??= XRInteractionManager.Instance;
+
+    //private static XRInteractionManager _xrInteraction;
     #endregion
     
     /// <summary>
@@ -130,5 +137,6 @@ public class GameModule
         _localization = null;
         _ui3d = null;
         _xrPlayer = null;
+        //_xrInteraction = null;
     }
 }
