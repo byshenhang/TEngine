@@ -3,23 +3,46 @@ using System;
 namespace GameLogic
 {
     /// <summary>
-    /// u7528u4e8eu6807u8bb0u573au666f3D UIu7a97u53e3u7684u7279u6027u7c7bu3002
+    /// 场景3D UI特性，用于标记UI类为场景UI
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
     public class SceneUIAttribute : Attribute
     {
         /// <summary>
-        /// UIu7684u6807u8bc6u7b26uff0cu7528u4e8eu5339u914du573au666fu4e2du7684UIu951au70b9u3002
+        /// 资源路径
         /// </summary>
-        public string Identifier { get; }
+        public readonly string AssetPath;
         
         /// <summary>
-        /// u521bu5efau4e00u4e2au65b0u7684SceneUIAttributeu5b9eu4f8bu3002
+        /// 默认是否可抓取
         /// </summary>
-        /// <param name="identifier">u4e0eUI3DAnchorPointu5bf9u5e94u7684u6807u8bc6u7b26</param>
-        public SceneUIAttribute(string identifier)
+        public readonly bool Grabbable;
+        
+        /// <summary>
+        /// 默认交互模式
+        /// </summary>
+        public readonly UI3DInteractionMode InteractionMode;
+        
+        /// <summary>
+        /// 默认定位模式
+        /// </summary>
+        public readonly UI3DPositionMode PositionMode;
+        
+        /// <summary>
+        /// 创建场景3D UI特性
+        /// </summary>
+        /// <param name="assetPath">资源路径</param>
+        /// <param name="grabbable">是否可抓取</param>
+        /// <param name="interactionMode">交互模式</param>
+        /// <param name="positionMode">定位模式</param>
+        public SceneUIAttribute(string assetPath, bool grabbable = true, 
+            UI3DInteractionMode interactionMode = UI3DInteractionMode.RayBased,
+            UI3DPositionMode positionMode = UI3DPositionMode.WorldFixed)
         {
-            Identifier = identifier;
+            AssetPath = assetPath;
+            Grabbable = grabbable;
+            InteractionMode = interactionMode;
+            PositionMode = positionMode;
         }
     }
 }

@@ -4,216 +4,465 @@ using TEngine;
 using UnityEngine;
 using UnityEngine.UI;
 
+#if UNITY_EDITOR || ENABLE_XR
+using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.UI;
+#endif
+
 namespace GameLogic
 {
     /// <summary>
-    /// 3D UIu7a97u53e3u57fau7c7bu3002
+    /// 3D UI窗口类。
     /// </summary>
-    public abstract class UI3DWindow : UIBase
+    public abstract class UI3DWindow : UI3DBase
     {
-        private GameObject _panel;
-        private Canvas _canvas;
-        private GraphicRaycaster _raycaster;
+        #region 属性
+
+        // 窗口名称
+        public string WindowName { get; private set; }
         
-        // u4e16u754cu7a7au95f4u4f4du7f6eu548cu65cbu8f6c
-        private Vector3 _worldPosition;
-        private Quaternion _worldRotation;
+        // 资源定位地址
+        public string AssetName { get; private set; }
         
-        // u7a97u53e3u540du79f0u548cu8d44u6e90u8defu5f84
-        public string WindowName { private set; get; }
-        public string AssetName { private set; get; }
+#if UNITY_EDITOR || ENABLE_XR
+        // 交互组件
+        private XRGrabInteractable _grabInteractable;
+#endif
         
-        // u662fu5426u52a0u8f7du5b8cu6210
-        public bool IsLoadDone { private set; get; }
+        // 窗口状态
+        private bool _isGrabbable = true;
+        private bool _isFollowingUser = false;
+        private Vector3 _relativePosition;
+        private Quaternion _relativeRotation;
+        private UI3DPositionMode _positionMode = UI3DPositionMode.WorldFixed;
+        private Transform _referenceTransform;
         
-        public Canvas Canvas => _canvas;
-        public GraphicRaycaster GraphicRaycaster => _raycaster;
-        
-        public override UIType Type => UIType.Window;
+        // UI类型
+        public override UI3DType Type => UI3DType.Window;
         
         /// <summary>
-        /// u7a97u53e3u4f4du7f6eu7ec4u4ef6u3002
+        /// 窗口的当前定位模式
         /// </summary>
-        public override Transform transform => _panel?.transform;
+        public UI3DPositionMode PositionMode => _positionMode;
         
         /// <summary>
-        /// u7a97u53e3u77e9u9635u4f4du7f6eu7ec4u4ef6u3002
+        /// 窗口参考变换组件（用于锚点模式）
         /// </summary>
-        public override RectTransform rectTransform => _panel?.transform as RectTransform;
+        public Transform ReferenceTransform => _referenceTransform;
+        
+        #endregion
 
         /// <summary>
-        /// u7a97u53e3u7684u5b9eu4f8bu8d44u6e90u5bf9u8c61u3002
+        /// 准备窗口资源
         /// </summary>
-        public override GameObject gameObject => _panel;
-        
-        /// <summary>
-        /// u8bbeu7f6eu4e16u754cu7a7au95f4u4f4du7f6e
-        /// </summary>
-        public void SetWorldPosition(Vector3 position)
+        public async UniTask PrepareAsync(string assetName, Transform parent, object[] userDatas)
         {
-            _worldPosition = position;
-            if (_panel != null)
-            {
-                _panel.transform.position = position;
-            }
-        }
-        
-        /// <summary>
-        /// u8bbeu7f6eu4e16u754cu7a7au95f4u65cbu8f6c
-        /// </summary>
-        public void SetWorldRotation(Quaternion rotation)
-        {
-            _worldRotation = rotation;
-            if (_panel != null)
-            {
-                _panel.transform.rotation = rotation;
-            }
-        }
-        
-        /// <summary>
-        /// u8bbeu7f6eGameObject
-        /// </summary>
-        public void SetGameObject(GameObject go)
-        {
-            _panel = go;
-            _canvas = _panel.GetComponent<Canvas>();
-            _raycaster = _panel.GetComponent<GraphicRaycaster>();
-            
-            // u5e94u7528u4f4du7f6eu548cu65cbu8f6c
-            _panel.transform.position = _worldPosition;
-            _panel.transform.rotation = _worldRotation;
-        }
-        
-        /// <summary>
-        /// u5185u90e8u52a0u8f7du65b9u6cd5
-        /// </summary>
-        internal async UniTask InternalLoad(string assetName, Action<UIWindow> prepareCallback, bool async, params object[] userDatas)
-        {
-            // u8bbeu7f6eu57fau672cu5c5eu6027
-            WindowName = GetType().FullName;
-            AssetName = assetName ?? GetType().Name;
+            AssetName = assetName;
+            WindowName = GetType().Name;
             _userDatas = userDatas;
             
-            if (string.IsNullOrEmpty(assetName))
+            try
             {
-                Log.Error($"UI3DWindow {WindowName} assetName is null or empty");
-                return;
-            }
-            
-            // u52a0u8f7dUIu9884u5236u4f53
-            GameObject prefab = null;
-            try 
-            {
-                if (async)
+                // 直接使用GameModule.Resource加载预制体
+                GameObject prefab = await GameModule.Resource.LoadAssetAsync<GameObject>(assetName);
+                if (prefab == null)
                 {
-                    prefab = await UI3DModule.Resource.LoadPrefabAsync(assetName);
+                    Log.Error($"Load 3D UI prefab failed: {assetName}");
+                    return;
                 }
-                else
+                
+                // 实例化
+                gameObject = GameObject.Instantiate(prefab, parent);
+                transform = gameObject.transform;
+                
+                // 添加交互组件
+                SetupInteraction();
+                
+                // 修复TMP输入字段，确保它们在VR中正常工作
+                SetupTextMeshProInputFields();
+                
+                // 调用生命周期方法
+                OnCreate(parent, userDatas);
+                IsPrepare = true;
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error preparing UI3D window {WindowName}: {ex.Message}\n{ex.StackTrace}");
+            }
+        }
+        
+        /// <summary>
+        /// 设置TextMeshPro输入字段
+        /// </summary>
+        private void SetupTextMeshProInputFields()
+        {
+#if UNITY_EDITOR || ENABLE_XR
+            try
+            {
+                // 查找所有TMPro.TMP_InputField组件
+                var tmpInputFields = gameObject.GetComponentsInChildren<TMPro.TMP_InputField>(true);
+                if (tmpInputFields != null && tmpInputFields.Length > 0)
                 {
-                    prefab = UI3DModule.Resource.LoadPrefab(assetName);
+                    foreach (var inputField in tmpInputFields)
+                    {
+                        // 防止多行输入问题
+                        inputField.lineType = TMPro.TMP_InputField.LineType.SingleLine;
+                        
+                        // 添加软键盘关闭处理
+                        inputField.onEndEdit.AddListener(CloseKeyboardIfNeeded);
+                        
+                        Log.Info($"Setup TMP_InputField in {WindowName}: {inputField.name}");
+                    }
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Log.Error($"Load UI3D prefab failed: {assetName}, {e.Message}");
-                return;
+                Log.Warning($"Error setting up TMP input fields: {ex.Message}");
+            }
+#endif
+        }
+        
+        /// <summary>
+        /// 处理软键盘关闭问陒
+        /// </summary>
+        private void CloseKeyboardIfNeeded(string text)
+        {
+#if UNITY_ANDROID && (UNITY_EDITOR || ENABLE_XR)
+            // Quest平台特定处理
+            try
+            {
+                // 尝试强制隐藏软键盘
+                TouchScreenKeyboard.hideInput = true;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning($"Error closing keyboard: {ex.Message}");
+            }
+#endif
+        }
+        
+        /// <summary>
+        /// 设置交互组件
+        /// </summary>
+        private void SetupInteraction()
+        {
+#if UNITY_EDITOR || ENABLE_XR
+            // 确保UI组件使用正确的交互组件
+            // 先删除已存在的交互组件，避免冲突
+            var existingInteractable = gameObject.GetComponent<XRBaseInteractable>();
+            if (existingInteractable != null && !(existingInteractable is XRGrabInteractable))
+            {
+                GameObject.DestroyImmediate(existingInteractable);
             }
             
-            if (prefab == null)
+            // 对于可抓取的窗口，使用XRGrabInteractable
+            if (_isGrabbable)
             {
-                Log.Error($"UI3D prefab load failed: {assetName}");
-                return;
+                if (_grabInteractable == null)
+                {
+                    _grabInteractable = gameObject.AddComponent<XRGrabInteractable>();
+                }
+                
+                _grabInteractable.movementType = XRBaseInteractable.MovementType.Instantaneous;
+                _grabInteractable.throwOnDetach = false;
+                _grabInteractable.trackPosition = true;
+                _grabInteractable.trackRotation = true;
+                _grabInteractable.smoothPosition = false; // 实时跟踪，不平滑
+                
+                // 添加事件监听
+                _grabInteractable.selectEntered.AddListener(OnGrab);
+                _grabInteractable.selectExited.AddListener(OnRelease);
+                
+                // 配置抓取交互区域
+                ConfigureGrabInteractionArea();
+            }
+            else if (_grabInteractable != null)
+            {
+                // 如果不可抓取，删除组件
+                GameObject.DestroyImmediate(_grabInteractable);
+                _grabInteractable = null;
             }
             
-            // u5b9eu4f8bu5316UI
-            _panel = GameObject.Instantiate(prefab, UI3DModule.UIRoot);
-            _panel.name = WindowName;
+            // 配置Canvas以支持UI交互
+            EnsureProperCanvasSetup();
+#endif
+        }
+        
+#if UNITY_EDITOR || ENABLE_XR
+        /// <summary>
+        /// 抓取事件
+        /// </summary>
+        private void OnGrab(SelectEnterEventArgs args)
+        {
+            _isFollowingUser = false;
+            _positionMode = UI3DPositionMode.WorldFixed;
             
-            // u8bbeu7f6eu4f4du7f6eu548cu65cbu8f6c
-            _panel.transform.position = _worldPosition;
-            _panel.transform.rotation = _worldRotation;
+            // 在抓取时将窗口移到前层
+            BringWindowToFront();
+        }
+        
+        /// <summary>
+        /// 释放事件
+        /// </summary>
+        private void OnRelease(SelectExitEventArgs args)
+        {
+            // 释放后尝试吸附到最近的锚点
+            TrySnapToNearestAnchor();
+        }
+        
+        /// <summary>
+        /// 将窗口移到前层
+        /// </summary>
+        private void BringWindowToFront()
+        {
+            // 请求UI3DModule将此窗口移到最前层
+            // 实际实现可以根据项目需求添加
+        }
+        
+        /// <summary>
+        /// 配置抓取交互区域
+        /// </summary>
+        private void ConfigureGrabInteractionArea()
+        {
+#if UNITY_EDITOR || ENABLE_XR
+            if (_grabInteractable == null) return;
             
-            // u83b7u53d6Canvasu7ec4u4ef6
-            _canvas = _panel.GetComponent<Canvas>();
-            if (_canvas == null)
+            // 查找窗口标题栏或边框
+            Transform titleBar = transform.Find("TitleBar");
+            if (titleBar == null) titleBar = transform.Find("Panel/TitleBar");
+            
+            if (titleBar != null)
             {
-                _canvas = _panel.AddComponent<Canvas>();
+                // 创建一个碰撩体用于抓取
+                var collider = titleBar.gameObject.GetComponent<BoxCollider>();
+                if (collider == null)
+                {
+                    collider = titleBar.gameObject.AddComponent<BoxCollider>();
+                    // 调整碰撩体大小以适应标题栏
+                    var rectTrans = titleBar.GetComponent<RectTransform>();
+                    if (rectTrans != null)
+                    {
+                        // 根据RectTransform设置适合的大小
+                        collider.size = new Vector3(rectTrans.rect.width, rectTrans.rect.height, 0.01f);
+                        collider.center = Vector3.zero;
+                    }
+                    else
+                    {
+                        // 默认大小
+                        collider.size = new Vector3(1, 0.1f, 0.01f);
+                        collider.center = Vector3.zero;
+                    }
+                }
+            }
+            else
+            {
+                // 如果没有标题栏，使用整个窗口作为抓取区域
+                var collider = gameObject.GetComponent<BoxCollider>();
+                if (collider == null)
+                {
+                    collider = gameObject.AddComponent<BoxCollider>();
+                    // 设置一个薄的碰撩体
+                    collider.size = new Vector3(1, 1, 0.01f);
+                    collider.center = Vector3.zero;
+                }
+            }
+#endif
+        }
+#endif
+        
+        /// <summary>
+        /// 确保Canvas正确配置以支持UI交互
+        /// </summary>
+        private void EnsureProperCanvasSetup()
+        {
+#if UNITY_EDITOR || ENABLE_XR
+            // 查找或添加Canvas组件
+            Canvas canvas = gameObject.GetComponent<Canvas>();
+            if (canvas == null)
+            {
+                canvas = gameObject.AddComponent<Canvas>();
+                Log.Info($"Added Canvas component to {WindowName}");
             }
             
-            // u83b7u53d6GraphicRaycasteru7ec4u4ef6
-            _raycaster = _panel.GetComponent<GraphicRaycaster>();
-            if (_raycaster == null)
+            // 确保Canvas设置为World Space
+            if (canvas.renderMode != RenderMode.WorldSpace)
             {
-                _raycaster = _panel.AddComponent<GraphicRaycaster>();
+                canvas.renderMode = RenderMode.WorldSpace;
+                Log.Info($"Set Canvas render mode to WorldSpace for {WindowName}");
             }
             
-            // u8bbeu7f6eu4e3au4e16u754cu7a7au95f4u6e32u67d3u6a21u5f0f
-            _canvas.renderMode = RenderMode.WorldSpace;
-            
-            // u521du59cbu5316UI
-            ScriptGenerator();
-            BindMemberProperty();
-            RegisterEvent();
-            OnCreate();
-            
-            // u6807u8bb0u52a0u8f7du5b8cu6210
-            IsLoadDone = true;
-            
-            // u8c03u7528u51c6u5907u5b8cu6210u56deu8c03
-            prepareCallback?.Invoke(this);
-        }
-        
-        /// <summary>
-        /// u5185u90e8u66f4u65b0u65b9u6cd5
-        /// </summary>
-        internal void InternalUpdate()
-        {
-            OnUpdate();
-        }
-        
-        /// <summary>
-        /// u9500u6bc1u65b9u6cd5
-        /// </summary>
-        internal void InternalDestroy()
-        {
-            OnDestroy();
-            if (_panel != null)
+            // 添加CanvasScaler组件以确保正确的尺寸
+            var scaler = gameObject.GetComponent<CanvasScaler>();
+            if (scaler == null)
             {
-                GameObject.Destroy(_panel);
-                _panel = null;
+                scaler = gameObject.AddComponent<CanvasScaler>();
+                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                scaler.referenceResolution = new Vector2(1920, 1080);
+                scaler.matchWidthOrHeight = 0.5f; // 同时考虑宽度和高度
+                Log.Info($"Added CanvasScaler component to {WindowName}");
+            }
+            
+            // 添加TrackedDeviceGraphicRaycaster组件以支持XR交互
+            var graphicRaycaster = gameObject.GetComponent<GraphicRaycaster>();
+            var trackedDeviceRaycaster = gameObject.GetComponent<TrackedDeviceGraphicRaycaster>();
+            
+            // 如果有普通的GraphicRaycaster但没有TrackedDeviceGraphicRaycaster，则替换
+            if (graphicRaycaster != null && !(graphicRaycaster is TrackedDeviceGraphicRaycaster))
+            {
+                GameObject.DestroyImmediate(graphicRaycaster);
+                graphicRaycaster = null;
+            }
+            
+            // 添加TrackedDeviceGraphicRaycaster如果需要
+            if (trackedDeviceRaycaster == null)
+            {
+                trackedDeviceRaycaster = gameObject.AddComponent<TrackedDeviceGraphicRaycaster>();
+                // 配置遗挡检查
+                trackedDeviceRaycaster.checkFor3DOcclusion = true; // 允许3D对象遗挡UI
+                Log.Info($"Added TrackedDeviceGraphicRaycaster to {WindowName}");
+            }
+            
+            // 注册到Canvas优化器
+            if (UI3DModule.Instance != null)
+            {
+                UI3DModule.Instance.RegisterCanvasToOptimizer(canvas);
+            }
+#endif
+        }
+        
+        /// <summary>
+        /// 尝试吸附到最近的锚点
+        /// </summary>
+        private void TrySnapToNearestAnchor()
+        {
+            if (UI3DModule.Instance != null)
+            {
+                UI3DAnchorPoint nearestAnchor = UI3DModule.Instance.FindNearestAnchor(transform.position, 1.0f);
+                if (nearestAnchor != null)
+                {
+                    SetPositionMode(UI3DPositionMode.AnchorBased, nearestAnchor.transform);
+                }
             }
         }
         
         /// <summary>
-        /// XRu60acu505cu8fdbu5165u4ea4u4e92
+        /// 设置是否可抓取
         /// </summary>
-        public virtual void OnXRHoverEnter()
+        public void SetGrabbable(bool grabbable)
         {
-            // u5b50u7c7bu5b9eu73b0u60acu505cu6548u679c
+            _isGrabbable = grabbable;
+#if UNITY_EDITOR || ENABLE_XR
+            if (_grabInteractable != null)
+            {
+                _grabInteractable.enabled = grabbable;
+            }
+#endif
         }
         
         /// <summary>
-        /// XRu60acu505cu79bbu5f00u4ea4u4e92
+        /// 设置位置模式
         /// </summary>
-        public virtual void OnXRHoverExit()
+        public void SetPositionMode(UI3DPositionMode mode, Transform reference = null, Vector3 offset = default)
         {
-            // u5b50u7c7bu5b9eu73b0u60acu505cu79bbu5f00u6548u679c
+            _positionMode = mode;
+            _referenceTransform = reference;
+            
+            switch (mode)
+            {
+                case UI3DPositionMode.WorldFixed:
+                    // 保持当前世界位置不变
+                    _isFollowingUser = false;
+                    transform.SetParent(UI3DModule.Instance.transform);
+                    break;
+                    
+                case UI3DPositionMode.UserRelative:
+                    // 设置相对于用户的位置
+                    _isFollowingUser = true;
+                    _relativePosition = offset;
+                    _relativeRotation = Quaternion.identity;
+                    transform.SetParent(UI3DModule.Instance.transform);
+                    break;
+                    
+                case UI3DPositionMode.AnchorBased:
+                    // 设置到指定锚点
+                    _isFollowingUser = false;
+                    if (reference != null)
+                    {
+                        transform.position = reference.position + reference.TransformDirection(offset);
+                        transform.rotation = reference.rotation;
+                        transform.SetParent(reference);
+                    }
+                    break;
+                    
+                case UI3DPositionMode.HandAttached:
+                    // 附着到手上
+                    _isFollowingUser = false;
+                    if (reference != null) // reference为手部控制器Transform
+                    {
+                        transform.SetParent(reference);
+                        transform.localPosition = offset;
+                        transform.localRotation = Quaternion.identity;
+                    }
+                    break;
+            }
         }
         
         /// <summary>
-        /// XRu9009u62e9u4ea4u4e92
+        /// 设置相对于用户的位置（跟随模式）
         /// </summary>
-        public virtual void OnXRSelect()
+        public override void SetRelativeToUser(Vector3 relativePosition, Quaternion relativeRotation)
         {
-            // u5b50u7c7bu5b9eu73b0u9009u62e9u6548u679c
+            SetPositionMode(UI3DPositionMode.UserRelative, null, relativePosition);
+            _relativeRotation = relativeRotation;
         }
         
         /// <summary>
-        /// XRu9009u62e9u79bbu5f00u4ea4u4e92
+        /// 设置世界空间位置
         /// </summary>
-        public virtual void OnXRSelectExit()
+        public override void SetWorldPosition(Vector3 position, Quaternion rotation)
         {
-            // u5b50u7c7bu5b9eu73b0u9009u62e9u79bbu5f00u6548u679c
+            SetPositionMode(UI3DPositionMode.WorldFixed);
+            transform.position = position;
+            transform.rotation = rotation;
+        }
+        
+        /// <summary>
+        /// 停止跟随
+        /// </summary>
+        public void StopFollowing()
+        {
+            if (_isFollowingUser)
+            {
+                _isFollowingUser = false;
+                _positionMode = UI3DPositionMode.WorldFixed;
+            }
+        }
+        
+        /// <summary>
+        /// 更新位置（如果在跟随模式）
+        /// </summary>
+        public override void OnUpdate()
+        {
+            if (_isFollowingUser && UI3DModule.Instance.XRRig != null)
+            {
+                Transform userTransform = UI3DModule.Instance.XRRig;
+                transform.position = userTransform.TransformPoint(_relativePosition);
+                transform.rotation = userTransform.rotation * _relativeRotation;
+            }
+        }
+        
+        /// <summary>
+        /// 销毁UI
+        /// </summary>
+        public override void OnDestroy()
+        {
+            base.OnDestroy();
+            if (gameObject != null)
+            {
+                GameObject.Destroy(gameObject);
+                gameObject = null;
+                transform = null;
+            }
         }
     }
 }

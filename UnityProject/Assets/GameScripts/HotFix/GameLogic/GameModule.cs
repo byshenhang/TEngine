@@ -65,13 +65,6 @@ public class GameModule
     private static UIModule _ui;
 
     /// <summary>
-    /// 获取3D UI模块。
-    /// </summary>
-    public static UI3DModule UI3D => _ui3D ??= UI3DModule.Instance;
-
-    private static UI3DModule _ui3D;
-
-    /// <summary>
     /// 获取场景模块。
     /// </summary>
     public static ISceneModule Scene => _scene ??= Get<ISceneModule>();
@@ -91,6 +84,13 @@ public class GameModule
     public static ILocalizationModule Localization => _localization ??= Get<ILocalizationModule>();
     
     private static ILocalizationModule _localization;
+    
+    /// <summary>
+    /// 获取3D UI模块。
+    /// </summary>
+    public static UI3DModule UI3D => _ui3d ??= UI3DModule.Instance;
+
+    private static UI3DModule _ui3d;
     #endregion
     
     /// <summary>
@@ -118,9 +118,9 @@ public class GameModule
         _resource = null;
         _audio = null;
         _ui = null;
-        _ui3D = null;
         _scene = null;
         _timer = null;
         _localization = null;
+        _ui3d = null;
     }
 }
