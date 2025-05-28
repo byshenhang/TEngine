@@ -30,6 +30,7 @@ namespace GameLogic
         private void OnClick_debugBtn()
         {
             Debug.Log("---------------------------------- XR Event Action ----------------------------------");
+            GameModule.UI3D.CloseUI3D<BattleMainUI>();
         }
         #endregion
 

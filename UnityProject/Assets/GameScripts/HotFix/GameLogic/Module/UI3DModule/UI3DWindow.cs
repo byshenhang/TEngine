@@ -189,6 +189,8 @@ namespace GameLogic
             return true;
         }
         
+
+        
         /// <summary>
         /// 设置TextMeshPro输入字段
         /// </summary>
@@ -621,6 +623,42 @@ namespace GameLogic
         /// </summary>
         internal void InternalDestroy()
         {
+            // 从 CanvasOptimizer 取消注册 Canvas
+#if UNITY_EDITOR || ENABLE_XR
+            try
+            {
+                // 先获取 Canvas
+                var canvas = gameObject?.GetComponent<Canvas>();
+                if (canvas != null && UI3DModule.Instance != null)
+                {
+                    // 从优化器取消注册
+                    var optimizer = GameObject.FindObjectOfType<CanvasOptimizer>();
+                    if (optimizer != null)
+                    {
+                        var unregisterMethod = optimizer.GetType().GetMethod("UnregisterCanvas");
+                        if (unregisterMethod != null)
+                        {
+                            unregisterMethod.Invoke(optimizer, new object[] { canvas });
+                            Log.Info($"Unregistered canvas {WindowName} from optimizer");
+                        }
+                    }
+                }
+                
+                // 清理交互组件
+                if (_grabInteractable != null)
+                {
+                    _grabInteractable.selectEntered.RemoveListener(OnGrab);
+                    _grabInteractable.selectExited.RemoveListener(OnRelease);
+                    _grabInteractable = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning($"Error unregistering canvas from optimizer: {ex.Message}");
+            }
+#endif
+            
+            // 先隐藏再调用销毁方法
             OnHide();
             OnDestroy();
             
@@ -633,6 +671,8 @@ namespace GameLogic
             
             _isCreated = false;
             IsPrepare = false;
+            
+            Log.Info($"UI3D window {WindowName} destroyed");
         }
         
         /// <summary>
