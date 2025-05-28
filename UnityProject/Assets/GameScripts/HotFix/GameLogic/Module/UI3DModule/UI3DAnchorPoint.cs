@@ -58,7 +58,7 @@ namespace GameLogic
                 // 如果设置为自动创建，且指定了默认窗口类型
                 if (_autoCreate && !string.IsNullOrEmpty(_defaultWindowType))
                 {
-                    UI3DModule.Instance.CreateWindowAtAnchorByType(_anchorId, _defaultWindowType);
+                    UI3DModule.Instance.ShowUI3DAtAnchorByType(_anchorId, _defaultWindowType);
                 }
             }
         }

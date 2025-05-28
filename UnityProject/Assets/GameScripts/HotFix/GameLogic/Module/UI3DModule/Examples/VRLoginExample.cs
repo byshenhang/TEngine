@@ -63,7 +63,7 @@ namespace GameLogic
         private async UniTask ShowLoginWindow()
         {
             // u65b9u5f0f1uff1au5728u7528u6237u9762u524du663eu793au767bu5f55u7a97u53e3
-            VRLoginWindow loginWindow = await GameModule.UI3D.CreateWindowInFrontOfUser<VRLoginWindow>(
+            VRLoginWindow loginWindow = await GameModule.UI3D.ShowUI3DInFrontOfUser<VRLoginWindow>(
                 distance: 1.5f, 
                 userDatas: new object[] { new Action<bool, string>(OnLoginComplete) }
             );
@@ -71,14 +71,14 @@ namespace GameLogic
             // u65b9u5f0f2uff1au5982u679cu60f3u5728u6307u5b9au4f4du7f6eu663eu793au7a97u53e3
             // Vector3 position = new Vector3(0, 1.6f, 2f);
             // Quaternion rotation = Quaternion.identity;
-            // VRLoginWindow loginWindow = await GameModule.UI3D.CreateWindow<VRLoginWindow>(
+            // VRLoginWindow loginWindow = await GameModule.UI3D.ShowUI3D<VRLoginWindow>(
             //     position, 
             //     rotation, 
             //     userDatas: new object[] { new Action<bool, string>(OnLoginComplete) }
             // );
             
             // u65b9u5f0f3uff1au5982u679cu60f3u5728u9884u5148u8bbeu7f6eu7684u951au70b9u663eu793au7a97u53e3
-            // VRLoginWindow loginWindow = await GameModule.UI3D.CreateWindowAtAnchor<VRLoginWindow>(
+            // VRLoginWindow loginWindow = await GameModule.UI3D.ShowUI3DAtAnchor<VRLoginWindow>(
             //     "LoginAnchor", 
             //     userDatas: new object[] { new Action<bool, string>(OnLoginComplete) }
             // );

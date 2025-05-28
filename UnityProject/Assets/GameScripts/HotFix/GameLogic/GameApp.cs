@@ -3,6 +3,7 @@ using System.Reflection;
 using GameConfig.item;
 using GameLogic;
 using TEngine;
+using UnityEngine;
 using static UnityEditor.Progress;
 #pragma warning disable CS0436
 
@@ -32,7 +33,8 @@ public partial class GameApp
     {
         GameEvent.Get<ILoginUI>().ShowLoginUI();
 
-        GameModule.UI.ShowUIAsync<BattleMainUI>();
+        //GameModule.UI.ShowUIAsync<BattleMainUI>();
+        GameModule.UI3D.ShowUI3D<BattleMainUI>(Vector3.zero, Quaternion.identity, null);
     }
     
     private static void Release()

@@ -24,6 +24,56 @@ namespace GameLogic
         // 资源定位地址
         public string AssetName { get; private set; }
         
+        // 窗口深度值
+        private int _depth = 0;
+        
+        /// <summary>
+        /// 窗口深度值。
+        /// </summary>
+        public int Depth
+        {
+            get => _depth;
+            set
+            {
+                if (_depth != value)
+                {
+                    _depth = value;
+                    OnSortDepth(value);
+                }
+            }
+        }
+        
+        /// <summary>
+        /// 窗口可见性。
+        /// </summary>
+        public bool Visible
+        {
+            get => gameObject != null && gameObject.activeSelf;
+            set
+            {
+                if (gameObject != null && gameObject.activeSelf != value)
+                {
+                    gameObject.SetActive(value);
+                    OnSetVisible(value);
+                }
+            }
+        }
+        
+        /// <summary>
+        /// 窗口是否创建完成
+        /// </summary>
+        private bool _isCreated = false;
+        
+        /// <summary>
+        /// 是否已经创建
+        /// </summary>
+        public bool IsCreated => _isCreated;
+        
+        /// <summary>
+        /// 是否正在加载
+        /// </summary>
+        public bool IsLoading { get; private set; } = false;
+        
 #if UNITY_EDITOR || ENABLE_XR
         // 交互组件
         private XRGrabInteractable _grabInteractable;
@@ -60,14 +110,16 @@ namespace GameLogic
             AssetName = assetName;
             WindowName = GetType().Name;
             _userDatas = userDatas;
+            IsLoading = true;
             
             try
             {
-                // 直接使用GameModule.Resource加载预制体
-                GameObject prefab = await GameModule.Resource.LoadAssetAsync<GameObject>(assetName);
+                // 使用UI3D特定的资源加载器
+                GameObject prefab = await UI3DModule.Resource.LoadGameObjectAsync(assetName);
                 if (prefab == null)
                 {
                     Log.Error($"Load 3D UI prefab failed: {assetName}");
+                    IsLoading = false;
                     return;
                 }
                 
@@ -81,14 +133,60 @@ namespace GameLogic
                 // 修复TMP输入字段，确保它们在VR中正常工作
                 SetupTextMeshProInputFields();
                 
-                // 调用生命周期方法
-                OnCreate(parent, userDatas);
+                // 调用内部创建方法
+                InternalCreate();
+                
                 IsPrepare = true;
             }
             catch (Exception ex)
             {
                 Log.Error($"Error preparing UI3D window {WindowName}: {ex.Message}\n{ex.StackTrace}");
             }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+        
+        /// <summary>
+        /// 内部创建方法，用于初始化窗口
+        /// </summary>
+        internal void InternalCreate()
+        {
+            if (!_isCreated)
+            {
+                _isCreated = true;
+                
+                // 按照UI系统的生命周期调用
+                ScriptGenerator();
+                BindMemberProperty();
+                RegisterEvent();
+                
+                // 调用原有创建方法保持兼容性
+                OnCreate(transform.parent, _userDatas);
+            }
+        }
+        
+        /// <summary>
+        /// 内部刷新方法
+        /// </summary>
+        internal void InternalRefresh()
+        {
+            OnRefresh();
+        }
+        
+        /// <summary>
+        /// 内部更新方法
+        /// </summary>
+        internal bool InternalUpdate()
+        {
+            if (!IsPrepare || !Visible)
+            {
+                return false;
+            }
+            
+            OnUpdate();
+            return true;
         }
         
         /// <summary>
@@ -449,6 +547,70 @@ namespace GameLogic
                 transform.position = userTransform.TransformPoint(_relativePosition);
                 transform.rotation = userTransform.rotation * _relativeRotation;
             }
+        }
+        
+        /// <summary>
+        /// 当触发窗口的层级排序。
+        /// </summary>
+        protected override void OnSortDepth(int depth)
+        {
+            // 3D UI窗口的深度排序实现
+            // 可以通过调整Canvas组件的sortingOrder来实现
+            Canvas canvas = gameObject.GetComponent<Canvas>();
+            if (canvas != null)
+            {
+                canvas.sortingOrder = depth;
+                
+                // 遍历子Canvas设置深度
+                Canvas[] childCanvases = gameObject.GetComponentsInChildren<Canvas>(true);
+                if (childCanvases != null && childCanvases.Length > 0)
+                {
+                    int childDepth = depth;
+                    foreach (var childCanvas in childCanvases)
+                    {
+                        if (childCanvas != canvas)
+                        {
+                            childDepth += 5; // 递增值
+                            childCanvas.sortingOrder = childDepth;
+                        }
+                    }
+                }
+            }
+        }
+        
+        /// <summary>
+        /// 当设置窗口的显隐状态
+        /// </summary>
+        protected override void OnSetVisible(bool visible)
+        {
+            // 处理显隐状态变化
+            if (visible)
+            {
+                OnShow();
+            }
+            else
+            {
+                OnHide();
+            }
+        }
+        
+        /// <summary>
+        /// 内部销毁方法
+        /// </summary>
+        internal void InternalDestroy()
+        {
+            OnHide();
+            OnDestroy();
+            
+            if (gameObject != null)
+            {
+                GameObject.Destroy(gameObject);
+                gameObject = null;
+                transform = null;
+            }
+            
+            _isCreated = false;
+            IsPrepare = false;
         }
         
         /// <summary>

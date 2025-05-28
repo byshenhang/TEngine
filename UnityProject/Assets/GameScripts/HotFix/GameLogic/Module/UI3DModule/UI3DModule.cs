@@ -19,6 +19,10 @@ namespace GameLogic
     /// </summary>
     public sealed class UI3DModule : Singleton<UI3DModule>, IUpdate
     {
+        /// <summary>
+        /// 3D UI资源加载器
+        /// </summary>
+        public static IUI3DResourceLoader Resource;
         // 3D UI 根节点
         private Transform _uiRoot;
         public Transform transform => _uiRoot;
@@ -62,6 +66,9 @@ namespace GameLogic
             GameObject.DontDestroyOnLoad(rootObj);
             _uiRoot = rootObj.transform;
             
+            // 初始化资源加载器
+            Resource = new UI3DResourceLoader();
+            
             // 使用已有的 ResourceModule，无需额外资源加载器
             
             // 确保事件系统和 Canvas 优化器初始化
@@ -83,7 +90,7 @@ namespace GameLogic
         protected override void OnRelease()
         {
             // 关闭所有窗口
-            CloseAllWindows();
+            CloseAllUI3D();
             
             // 资源无需手动释放，由 ResourceModule 管理
             
@@ -254,9 +261,10 @@ namespace GameLogic
         #region 窗口管理
         
         /// <summary>
-        /// 创建窗口
+        /// 显示/创建窗口
         /// </summary>
-        public async UniTask<T> CreateWindow<T>(Vector3 position, Quaternion rotation, object[] userDatas = null) where T : UI3DWindow, new()
+        /// <remarks>如果窗口已创建则更新位置，否则创建新窗口</remarks>
+        private async UniTask<T> ShowUI3DWindowInternal<T>(Vector3 position, Quaternion rotation, bool isAsync = true, object[] userDatas = null) where T : UI3DWindow, new()
         {
             Type windowType = typeof(T);
             
@@ -291,16 +299,45 @@ namespace GameLogic
             // 添加到活动窗口集合
             _activeWindows[windowType] = window;
             
-            // 调用显示回调
-            window.OnShow();
+            // 设置窗口深度
+            window.Depth = CalculateWindowDepth();
+            
+            // 确保窗口可见
+            window.Visible = true;
             
             return window;
         }
 
         /// <summary>
-        /// 在锚点处创建窗口
+        /// 显示窗口（在指定位置）
         /// </summary>
-        public async UniTask<T> CreateWindowAtAnchor<T>(string anchorId, object[] userDatas = null) where T : UI3DWindow, new()
+        /// <typeparam name="T">窗口类型</typeparam>
+        /// <param name="position">世界坐标位置</param>
+        /// <param name="rotation">世界旋转</param>
+        /// <param name="userDatas">用户数据</param>
+        /// <returns>窗口实例</returns>
+        public async UniTask<T> ShowUI3D<T>(Vector3 position, Quaternion rotation, object[] userDatas = null) where T : UI3DWindow, new()
+        {
+            return await ShowUI3DWindowInternal<T>(position, rotation, true, userDatas);
+        }
+
+        /// <summary>
+        /// 同步显示窗口（在指定位置）
+        /// </summary>
+        /// <typeparam name="T">窗口类型</typeparam>
+        /// <param name="position">世界坐标位置</param>
+        /// <param name="rotation">世界旋转</param>
+        /// <param name="userDatas">用户数据</param>
+        /// <returns>窗口实例</returns>
+        public T ShowUI3DSync<T>(Vector3 position, Quaternion rotation, object[] userDatas = null) where T : UI3DWindow, new()
+        {
+            return ShowUI3DWindowInternal<T>(position, rotation, false, userDatas).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// 在锚点处显示窗口
+        /// </summary>
+        public async UniTask<T> ShowUI3DAtAnchor<T>(string anchorId, object[] userDatas = null) where T : UI3DWindow, new()
         {
             UI3DAnchorPoint anchor = GetAnchor(anchorId);
             if (anchor == null)
@@ -309,7 +346,7 @@ namespace GameLogic
                 return null;
             }
             
-            T window = await CreateWindow<T>(anchor.transform.position, anchor.transform.rotation, userDatas);
+            T window = await ShowUI3DWindowInternal<T>(anchor.transform.position, anchor.transform.rotation, true, userDatas);
             
             if (window != null)
             {
@@ -321,9 +358,32 @@ namespace GameLogic
         }
 
         /// <summary>
-        /// 根据类型名在锚点处创建窗口
+        /// 同步在锚点处显示窗口
         /// </summary>
-        public async UniTask<UI3DWindow> CreateWindowAtAnchorByType(string anchorId, string windowTypeName, object[] userDatas = null)
+        public T ShowUI3DAtAnchorSync<T>(string anchorId, object[] userDatas = null) where T : UI3DWindow, new()
+        {
+            UI3DAnchorPoint anchor = GetAnchor(anchorId);
+            if (anchor == null)
+            {
+                Log.Error($"UI3D anchor {anchorId} not found");
+                return null;
+            }
+            
+            T window = ShowUI3DWindowInternal<T>(anchor.transform.position, anchor.transform.rotation, false, userDatas).GetAwaiter().GetResult();
+            
+            if (window != null)
+            {
+                // 设置为基于锚点位置模式
+                window.SetPositionMode(UI3DPositionMode.AnchorBased, anchor.transform);
+            }
+            
+            return window;
+        }
+
+        /// <summary>
+        /// 根据类型名在锚点处显示窗口
+        /// </summary>
+        public async UniTask<UI3DWindow> ShowUI3DAtAnchorByType(string anchorId, string windowTypeName, object[] userDatas = null)
         {
             // 查找类型
             Type windowType = FindWindowType(windowTypeName);
@@ -334,7 +394,7 @@ namespace GameLogic
             }
             
             // 反射调用通用方法
-            MethodInfo method = typeof(UI3DModule).GetMethod(nameof(CreateWindowAtAnchor));
+            MethodInfo method = typeof(UI3DModule).GetMethod(nameof(ShowUI3DAtAnchor));
             MethodInfo genericMethod = method.MakeGenericMethod(windowType);
             
             var task = (UniTask<UI3DWindow>)genericMethod.Invoke(this, new object[] { anchorId, userDatas });
@@ -342,13 +402,13 @@ namespace GameLogic
         }
 
         /// <summary>
-        /// 在用户前方创建窗口
+        /// 在用户前方显示窗口
         /// </summary>
-        public async UniTask<T> CreateWindowInFrontOfUser<T>(float distance = 1.5f, object[] userDatas = null) where T : UI3DWindow, new()
+        public async UniTask<T> ShowUI3DInFrontOfUser<T>(float distance = 1.5f, object[] userDatas = null) where T : UI3DWindow, new()
         {
             if (_xrRig == null)
             {
-                Log.Error("Cannot create window in front of user: XR Rig not found");
+                Log.Error("Cannot show window in front of user: XR Rig not found");
                 return null;
             }
             
@@ -356,8 +416,8 @@ namespace GameLogic
             Vector3 position = _xrRig.position + _xrRig.forward * distance;
             Quaternion rotation = _xrRig.rotation;
             
-            // 创建窗口
-            T window = await CreateWindow<T>(position, rotation, userDatas);
+            // 显示窗口
+            T window = await ShowUI3DWindowInternal<T>(position, rotation, true, userDatas);
             
             if (window != null)
             {
@@ -369,36 +429,67 @@ namespace GameLogic
         }
 
         /// <summary>
+        /// 同步在用户前方显示窗口
+        /// </summary>
+        public T ShowUI3DInFrontOfUserSync<T>(float distance = 1.5f, object[] userDatas = null) where T : UI3DWindow, new()
+        {
+            if (_xrRig == null)
+            {
+                Log.Error("Cannot show window in front of user: XR Rig not found");
+                return null;
+            }
+            
+            // 计算位置和旋转
+            Vector3 position = _xrRig.position + _xrRig.forward * distance;
+            Quaternion rotation = _xrRig.rotation;
+            
+            // 显示窗口
+            T window = ShowUI3DWindowInternal<T>(position, rotation, false, userDatas).GetAwaiter().GetResult();
+            
+            if (window != null)
+            {
+                // 设置为相对用户位置模式
+                window.SetRelativeToUser(new Vector3(0, 0, distance), Quaternion.identity);
+            }
+            
+            return window;
+        }
+        
+
+
+        /// <summary>
         /// 关闭指定窗口
         /// </summary>
-        public void CloseWindow<T>() where T : UI3DWindow
+        public void CloseUI3D<T>() where T : UI3DWindow
         {
             Type windowType = typeof(T);
             if (_activeWindows.TryGetValue(windowType, out var window))
             {
-                window.OnHide();
-                window.OnDestroy();
+                window.InternalDestroy();
                 _activeWindows.Remove(windowType);
             }
         }
+        
+
 
         /// <summary>
         /// 关闭所有窗口
         /// </summary>
-        public void CloseAllWindows()
+        public void CloseAllUI3D()
         {
             foreach (var window in _activeWindows.Values)
             {
-                window.OnHide();
-                window.OnDestroy();
+                window.InternalDestroy();
             }
             _activeWindows.Clear();
         }
+        
+
 
         /// <summary>
         /// 获取已打开的窗口实例
         /// </summary>
-        public T GetWindow<T>() where T : UI3DWindow
+        public T GetUI3D<T>() where T : UI3DWindow
         {
             Type windowType = typeof(T);
             _activeWindows.TryGetValue(windowType, out var window);
@@ -420,7 +511,7 @@ namespace GameLogic
             }
             
             // 默认命名规则
-            return $"UI3D/{windowType.Name}";
+            return $"{windowType.Name}";
         }
 
         /// <summary>
@@ -466,8 +557,20 @@ namespace GameLogic
             // 更新所有活动窗口
             foreach (var window in _activeWindows.Values)
             {
-                window.OnUpdate();
+                window.InternalUpdate();
             }
+        }
+        
+        /// <summary>
+        /// 计算窗口深度值
+        /// </summary>
+        private int CalculateWindowDepth()
+        {
+            // 基础深度值
+            int baseDepth = 1000;
+            
+            // 窗口数量影响深度
+            return baseDepth + _activeWindows.Count * 10;
         }
         
         #region XR UI 交互系统支持

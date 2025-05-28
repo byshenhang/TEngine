@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using TEngine;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace GameLogic
 {
@@ -132,6 +134,41 @@ namespace GameLogic
         }
         
         /// <summary>
+        /// 当触发窗口的层级排序。
+        /// </summary>
+        protected virtual void OnSortDepth(int depth)
+        {
+        }
+        
+        /// <summary>
+        /// 当因为全屏遮挡触或者窗口可见性触发窗口的显隐。
+        /// </summary>
+        protected virtual void OnSetVisible(bool visible)
+        {
+        }
+        
+        /// <summary>
+        /// 代码自动生成绑定。
+        /// </summary>
+        protected virtual void ScriptGenerator()
+        {
+        }
+
+        /// <summary>
+        /// 绑定UI成员元素。
+        /// </summary>
+        protected virtual void BindMemberProperty()
+        {
+        }
+
+        /// <summary>
+        /// 注册事件。
+        /// </summary>
+        protected virtual void RegisterEvent()
+        {
+        }
+        
+        /// <summary>
         /// 设置相对于用户的位置（跟随模式）
         /// </summary>
         /// <param name="relativePosition">相对位置</param>
@@ -156,6 +193,75 @@ namespace GameLogic
         public virtual void SetInteractionMode(UI3DInteractionMode mode)
         {
         }
+        #region FindChildComponent
+        
+        /// <summary>
+        /// 查找子节点
+        /// </summary>
+        public Transform FindChild(string path)
+        {
+            if (gameObject == null || string.IsNullOrEmpty(path))
+                return null;
+                
+            return transform.Find(path);
+        }
+        
+        /// <summary>
+        /// 查找子组件
+        /// </summary>
+        public T FindChildComponent<T>(string path) where T : Component
+        {
+            Transform child = FindChild(path);
+            if (child != null)
+            {
+                return child.GetComponent<T>();
+            }
+            return null;
+        }
+        
+        /// <summary>
+        /// 查找或添加子组件
+        /// </summary>
+        public T GetOrAddComponent<T>(string path) where T : Component
+        {
+            Transform child = FindChild(path);
+            if (child == null)
+                return null;
+                
+            T component = child.GetComponent<T>();
+            if (component == null)
+            {
+                component = child.gameObject.AddComponent<T>();
+            }
+            return component;
+        }
+        
+        /// <summary>
+        /// 查找子对象的Image组件
+        /// </summary>
+        public Image FindChildImage(string path)
+        {
+            return FindChildComponent<Image>(path);
+        }
+        
+        /// <summary>
+        /// 查找子对象的Button组件
+        /// </summary>
+        public Button FindChildButton(string path)
+        {
+            return FindChildComponent<Button>(path);
+        }
+        
+        /// <summary>
+        /// 查找子对象的Text组件
+        /// </summary>
+        public Text FindChildText(string path)
+        {
+            return FindChildComponent<Text>(path);
+        }
+        
+        #endregion
+        
     }
     
     /// <summary>

@@ -170,7 +170,7 @@ namespace GameLogic
                 _loginCallback?.Invoke(true, username);
                 
                 // 登录成功后关闭窗口
-                GameModule.UI3D.CloseWindow<VRLoginWindow>();
+                GameModule.UI3D.CloseUI3D<VRLoginWindow>();
                 return;
             }
             else
@@ -195,7 +195,7 @@ namespace GameLogic
             _loginCallback?.Invoke(false, "用户取消登录");
             
             // 关闭窗口
-            GameModule.UI3D.CloseWindow<VRLoginWindow>();
+            GameModule.UI3D.CloseUI3D<VRLoginWindow>();
         }
         
         /// <summary>

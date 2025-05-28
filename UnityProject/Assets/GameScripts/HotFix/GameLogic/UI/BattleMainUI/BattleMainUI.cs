@@ -5,7 +5,7 @@ using TEngine;
 namespace GameLogic
 {
     [Window(UILayer.UI)]
-    class BattleMainUI : UIWindow
+    class BattleMainUI : UI3DWindow
     {
         #region 脚本工具生成的代码
         private RectTransform _rectContainer;
@@ -13,7 +13,8 @@ namespace GameLogic
         private GameObject _goTopInfo;
         private GameObject _itemRoleInfo;
         private GameObject _itemMonsterInfo;
-        protected override void ScriptGenerator()
+
+        void Awake()
         {
             _rectContainer = FindChildComponent<RectTransform>("m_rectContainer");
             _itemTouch = FindChild("m_rectContainer/m_itemTouch").gameObject;
@@ -21,6 +22,7 @@ namespace GameLogic
             _itemRoleInfo = FindChild("m_goTopInfo/m_itemRoleInfo").gameObject;
             _itemMonsterInfo = FindChild("m_goTopInfo/m_itemMonsterInfo").gameObject;
         }
+      
         #endregion
 
         #region 事件
