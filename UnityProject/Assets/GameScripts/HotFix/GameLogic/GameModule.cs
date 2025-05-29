@@ -99,6 +99,13 @@ public class GameModule
 
     private static XRPlayerModule _xrPlayer;
     
+    /// <summary>
+    /// 获取XR交互模块。
+    /// </summary>
+    public static XRIModule XRI => _xri ??= XRIModule.Instance;
+
+    private static XRIModule _xri;
+    
     ///// <summary>
     ///// 获取XR交互模块。
     ///// </summary>
