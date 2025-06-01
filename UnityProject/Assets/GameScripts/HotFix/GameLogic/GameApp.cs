@@ -25,6 +25,11 @@ public partial class GameApp
         _hotfixAssembly = (List<Assembly>)objects[0];
         Log.Warning("======= 看到此条日志代表你成功运行了热更新代码 =======");
         Log.Warning("======= Entrance GameApp =======");
+        
+        // 初始化战斗模块
+        CombatModule.Instance.Initialize();
+        // 模块已继承并实现IUpdate接口以进行自动更新
+        
         Utility.Unity.AddDestroyListener(Release);
         StartGameLogic();
     }
@@ -40,6 +45,12 @@ public partial class GameApp
     
     private static void Release()
     {
+        // 关闭战斗模块
+        if (CombatModule.Instance != null)
+        {
+            CombatModule.Instance.Shutdown();
+        }
+        
         SingletonSystem.Release();
         Log.Warning("======= Release GameApp =======");
     }

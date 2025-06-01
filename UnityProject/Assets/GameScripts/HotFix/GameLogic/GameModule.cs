@@ -51,6 +51,13 @@ public class GameModule
     private static IResourceModule _resource;
 
     /// <summary>
+    /// 获取战斗模块。
+    /// </summary>
+    public static CombatModule Combat => _combat ??= CombatModule.Instance;
+
+    private static CombatModule _combat;
+
+    /// <summary>
     /// 获取音频模块。
     /// </summary>
     public static IAudioModule Audio => _audio ??= Get<IAudioModule>();
@@ -145,6 +152,9 @@ public class GameModule
         _ui3d = null;
         _xrPlayer = null;
         _xri = null;
+        
+        // 战斗模块作为Singleton由GameApp.Release处理
+        _combat = null;
         //_xrInteraction = null;
     }
 }
