@@ -20,58 +20,67 @@ namespace GameLogic
         
         protected override void RegisterXRInteractions()
         {
-            // 设置初始状态
-            if (_doorLock != null) {
-                _doorLock.SetActive(true);
-            }
-            
-            if (_alarmLight != null) {
-                _alarmLight.SetActive(false);
-            }
-            
-            // 1. 为紧急按钮注册事件处理
-            var emergencyButton = GameObject.FindGameObjectWithTag("EmergencyButton")?.GetComponent<XRBaseInteractable>();
-            if (emergencyButton != null)
-            {
-                RegisterInteractable(
-                    emergencyButton,
-                    selectHandler: OnEmergencyButtonSelected,
-                    activateHandler: OnEmergencyButtonActivated
-                );
-            }
-            
-            // 2. 为实验按钮注册事件处理
-            var experimentButton = GameObject.FindGameObjectWithTag("ExperimentButton")?.GetComponent<XRBaseInteractable>();
-            if (experimentButton != null)
-            {
-                RegisterInteractable(
-                    experimentButton,
-                    selectHandler: OnExperimentButtonSelected,
-                    activateHandler: OnExperimentButtonActivated
-                );
-            }
-            
-            // 3. 为门控制拉杆注册事件处理
-            var doorLeverObjects = GameObject.FindGameObjectsWithTag("DoorControl");
-            foreach (var obj in doorLeverObjects)
-            {
-                var leverInteractable = obj.GetComponent<XRBaseInteractable>();
-                if (leverInteractable != null)
-                {
-                    RegisterInteractable(
-                        leverInteractable,
-                        selectHandler: OnDoorLeverSelected,
-                        deselectHandler: OnDoorLeverReleased
-                    );
-                }
-            }
-            
-            // 4. 使用标签批量注册物体
-            RegisterInteractablesByTag("DangerousItem", 
-                hoverEnterHandler: OnDangerousItemHoverEnter,
-                hoverExitHandler: OnDangerousItemHoverExit
+
+            var xri_ball = _sceneManager.GetInteractable("XRI_Ball");
+            RegisterInteractable(
+                xri_ball,
+                selectHandler: OnEmergencyButtonSelected,
+                activateHandler: OnEmergencyButtonActivated
             );
-            
+
+
+            // 设置初始状态
+            //if (_doorLock != null) {
+            //    _doorLock.SetActive(true);
+            //}
+
+            //if (_alarmLight != null) {
+            //    _alarmLight.SetActive(false);
+            //}
+
+            //// 1. 为紧急按钮注册事件处理
+            //var emergencyButton = GameObject.FindGameObjectWithTag("EmergencyButton")?.GetComponent<XRBaseInteractable>();
+            //if (emergencyButton != null)
+            //{
+            //    RegisterInteractable(
+            //        emergencyButton,
+            //        selectHandler: OnEmergencyButtonSelected,
+            //        activateHandler: OnEmergencyButtonActivated
+            //    );
+            //}
+
+            //// 2. 为实验按钮注册事件处理
+            //var experimentButton = GameObject.FindGameObjectWithTag("ExperimentButton")?.GetComponent<XRBaseInteractable>();
+            //if (experimentButton != null)
+            //{
+            //    RegisterInteractable(
+            //        experimentButton,
+            //        selectHandler: OnExperimentButtonSelected,
+            //        activateHandler: OnExperimentButtonActivated
+            //    );
+            //}
+
+            //// 3. 为门控制拉杆注册事件处理
+            //var doorLeverObjects = GameObject.FindGameObjectsWithTag("DoorControl");
+            //foreach (var obj in doorLeverObjects)
+            //{
+            //    var leverInteractable = obj.GetComponent<XRBaseInteractable>();
+            //    if (leverInteractable != null)
+            //    {
+            //        RegisterInteractable(
+            //            leverInteractable,
+            //            selectHandler: OnDoorLeverSelected,
+            //            deselectHandler: OnDoorLeverReleased
+            //        );
+            //    }
+            //}
+
+            //// 4. 使用标签批量注册物体
+            //RegisterInteractablesByTag("DangerousItem", 
+            //    hoverEnterHandler: OnDangerousItemHoverEnter,
+            //    hoverExitHandler: OnDangerousItemHoverExit
+            //);
+
             Log.Info("实验室场景交互逻辑已注册");
         }
         

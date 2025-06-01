@@ -144,6 +144,7 @@ public class GameModule
         _localization = null;
         _ui3d = null;
         _xrPlayer = null;
+        _xri = null;
         //_xrInteraction = null;
     }
 }

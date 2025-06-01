@@ -299,7 +299,6 @@ namespace GameLogic
 
         public void OnUpdate()
         {
-            throw new NotImplementedException();
         }
 
         #endregion
