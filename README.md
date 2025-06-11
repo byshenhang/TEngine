@@ -23,11 +23,13 @@
   <a style="text-decoration:none">
     <img src="https://img.shields.io/github/languages/top/ALEXTANGXIAO/TEngine" alt="topLanguage" />
   </a>
+  <a href="https://deepwiki.com/Alex-Rachel/TEngine" style="text-decoration:none">
+    <img src="https://deepwiki.com/badge.svg" alt="DeepWiki" />
+  </a>
   <br>
   
   <br>
 </p>
-
 
 # <strong>TEngine
 
