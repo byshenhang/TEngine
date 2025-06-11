@@ -5,12 +5,9 @@ using TEngine;
 using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.Rendering;
-
-#if UNITY_EDITOR || ENABLE_XR
 using UnityEngine.XR;
 using UnityEngine.XR.Interaction.Toolkit;
 using System.Linq;
-#endif
 
 namespace GameLogic
 {
@@ -24,7 +21,6 @@ namespace GameLogic
         /// <summary> 获取XR Rig Transform </summary>
         public Transform XRRig => _xrRig;
 
-#if UNITY_EDITOR || ENABLE_XR
         // XR Origin组件引用
         private XROrigin _xrOrigin;
         /// <summary> 获取XR Origin组件 </summary>
@@ -50,7 +46,6 @@ namespace GameLogic
         public XRController LeftHandController => _leftHandController;
         /// <summary> 右手控制器 </summary>
         public XRController RightHandController => _rightHandController;
-#endif
 
         // 交互事件字典
         private Dictionary<XRInteractionEventType, List<Action<object, object>>> _interactionEvents =
@@ -92,7 +87,6 @@ namespace GameLogic
         /// <param name="forceDynamicCreation">强制动态创建，即使场景中已存在也会替换</param>
         private void FindXRComponents(bool forceDynamicCreation = false)
         {
-#if UNITY_EDITOR || ENABLE_XR
             if (!forceDynamicCreation)
             {
                 // 查找现有XR Origin
@@ -125,11 +119,11 @@ namespace GameLogic
             {
                 Log.Warning("无法找到或创建XR Origin，尝试使用备用方案");
                 // 使用主相机作为备用
-                var mainCamera = Camera.main;
-                if (mainCamera != null)
+                var mainCamera2 = Camera.main;
+                if (mainCamera2 != null)
                 {
-                    _xrRig = mainCamera.transform.parent != null ? mainCamera.transform.parent : mainCamera.transform;
-                    _xrCamera = mainCamera;
+                    _xrRig = mainCamera2.transform.parent != null ? mainCamera2.transform.parent : mainCamera2.transform;
+                    _xrCamera = mainCamera2;
                     Log.Info("使用主相机作为XR Camera备用方案");
                 }
                 else
@@ -140,7 +134,6 @@ namespace GameLogic
 
             // 查找并关联控制器
             FindAndSetupControllers();
-#else
             // 非XR模式下使用主相机
             var mainCamera = Camera.main;
             if (mainCamera != null)
@@ -148,19 +141,15 @@ namespace GameLogic
                 _xrRig = mainCamera.transform.parent != null ? mainCamera.transform.parent : mainCamera.transform;
                 Log.Info("非XR模式下使用主相机");
             }
-#endif
         }
 
         /// <summary> 每帧更新 </summary>
         public void OnUpdate()
         {
-#if UNITY_EDITOR || ENABLE_XR
             // 更新控制器输入
             UpdateControllerInput();
-#endif
         }
 
-#if UNITY_EDITOR || ENABLE_XR
         /// <summary> 更新XR控制器输入并触发交互事件 </summary>
         private void UpdateControllerInput()
         {
@@ -193,14 +182,12 @@ namespace GameLogic
                 }
             }
         }
-#endif
 
         /// <summary> 传送玩家到指定位置 </summary>
         /// <param name="position">目标位置</param>
         /// <param name="rotation">目标旋转（可选）</param>
         public void TeleportTo(Vector3 position, Quaternion? rotation = null)
         {
-#if UNITY_EDITOR || ENABLE_XR
             var teleportProvider = GameObject.FindObjectOfType<TeleportationProvider>();
             if (teleportProvider != null && _xrRig != null)
             {
@@ -214,7 +201,6 @@ namespace GameLogic
                 Log.Info($"已传送玩家到位置: {position}");
                 return;
             }
-#endif
             // 非XR或未找到TeleportProvider时直接移动
             if (_xrRig != null)
             {
@@ -271,7 +257,6 @@ namespace GameLogic
             Log.Info($"玩家平滑旋转 {degrees} 度完成");
         }
         
-#if UNITY_EDITOR || ENABLE_XR
         /// <summary> 尝试动态创建XR Origin </summary>
         private bool TryCreateXROrigin()
         {
@@ -367,7 +352,6 @@ namespace GameLogic
                 }
             }
         }
-#endif
         
         /// <summary> 获取当前玩家位置 </summary>
         public Vector3 GetPlayerPosition()
@@ -384,21 +368,13 @@ namespace GameLogic
         /// <summary> 获取玩家头部/相机位置 </summary>
         public Vector3 GetHeadPosition()
         {
-#if UNITY_EDITOR || ENABLE_XR
             return _xrCamera != null ? _xrCamera.transform.position : (_xrRig != null ? _xrRig.position : Vector3.zero);
-#else
-            return _xrRig != null ? _xrRig.position : Vector3.zero;
-#endif
         }
         
         /// <summary> 获取玩家头部前方方向 </summary>
         public Vector3 GetHeadForward()
         {
-#if UNITY_EDITOR || ENABLE_XR
             return _xrCamera != null ? _xrCamera.transform.forward : (_xrRig != null ? _xrRig.forward : Vector3.forward);
-#else
-            return _xrRig != null ? _xrRig.forward : Vector3.forward;
-#endif
         }
 
         /// <summary> 注册交互事件 </summary>
@@ -465,12 +441,10 @@ namespace GameLogic
             }
             
             _xrRig = null;
-#if UNITY_EDITOR || ENABLE_XR
             _xrOrigin = null;
             _xrCamera = null;
             _leftHandController = null;
             _rightHandController = null;
-#endif
         }
         
         /// <summary> 刷新XR Origin和控制器 </summary>

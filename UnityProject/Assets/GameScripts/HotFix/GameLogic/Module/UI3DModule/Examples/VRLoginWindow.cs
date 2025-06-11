@@ -3,7 +3,7 @@ using Cysharp.Threading.Tasks;
 using TEngine;
 using UnityEngine;
 using UnityEngine.UI;
-#if UNITY_EDITOR || ENABLE_XR
+#if True
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.UI;
 #endif
@@ -224,7 +224,7 @@ namespace GameLogic
         /// </summary>
         private void AddVirtualKeyboardSupport()
         {
-#if UNITY_EDITOR || ENABLE_XR
+#if True
             // 如果需要虚拟键盘，这里添加相关代码
             // 在实际项目中，建议实现一个3D虚拟键盘
             var inputModules = GameObject.FindObjectsOfType<XRUIInputModule>();

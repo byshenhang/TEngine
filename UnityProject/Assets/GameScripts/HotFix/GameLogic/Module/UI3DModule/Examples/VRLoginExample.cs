@@ -32,7 +32,7 @@ namespace GameLogic
                 {
                     button.onClick.AddListener(OnLoginButtonClicked);
                 }
-#if UNITY_EDITOR || ENABLE_XR
+#if True
                 // u5982u679cu6709XRu4ea4u4e92u7ec4u4ef6uff0cu6dfbu52a0XRu4ea4u4e92u4e8bu4ef6
                 var interactable = _loginButtonObject.GetComponent<UnityEngine.XR.Interaction.Toolkit.XRSimpleInteractable>();
                 if (interactable != null)

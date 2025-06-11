@@ -190,7 +190,7 @@ namespace GameLogic
             Log.Info($"已平滑过渡到配置文件: {profileName}");
         }
         
-#if UNITY_EDITOR || ENABLE_XR
+#if True
         /// <summary>
         /// 调整特定后处理效果参数
         /// </summary>

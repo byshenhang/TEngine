@@ -7,7 +7,7 @@ using TEngine;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-#if UNITY_EDITOR || ENABLE_XR
+#if True
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.UI;
 #endif
@@ -40,7 +40,7 @@ namespace GameLogic
         /// </summary>
         public Transform XRRig => _xrRig;
         
-#if UNITY_EDITOR || ENABLE_XR
+#if True
         // 手部射线交互器引用
         private XRRayInteractor _leftHandInteractor;
         private XRRayInteractor _rightHandInteractor;
@@ -98,7 +98,7 @@ namespace GameLogic
             // 资源无需手动释放，由 ResourceModule 管理
             
             // 销毁 XR Event System
-#if UNITY_EDITOR || ENABLE_XR
+#if True
             var eventSystem = GameObject.FindObjectOfType<EventSystem>();
             if (eventSystem != null && eventSystem.gameObject.name == "XR Event System")
             {
@@ -135,7 +135,7 @@ namespace GameLogic
         /// </summary>
         private void FindXRComponents()
         {
-#if UNITY_EDITOR || ENABLE_XR
+#if True
             // 查找 XR Rig
             var xrRigs = GameObject.FindObjectsOfType<XRRig>();
             if (xrRigs != null && xrRigs.Length > 0)
@@ -672,7 +672,7 @@ namespace GameLogic
         /// </summary>
         private void EnsureXREventSystem()
         {
-#if UNITY_EDITOR || ENABLE_XR
+#if True
             var eventSystem = GameObject.FindObjectOfType<EventSystem>();
             
             // 如果没有事件系统，创建一个
@@ -706,7 +706,7 @@ namespace GameLogic
         /// </summary>
         private void SetupCanvasOptimizer()
         {
-#if UNITY_EDITOR || ENABLE_XR
+#if True
             // 查找或创建 Canvas 优化器
             CanvasOptimizer optimizer = GameObject.FindObjectOfType<CanvasOptimizer>();
             
@@ -734,7 +734,7 @@ namespace GameLogic
         /// </summary>
         public void RegisterCanvasToOptimizer(Canvas canvas)
         {
-#if UNITY_EDITOR || ENABLE_XR
+#if True
             try
             {
                 var optimizer = GameObject.FindObjectOfType<CanvasOptimizer>();
@@ -768,7 +768,7 @@ namespace GameLogic
             CloseAllUI3D();
             
             // 手动清理所有DontDestroyOnLoad对象
-#if UNITY_EDITOR || ENABLE_XR
+#if True
             // 清理XR事件系统
             var eventSystem = GameObject.FindObjectOfType<EventSystem>();
             if (eventSystem != null && eventSystem.gameObject.name == "XR Event System")

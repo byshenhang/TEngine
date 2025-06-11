@@ -4,7 +4,7 @@ using TEngine;
 using UnityEngine;
 using UnityEngine.UI;
 
-#if UNITY_EDITOR || ENABLE_XR
+#if True
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.UI;
 #endif
@@ -74,7 +74,7 @@ namespace GameLogic
         /// </summary>
         public bool IsLoading { get; private set; } = false;
         
-#if UNITY_EDITOR || ENABLE_XR
+#if True
         // 交互组件
         private XRGrabInteractable _grabInteractable;
 #endif
@@ -196,7 +196,7 @@ namespace GameLogic
         /// </summary>
         private void SetupTextMeshProInputFields()
         {
-#if UNITY_EDITOR || ENABLE_XR
+#if True
             try
             {
                 // 查找所有TMPro.TMP_InputField组件
@@ -227,7 +227,7 @@ namespace GameLogic
         /// </summary>
         private void CloseKeyboardIfNeeded(string text)
         {
-#if UNITY_ANDROID && (UNITY_EDITOR || ENABLE_XR)
+#if UNITY_ANDROID && (True)
             // Quest平台特定处理
             try
             {
@@ -246,7 +246,7 @@ namespace GameLogic
         /// </summary>
         private void SetupInteraction()
         {
-#if UNITY_EDITOR || ENABLE_XR
+#if True
             // 确保UI组件使用正确的交互组件
             // 先删除已存在的交互组件，避免冲突
             var existingInteractable = gameObject.GetComponent<XRBaseInteractable>();
@@ -298,7 +298,7 @@ namespace GameLogic
 #endif
         }
         
-#if UNITY_EDITOR || ENABLE_XR
+#if True
         /// <summary>
         /// 抓取事件
         /// </summary>
@@ -334,7 +334,7 @@ namespace GameLogic
         /// </summary>
         private void ConfigureGrabInteractionArea()
         {
-#if UNITY_EDITOR || ENABLE_XR
+#if True
             if (_grabInteractable == null) return;
             
             // 查找窗口标题栏或边框
@@ -385,7 +385,7 @@ namespace GameLogic
         /// </summary>
         private void EnsureProperCanvasSetup()
         {
-#if UNITY_EDITOR || ENABLE_XR
+#if True
             // 查找或添加Canvas组件
             Canvas canvas = gameObject.GetComponent<Canvas>();
             if (canvas == null)
@@ -624,7 +624,7 @@ namespace GameLogic
         internal void InternalDestroy()
         {
             // 从 CanvasOptimizer 取消注册 Canvas
-#if UNITY_EDITOR || ENABLE_XR
+#if True
             try
             {
                 // 先获取 Canvas
