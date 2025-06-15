@@ -164,12 +164,12 @@ namespace GameLogic
                 // 设置位置
                 lineObj.transform.localPosition = new Vector3(0, startY - i * 30f, 0);
                 
-                // 添加Text组件
-                var textComponent = lineObj.AddComponent<UnityEngine.UI.Text>();
+                // 添加TextMeshProUGUI组件
+                var textComponent = lineObj.AddComponent<TMPro.TextMeshProUGUI>();
                 textComponent.text = lines[i];
                 textComponent.fontSize = _config.FontSize;
-                textComponent.color = new Color(_config.TextColor.r, _config.TextColor.g, _config.TextColor.b, 0f); // 初始透明
-                textComponent.alignment = TextAnchor.MiddleCenter;
+                textComponent.color = new Color(_config.TextColor.r, _config.TextColor.g, _config.TextColor.b, 1f); // 初始可见
+                textComponent.alignment = TMPro.TextAlignmentOptions.Center;
                 
                 // 设置字体
                 if (!string.IsNullOrEmpty(_config.FontPath))
@@ -217,7 +217,7 @@ namespace GameLogic
                 return;
                 
             var lineObj = _lyricLines[lineIndex];
-            var textComponent = lineObj.GetComponent<UnityEngine.UI.Text>();
+            var textComponent = lineObj.GetComponent<TMPro.TextMeshProUGUI>();
             
             // 创建淡入效果
             var fadeConfig = new FadeEffectConfig

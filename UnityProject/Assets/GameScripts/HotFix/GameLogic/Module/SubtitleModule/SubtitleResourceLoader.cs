@@ -73,12 +73,12 @@ namespace GameLogic
             var textObj = new GameObject("SubtitleText");
             textObj.transform.SetParent(parent);
             
-            // 添加Text组件
-            var textComponent = textObj.AddComponent<UnityEngine.UI.Text>();
+            // 添加TextMeshProUGUI组件
+            var textComponent = textObj.AddComponent<TMPro.TextMeshProUGUI>();
             textComponent.text = text;
             textComponent.fontSize = 24;
             textComponent.color = Color.white;
-            textComponent.alignment = TextAnchor.MiddleCenter;
+            textComponent.alignment = TMPro.TextAlignmentOptions.Center;
             
             // 添加RectTransform
             var rectTransform = textObj.GetComponent<RectTransform>();

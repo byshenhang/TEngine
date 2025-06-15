@@ -177,17 +177,4 @@ namespace GameLogic
             _transform = null;
         }
     }
-    
-    /// <summary>
-    /// 缩放效果工厂
-    /// </summary>
-    public class ScaleSubtitleEffectFactory : ISubtitleEffectFactory
-    {
-        public ISubtitleEffect CreateEffect(ISubtitleEffectConfig config)
-        {
-            var effect = new ScaleSubtitleEffect();
-            effect.Initialize(config);
-            return effect;
-        }
-    }
 }

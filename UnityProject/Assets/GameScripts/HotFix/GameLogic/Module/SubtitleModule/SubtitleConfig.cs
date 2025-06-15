@@ -136,6 +136,50 @@ namespace GameLogic
             get => HoldDuration;
             set => HoldDuration = value;
         }
+        
+        /// <summary>
+        /// 克隆配置
+        /// </summary>
+        /// <returns>克隆的配置实例</returns>
+        public SubtitleSequenceConfig Clone()
+        {
+            var clone = new SubtitleSequenceConfig
+            {
+                SequenceType = this.SequenceType,
+                DisplayMode = this.DisplayMode,
+                Text = this.Text,
+                Position = this.Position,
+                Rotation = this.Rotation,
+                Scale = this.Scale,
+                StartDelay = this.StartDelay,
+                CharacterInterval = this.CharacterInterval,
+                WordInterval = this.WordInterval,
+                LineInterval = this.LineInterval,
+                HoldDuration = this.HoldDuration,
+                FadeOutDuration = this.FadeOutDuration,
+                Duration = this.Duration,
+                Font = this.Font,
+                FontSize = this.FontSize,
+                TextColor = this.TextColor,
+                TextMaterial = this.TextMaterial,
+                FontPath = this.FontPath,
+                PrefabPath = this.PrefabPath,
+                Is3D = this.Is3D,
+                AnchorPointName = this.AnchorPointName,
+                TargetCamera = this.TargetCamera,
+                UILayer = this.UILayer,
+                ParentTransform = this.ParentTransform
+            };
+            
+            // 深拷贝效果配置列表
+            clone.Effects = new List<SubtitleEffectConfig>();
+            foreach (var effect in this.Effects)
+            {
+                clone.Effects.Add(effect.Clone());
+            }
+            
+            return clone;
+        }
     }
     
     /// <summary>
@@ -182,6 +226,32 @@ namespace GameLogic
                 return typedValue;
             }
             return defaultValue;
+        }
+        
+        /// <summary>
+        /// 克隆效果配置
+        /// </summary>
+        /// <returns>克隆的效果配置实例</returns>
+        public SubtitleEffectConfig Clone()
+        {
+            var clone = new SubtitleEffectConfig
+            {
+                EffectType = this.EffectType,
+                Duration = this.Duration,
+                Delay = this.Delay,
+                Target = this.Target,
+                Phase = this.Phase,
+                AnimationCurve = new AnimationCurve(this.AnimationCurve.keys)
+            };
+            
+            // 深拷贝参数字典
+            clone.Parameters = new Dictionary<string, object>();
+            foreach (var kvp in this.Parameters)
+            {
+                clone.Parameters[kvp.Key] = kvp.Value;
+            }
+            
+            return clone;
         }
     }
     

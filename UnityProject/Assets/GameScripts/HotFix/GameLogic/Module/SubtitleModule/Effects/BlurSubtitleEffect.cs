@@ -216,17 +216,4 @@ namespace GameLogic
 #endif
         }
     }
-    
-    /// <summary>
-    /// 模糊效果工厂
-    /// </summary>
-    public class BlurSubtitleEffectFactory : ISubtitleEffectFactory
-    {
-        public ISubtitleEffect CreateEffect(ISubtitleEffectConfig config)
-        {
-            var effect = new BlurSubtitleEffect();
-            effect.Initialize(config);
-            return effect;
-        }
-    }
 }

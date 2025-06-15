@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using TEngine;
 
@@ -30,6 +30,32 @@ namespace GameLogic
         private void OnClick_debugBtn()
         {
             Debug.Log("---------------------------------- XR Event Action ----------------------------------");
+            
+            // 播放测试字幕内容
+            var subtitleModule = GameModule.Subtitle;
+            if (subtitleModule != null)
+            {
+                // 使用测试LRC内容播放带效果的字幕
+                string testLrcContent = @"[ti:TestMusic]
+[ar:MusicPlayer]
+[al:Test]
+[by:Test1]
+[offset:0]
+
+[00:00.00]This is the first line of test subtitles
+[00:03.00]This is the second line of test subtitles
+[00:06.00]Subtitle playback with multiple effects
+[00:09.00]Fade in, zoom, fade out effects
+[00:12.00]Test complete";
+                
+                _ = subtitleModule.PlayLRCContentAsync(testLrcContent, enableEffects: true);
+                Debug.Log("开始播放测试字幕内容");
+            }
+            else
+            {
+                Debug.LogError("字幕模块未找到");
+            }
+            
             GameModule.UI3D.CloseUI3D<BattleMainUI>();
         }
         #endregion

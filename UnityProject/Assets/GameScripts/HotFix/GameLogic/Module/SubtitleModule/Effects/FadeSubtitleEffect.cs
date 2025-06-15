@@ -186,17 +186,4 @@ namespace GameLogic
             _canvasGroup = null;
         }
     }
-    
-    /// <summary>
-    /// 淡入淡出效果工厂
-    /// </summary>
-    public class FadeSubtitleEffectFactory : ISubtitleEffectFactory
-    {
-        public ISubtitleEffect CreateEffect(ISubtitleEffectConfig config)
-        {
-            var effect = new FadeSubtitleEffect();
-            effect.Initialize(config);
-            return effect;
-        }
-    }
 }

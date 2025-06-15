@@ -174,17 +174,4 @@ namespace GameLogic
             _fullText = null;
         }
     }
-    
-    /// <summary>
-    /// 打字机效果工厂
-    /// </summary>
-    public class TypewriterSubtitleEffectFactory : ISubtitleEffectFactory
-    {
-        public ISubtitleEffect CreateEffect(ISubtitleEffectConfig config)
-        {
-            var effect = new TypewriterSubtitleEffect();
-            effect.Initialize(config);
-            return effect;
-        }
-    }
 }

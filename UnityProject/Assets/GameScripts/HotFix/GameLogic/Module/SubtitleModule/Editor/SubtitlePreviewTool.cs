@@ -261,8 +261,13 @@ namespace GameLogic.Editor
 
         private void StartPreview()
         {
-            if (_previewAsset == null) return;
+            if (_previewAsset == null)
+            {
+                Debug.LogError("[SubtitlePreview] Cannot start preview: _previewAsset is null");
+                return;
+            }
 
+            Debug.Log($"[SubtitlePreview] 开始预览: {_previewAsset.name}");
             CleanupPreview();
 
             _isPreviewActive = true;
@@ -271,13 +276,20 @@ namespace GameLogic.Editor
             _previewTime = 0f;
 
             CreatePreviewObjects();
+            CalculateDuration();
+            Debug.Log($"[SubtitlePreview] 总时长: {_totalDuration:F3}秒");
+            
+            // 立即更新预览状态，确保初始状态正确显示
+            UpdatePreviewAtTime(_previewTime);
 
             if (Application.isPlaying)
             {
+                Debug.Log("[SubtitlePreview] 使用运行时预览");
                 StartRuntimePreview();
             }
             else
             {
+                Debug.Log("[SubtitlePreview] 使用编辑器预览");
                 StartEditorPreview();
             }
         }
@@ -307,12 +319,14 @@ namespace GameLogic.Editor
         private void CreatePreviewObjects()
         {
             var config = _previewAsset.Config;
+            Debug.Log($"[SubtitlePreview] 创建预览对象: Text='{config.Text}', FontSize={config.FontSize}");
 
             // 创建根对象
             _previewRoot = new GameObject("SubtitlePreview");
             _previewRoot.transform.position = config.Position;
             _previewRoot.transform.rotation = config.Rotation;
             _previewRoot.transform.localScale = config.Scale;
+            Debug.Log($"[SubtitlePreview] 创建根对象: Position={config.Position}, Scale={config.Scale}");
 
             // 创建Canvas
             var canvas = _previewRoot.AddComponent<Canvas>();
@@ -326,6 +340,11 @@ namespace GameLogic.Editor
 
             // 创建字符对象（使用TextMeshProUGUI组件）
             _previewCharacters.Clear();
+            
+            // 根据字体大小动态计算字符间距
+            float characterSpacing = Mathf.Max(config.FontSize * 0.8f, 20f);
+            float characterSize = Mathf.Max(config.FontSize * 1.2f, 30f);
+            Debug.Log($"[SubtitlePreview] 字符设置: spacing={characterSpacing}, size={characterSize}");
 
             for (int i = 0; i < config.Text.Length; i++)
             {
@@ -333,8 +352,8 @@ namespace GameLogic.Editor
                 charObj.transform.SetParent(_previewRoot.transform, false);
                 
                 var rectTransform = charObj.AddComponent<RectTransform>();
-                rectTransform.anchoredPosition = new Vector2(i * 50f, 0);
-                rectTransform.sizeDelta = new Vector2(50, 50);
+                rectTransform.anchoredPosition = new Vector2(i * characterSpacing, 0);
+                rectTransform.sizeDelta = new Vector2(characterSize, characterSize);
 
                 // 添加TextMeshProUGUI组件显示文字
                 var textMeshPro = charObj.AddComponent<TMPro.TextMeshProUGUI>();
@@ -351,7 +370,10 @@ namespace GameLogic.Editor
 
                 charObj.SetActive(false);
                 _previewCharacters.Add(charObj);
+                Debug.Log($"[SubtitlePreview] 创建字符 {i}: '{config.Text[i]}', 位置=({i * characterSpacing}, 0)");
             }
+            
+            Debug.Log($"[SubtitlePreview] 总共创建了 {_previewCharacters.Count} 个字符对象");
         }
 
         private async void StartRuntimePreview()
@@ -385,9 +407,11 @@ namespace GameLogic.Editor
             }
 
             _previewTime += Time.deltaTime;
+            Debug.Log($"[SubtitlePreview] UpdateEditorPreview: _previewTime={_previewTime:F3}, _totalDuration={_totalDuration:F3}");
 
             if (_previewTime >= _totalDuration)
             {
+                Debug.Log($"[SubtitlePreview] 预览结束，停止播放");
                 StopPreview();
                 return;
             }
@@ -400,9 +424,14 @@ namespace GameLogic.Editor
 
         private void UpdatePreviewAtTime(float time)
         {
-            if (_previewAsset == null) return;
+            if (_previewAsset == null)
+            {
+                Debug.LogError("[SubtitlePreview] _previewAsset is null");
+                return;
+            }
 
             var config = _previewAsset.Config;
+            Debug.Log($"[SubtitlePreview] UpdatePreviewAtTime: time={time:F3}, StartDelay={config.StartDelay:F3}, CharacterInterval={config.CharacterInterval:F3}");
 
             // 简化的时间轴模拟
             float charTime = config.StartDelay;
@@ -410,15 +439,24 @@ namespace GameLogic.Editor
             for (int i = 0; i < _previewCharacters.Count; i++)
             {
                 var charObj = _previewCharacters[i];
-                if (charObj == null) continue;
+                if (charObj == null)
+                {
+                    Debug.LogWarning($"[SubtitlePreview] Character {i} is null");
+                    continue;
+                }
 
                 bool shouldShow = time >= charTime;
+                Debug.Log($"[SubtitlePreview] Character {i}: charTime={charTime:F3}, shouldShow={shouldShow}");
                 charObj.SetActive(shouldShow);
 
                 if (shouldShow)
                 {
+                    // 重置字符的初始状态
+                    ResetCharacterToDefault(charObj);
+                    
                     // 简单的效果模拟
                     float effectTime = time - charTime;
+                    //Debug.Log($"[SubtitlePreview] Character {i}: effectTime={effectTime:F3}, effects count={config.Effects?.Count ?? 0}");
                     ApplySimpleEffects(charObj, effectTime, config.Effects);
                 }
 
@@ -426,19 +464,41 @@ namespace GameLogic.Editor
             }
         }
 
+        private void ResetCharacterToDefault(GameObject charObj)
+        {
+            // 重置变换
+            charObj.transform.localScale = Vector3.one; // 正常缩放
+            
+            // 重置文本颜色和透明度
+            var textMeshPro = charObj.GetComponent<TMPro.TextMeshProUGUI>();
+            if (textMeshPro != null && _previewAsset != null)
+            {
+                textMeshPro.color = _previewAsset.Config.TextColor;
+            }
+        }
+
         private void ApplySimpleEffects(GameObject charObj, float effectTime, List<SubtitleEffectConfig> effects)
         {
+            if (effects == null || effects.Count == 0)
+            {
+                Debug.Log($"[SubtitlePreview] 没有效果需要应用");
+                return;
+            }
+            
             foreach (var effect in effects)
             {
-                if (effect.Phase != SubtitleEffectPhase.Enter) continue;
-
                 float startTime = effect.Delay;
                 float endTime = startTime + effect.Duration;
+                Debug.Log($"[SubtitlePreview] 检查效果 {effect.GetType().Name}: effectTime={effectTime:F3}, startTime={startTime:F3}, endTime={endTime:F3}");
 
                 if (effectTime >= startTime && effectTime <= endTime)
                 {
                     float t = (effectTime - startTime) / effect.Duration;
-                    t = effect.AnimationCurve.Evaluate(t);
+                    if (effect.AnimationCurve != null)
+                    {
+                        t = effect.AnimationCurve.Evaluate(t);
+                    }
+                    Debug.Log($"[SubtitlePreview] 应用效果 {effect.GetType().Name}: t={t:F3}");
 
                     ApplySimpleEffect(charObj, effect, t);
                 }
@@ -447,22 +507,131 @@ namespace GameLogic.Editor
 
         private void ApplySimpleEffect(GameObject charObj, SubtitleEffectConfig effect, float t)
         {
-            switch (effect)
+            Debug.Log($"[SubtitlePreview] ApplySimpleEffect: {effect.GetType().Name}, EffectType={effect.EffectType}, t={t:F3}");
+            
+            // 由于Unity YAML反序列化的限制，我们需要通过EffectType字符串来判断效果类型
+            switch (effect.EffectType)
             {
-                case ScaleEffectConfig scale:
-                    Vector3 currentScale = Vector3.Lerp(scale.ScaleStart, scale.ScaleEnd, t);
-                    charObj.transform.localScale = currentScale * 0.1f; // 基础缩放
+                case "Scale":
+                    if (effect is ScaleEffectConfig scale)
+                    {
+                        Vector3 currentScale = Vector3.Lerp(scale.ScaleStart, scale.ScaleEnd, t);
+                        Debug.Log($"[SubtitlePreview] 缩放效果: {scale.ScaleStart} -> {scale.ScaleEnd}, 当前={currentScale}");
+                        charObj.transform.localScale = currentScale;
+                    }
+                    else
+                    {
+                        // 从基础配置中获取参数
+                        Vector3 scaleStart = effect.GetParameter("ScaleStart", Vector3.zero);
+                        Vector3 scaleEnd = effect.GetParameter("ScaleEnd", Vector3.one);
+                        Vector3 currentScale = Vector3.Lerp(scaleStart, scaleEnd, t);
+                        Debug.Log($"[SubtitlePreview] 缩放效果(通用): {scaleStart} -> {scaleEnd}, 当前={currentScale}");
+                        charObj.transform.localScale = currentScale;
+                    }
                     break;
 
-                case FadeEffectConfig fade:
-                    var textMeshPro = charObj.GetComponent<TMPro.TextMeshProUGUI>();
-                    if (textMeshPro != null)
+                case "Fade":
+                    if (effect is FadeEffectConfig fade)
                     {
                         float alpha = Mathf.Lerp(fade.AlphaStart, fade.AlphaEnd, t);
-                        var color = textMeshPro.color;
-                        color.a = alpha;
-                        textMeshPro.color = color;
+                        Debug.Log($"[SubtitlePreview] 淡入淡出效果: {fade.AlphaStart} -> {fade.AlphaEnd}, 当前alpha={alpha:F3}");
+                        var textMeshPro = charObj.GetComponent<TMPro.TextMeshProUGUI>();
+                        if (textMeshPro != null)
+                        {
+                            var color = textMeshPro.color;
+                            color.a = alpha;
+                            textMeshPro.color = color;
+                        }
                     }
+                    else
+                    {
+                        // 从基础配置中获取参数，或使用默认值
+                        float alphaStart = effect.GetParameter("AlphaStart", 0f);
+                        float alphaEnd = effect.GetParameter("AlphaEnd", 1f);
+                        
+                        // 根据Phase确定默认的淡入淡出方向
+                        if (effect.Phase == SubtitleEffectPhase.Enter)
+                        {
+                            alphaStart = 0f;
+                            alphaEnd = 1f;
+                        }
+                        else if (effect.Phase == SubtitleEffectPhase.Exit)
+                        {
+                            alphaStart = 1f;
+                            alphaEnd = 0f;
+                        }
+                        
+                        float alpha = Mathf.Lerp(alphaStart, alphaEnd, t);
+                        Debug.Log($"[SubtitlePreview] 淡入淡出效果(通用): {alphaStart} -> {alphaEnd}, 当前alpha={alpha:F3}, Phase={effect.Phase}");
+                        var textMeshPro = charObj.GetComponent<TMPro.TextMeshProUGUI>();
+                        if (textMeshPro != null)
+                        {
+                            var color = textMeshPro.color;
+                            color.a = alpha;
+                            textMeshPro.color = color;
+                        }
+                    }
+                    break;
+
+                case "Blur":
+                    if (effect is BlurEffectConfig blur)
+                    {
+                        float blurAmount = Mathf.Lerp(blur.BlurStart, blur.BlurEnd, t);
+                        float blurAlpha = Mathf.Lerp(1f, 0.3f, blurAmount / 30f);
+                        Debug.Log($"[SubtitlePreview] 模糊效果: {blur.BlurStart} -> {blur.BlurEnd}, 当前模糊={blurAmount:F1}, alpha={blurAlpha:F3}");
+                        var blurTextMeshPro = charObj.GetComponent<TMPro.TextMeshProUGUI>();
+                        if (blurTextMeshPro != null)
+                        {
+                            var blurColor = blurTextMeshPro.color;
+                            blurColor.a = blurAlpha;
+                            blurTextMeshPro.color = blurColor;
+                        }
+                    }
+                    else
+                    {
+                        // 从基础配置中获取参数
+                        float blurStart = effect.GetParameter("BlurStart", 30f);
+                        float blurEnd = effect.GetParameter("BlurEnd", 0f);
+                        float blurAmount = Mathf.Lerp(blurStart, blurEnd, t);
+                        float blurAlpha = Mathf.Lerp(1f, 0.3f, blurAmount / 30f);
+                        Debug.Log($"[SubtitlePreview] 模糊效果(通用): {blurStart} -> {blurEnd}, 当前模糊={blurAmount:F1}, alpha={blurAlpha:F3}");
+                        var blurTextMeshPro = charObj.GetComponent<TMPro.TextMeshProUGUI>();
+                        if (blurTextMeshPro != null)
+                        {
+                            var blurColor = blurTextMeshPro.color;
+                            blurColor.a = blurAlpha;
+                            blurTextMeshPro.color = blurColor;
+                        }
+                    }
+                    break;
+
+                case "Typewriter":
+                    if (effect is TypewriterEffectConfig typewriter)
+                    {
+                        Debug.Log($"[SubtitlePreview] 打字机效果: t={t:F3}");
+                        var typewriterTextMeshPro = charObj.GetComponent<TMPro.TextMeshProUGUI>();
+                        if (typewriterTextMeshPro != null)
+                        {
+                            var typewriterColor = typewriterTextMeshPro.color;
+                            typewriterColor.a = t >= 1f ? 1f : 0f;
+                            typewriterTextMeshPro.color = typewriterColor;
+                        }
+                    }
+                    else
+                    {
+                        Debug.Log($"[SubtitlePreview] 打字机效果(通用): t={t:F3}");
+                        var typewriterTextMeshPro = charObj.GetComponent<TMPro.TextMeshProUGUI>();
+                        if (typewriterTextMeshPro != null)
+                        {
+                            var typewriterColor = typewriterTextMeshPro.color;
+                            typewriterColor.a = t >= 1f ? 1f : 0f;
+                            typewriterTextMeshPro.color = typewriterColor;
+                        }
+                    }
+                    break;
+                    
+                default:
+                    Debug.LogWarning($"[SubtitlePreview] 未知的效果类型: {effect.EffectType} (类型: {effect.GetType().Name})");
                     break;
             }
         }

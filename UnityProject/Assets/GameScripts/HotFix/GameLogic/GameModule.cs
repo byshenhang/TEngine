@@ -112,15 +112,20 @@ public class GameModule
     public static XRIModule XRI => _xri ??= XRIModule.Instance;
 
     private static XRIModule _xri;
-    
+
     ///// <summary>
     ///// 获取XR交互模块。
     ///// </summary>
     //public static XRInteractionManager XRInteraction => _xrInteraction ??= XRInteractionManager.Instance;
 
     //private static XRInteractionManager _xrInteraction;
+
+
+    public static SubtitleModule Subtitle => _subtitle ??= SubtitleModule.Instance;
+
+    private static SubtitleModule _subtitle;
     #endregion
-    
+
     /// <summary>
     /// 获取游戏框架模块类。
     /// </summary>
@@ -155,6 +160,7 @@ public class GameModule
         
         // 战斗模块作为Singleton由GameApp.Release处理
         _combat = null;
+        _subtitle = null;
         //_xrInteraction = null;
     }
 }

@@ -305,14 +305,100 @@ namespace GameLogic
         /// </summary>
         protected virtual ISubtitleEffect CreateEffectByType(SubtitleEffectConfig config)
         {
+            // 根据效果类型创建对应的具体配置
+            ISubtitleEffectConfig specificConfig = config.EffectType switch
+            {
+                "Blur" => ConvertToBlurConfig(config),
+                "Fade" => ConvertToFadeConfig(config),
+                "Typewriter" => ConvertToTypewriterConfig(config),
+                "Scale" => ConvertToScaleConfig(config),
+                _ => config
+            };
+            
             return config.EffectType switch
             {
-                "Blur" => _subtitleModule.CreateSubtitleEffect<BlurSubtitleEffect>(config),
-                "Fade" => _subtitleModule.CreateSubtitleEffect<FadeSubtitleEffect>(config),
-                "Typewriter" => _subtitleModule.CreateSubtitleEffect<TypewriterSubtitleEffect>(config),
-                "Scale" => _subtitleModule.CreateSubtitleEffect<ScaleSubtitleEffect>(config),
+                "Blur" => _subtitleModule.CreateSubtitleEffect<BlurSubtitleEffect>(specificConfig),
+                "Fade" => _subtitleModule.CreateSubtitleEffect<FadeSubtitleEffect>(specificConfig),
+                "Typewriter" => _subtitleModule.CreateSubtitleEffect<TypewriterSubtitleEffect>(specificConfig),
+                "Scale" => _subtitleModule.CreateSubtitleEffect<ScaleSubtitleEffect>(specificConfig),
                 _ => null
             };
+        }
+        
+        /// <summary>
+        /// 转换为模糊效果配置
+        /// </summary>
+        private BlurEffectConfig ConvertToBlurConfig(SubtitleEffectConfig config)
+        {
+            var blurConfig = new BlurEffectConfig
+            {
+                Duration = config.Duration,
+                Delay = config.Delay,
+                Target = config.Target,
+                Phase = config.Phase,
+                AnimationCurve = config.AnimationCurve,
+                BlurStart = config.GetParameter("BlurStart", 30f),
+                BlurEnd = config.GetParameter("BlurEnd", 0f),
+                BlurThreshold = config.GetParameter("BlurThreshold", 10f)
+            };
+            return blurConfig;
+        }
+        
+        /// <summary>
+        /// 转换为淡入淡出效果配置
+        /// </summary>
+        private FadeEffectConfig ConvertToFadeConfig(SubtitleEffectConfig config)
+        {
+            var fadeConfig = new FadeEffectConfig
+            {
+                Duration = config.Duration,
+                Delay = config.Delay,
+                Target = config.Target,
+                Phase = config.Phase,
+                AnimationCurve = config.AnimationCurve,
+                AlphaStart = config.GetParameter("AlphaStart", 0f),
+                AlphaEnd = config.GetParameter("AlphaEnd", 1f),
+                FadeIn = config.GetParameter("FadeIn", true)
+            };
+            return fadeConfig;
+        }
+        
+        /// <summary>
+        /// 转换为打字机效果配置
+        /// </summary>
+        private TypewriterEffectConfig ConvertToTypewriterConfig(SubtitleEffectConfig config)
+        {
+            var typewriterConfig = new TypewriterEffectConfig
+            {
+                Duration = config.Duration,
+                Delay = config.Delay,
+                Target = config.Target,
+                Phase = config.Phase,
+                AnimationCurve = config.AnimationCurve,
+                CharacterSpeed = config.GetParameter("CharacterSpeed", 0.05f),
+                RandomSpeed = config.GetParameter("RandomSpeed", false),
+                SpeedVariation = config.GetParameter("SpeedVariation", 0.02f)
+            };
+            return typewriterConfig;
+        }
+        
+        /// <summary>
+        /// 转换为缩放效果配置
+        /// </summary>
+        private ScaleEffectConfig ConvertToScaleConfig(SubtitleEffectConfig config)
+        {
+            var scaleConfig = new ScaleEffectConfig
+            {
+                Duration = config.Duration,
+                Delay = config.Delay,
+                Target = config.Target,
+                Phase = config.Phase,
+                AnimationCurve = config.AnimationCurve,
+                ScaleStart = config.GetParameter("ScaleStart", Vector3.zero),
+                ScaleEnd = config.GetParameter("ScaleEnd", Vector3.one),
+                Bounce = config.GetParameter("Bounce", false)
+            };
+            return scaleConfig;
         }
         
         /// <summary>

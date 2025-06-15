@@ -87,19 +87,6 @@ namespace GameLogic
     }
     
     /// <summary>
-    /// 字幕效果工厂接口
-    /// </summary>
-    public interface ISubtitleEffectFactory
-    {
-        /// <summary>
-        /// 创建效果实例
-        /// </summary>
-        /// <param name="config">效果配置</param>
-        /// <returns>效果实例</returns>
-        ISubtitleEffect CreateEffect(ISubtitleEffectConfig config);
-    }
-    
-    /// <summary>
     /// 字幕序列接口
     /// </summary>
     public interface ISubtitleSequence

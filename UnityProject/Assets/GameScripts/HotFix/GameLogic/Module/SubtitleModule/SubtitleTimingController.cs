@@ -371,6 +371,38 @@ namespace GameLogic
         }
         
         /// <summary>
+        /// 播放定时字幕（别名方法，与Play()功能相同）
+        /// </summary>
+        public void PlayTimedSubtitles()
+        {
+            Play();
+        }
+        
+        /// <summary>
+        /// 暂停定时字幕（别名方法，与Pause()功能相同）
+        /// </summary>
+        public void PauseTimedSubtitles()
+        {
+            Pause();
+        }
+        
+        /// <summary>
+        /// 恢复定时字幕（别名方法，与Resume()功能相同）
+        /// </summary>
+        public void ResumeTimedSubtitles()
+        {
+            Resume();
+        }
+        
+        /// <summary>
+        /// 停止定时字幕（别名方法，与Stop()功能相同）
+        /// </summary>
+        public void StopTimedSubtitles()
+        {
+            Stop();
+        }
+        
+        /// <summary>
         /// 释放资源
         /// </summary>
         public void Dispose()
