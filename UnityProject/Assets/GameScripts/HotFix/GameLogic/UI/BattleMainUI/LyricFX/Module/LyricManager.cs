@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using TMPro;
@@ -34,7 +33,7 @@ namespace LyricFX.Module
         [Header("效果配置")]
         [SerializeField] private float blurStart = 30.0f;
         [SerializeField] private float blurThreshold = 10f;
-        [SerializeField] private float blurFadeDuration = 1.0f;
+        [SerializeField] private float blurFadeDuration = 1.0f; // 注意：此处的 blurFadeDuration 字段保留，但在 PrepareEffects 中实际使用的是 fadeInDuration
         [SerializeField] private float fadeInDuration = 0.5f;
         [SerializeField] private float fadeOutDuration = 0.5f;
         [SerializeField] private AnimationCurve blurCurve;
@@ -238,15 +237,8 @@ namespace LyricFX.Module
                 var renderer = new CharacterRenderer(characterPrefab, lineContainer);
                 renderer.SetText(character.Character.ToString());
                 
-                // 确保字符有BlurFilter组件
-                var blurFilter = renderer.GetOrCreateComponent<ChocDino.UIFX.BlurFilter>();
-                if (blurFilter != null)
-                {
-                    blurFilter.Blur = blurStart;
-                }
-                
-                // 初始设置为不可见
-                renderer.SetAlpha(0f);
+                // 初始设置为透明，等待FadeEffect淡入
+                renderer.SetAlpha(0.0f);
                 renderer.SetActive(true);
                 
                 // 添加到列表
@@ -317,17 +309,7 @@ namespace LyricFX.Module
                     // 配置入场效果
                     var enterEffects = new List<BaseEffect>
                     {
-                        // 模糊效果
-                        new BlurEffect(new BlurParameters
-                        {
-                            StartBlur = blurStart,
-                            EndBlur = 0f,
-                            Duration = blurFadeDuration,
-                            Curve = blurCurve,
-                            BlurThreshold = blurThreshold
-                        }),
-                        
-                        // 淡入效果
+                        // 淡入效果 - 从透明到不透明
                         new FadeEffect(new FadeParameters
                         {
                             StartAlpha = 0.0f,
@@ -352,7 +334,7 @@ namespace LyricFX.Module
                     
                     // 设置效果
                     adapter.ConfigureEffects(CharacterState.Enter, enterEffects);
-                    adapter.ConfigureEffects(CharacterState.Exit, exitEffects);
+                    //adapter.ConfigureEffects(CharacterState.Exit, exitEffects);
                 }
             }
         }
@@ -644,22 +626,38 @@ namespace LyricFX.Module
                     {
                         Debug.Log($"Showing line {i}: '{line.Text}' at time {_currentTime}");
                         
-                        // 隐藏之前的行
-                        if (_currentLineIndex >= 0)
-                        {
-                            await ExitLine(_currentLineIndex, _cts.Token);
-                        }
+                        // 不立即隐藏之前的行，让它们保持显示状态
+                        // 只有当行结束时间到达时才隐藏
                         
                         _currentLineIndex = i;
                         await PlayLine(i, _cts.Token);
                     }
                 }
-                // 检查是否需要隐藏这一行
-                else if (i == _currentLineIndex && _currentTime >= line.EndTime)
+                // 检查是否需要隐藏这一行（只在行结束时间到达时隐藏）
+                else if (_currentTime >= line.EndTime)
                 {
-                    Debug.Log($"Hiding line {i} at time {_currentTime}");
-                    await ExitLine(i, _cts.Token);
-                    _currentLineIndex = -1;
+                    // 检查这一行是否还在显示中，如果是则隐藏它
+                    if (_lineAdapters.ContainsKey(i))
+                    {
+                        var adapters = _lineAdapters[i];
+                        bool anyVisible = false;
+                        foreach (var adapter in adapters)
+                        {
+                            // 检查字符是否还可见（这里需要根据实际的 EffectAdapter 实现来判断）
+                            // 暂时简化为检查是否超过结束时间一定时长
+                            if (_currentTime < line.EndTime + fadeOutDuration + 0.5f) // 给退场效果留出时间
+                            {
+                                anyVisible = true;
+                                break;
+                            }
+                        }
+                        
+                        if (anyVisible && _currentTime >= line.EndTime + 2.0f) // 延迟2秒后再隐藏
+                        {
+                            Debug.Log($"Hiding line {i} at time {_currentTime} (delayed)");
+                            await ExitLine(i, _cts.Token);
+                        }
+                    }
                 }
             }
         }

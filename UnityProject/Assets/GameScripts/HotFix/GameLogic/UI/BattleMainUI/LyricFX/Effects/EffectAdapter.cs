@@ -249,34 +249,6 @@ namespace LyricFX.Effects
             return _activeEffects.Find(e => e is T) as T;
         }
         
-        /// <summary>
-        /// 检查效果是否满足条件
-        /// </summary>
-        public bool MeetsCondition(string conditionKey)
-        {
-            switch (conditionKey)
-            {
-                case "blur_below_threshold":
-                    var blurEffect = GetActiveEffect<BlurEffect>();
-                    if (blurEffect != null)
-                    {
-                        var parameters = blurEffect.GetType().GetField("_params", 
-                            System.Reflection.BindingFlags.NonPublic | 
-                            System.Reflection.BindingFlags.Instance)?.GetValue(blurEffect) as BlurParameters;
-                            
-                        float threshold = parameters?.BlurThreshold ?? 10f;
-                        return blurEffect.GetCurrentValue() < threshold;
-                    }
-                    return false;
-                    
-                case "effect_complete":
-                    return _activeEffects.Count > 0 && 
-                           _activeEffects.TrueForAll(e => Mathf.Approximately(e.GetCurrentValue(), 1.0f));
-                           
-                default:
-                    return true;
-            }
-        }
         
         /// <summary>
         /// 清理资源

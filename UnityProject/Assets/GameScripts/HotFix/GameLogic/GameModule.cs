@@ -124,6 +124,11 @@ public class GameModule
     //public static SubtitleModule Subtitle => _subtitle ??= SubtitleModule.Instance;
 
     //private static SubtitleModule _subtitle;
+
+
+    public static LyricModule Lyric => _lyric ??= LyricModule.Instance;
+
+    private static LyricModule _lyric;
     #endregion
 
     /// <summary>
