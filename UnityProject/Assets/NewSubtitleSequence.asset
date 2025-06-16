@@ -18,7 +18,6 @@ MonoBehaviour:
   _config:
     SequenceType: 0
     DisplayMode: 0
-    Text: Hello VR And Unity
     Position: {x: 0, y: 0, z: 0}
     Rotation: {x: 0, y: 0, z: 0, w: 1}
     Scale: {x: 1, y: 1, z: 1}
@@ -28,10 +27,14 @@ MonoBehaviour:
     LineInterval: 0.2
     HoldDuration: 2
     FadeOutDuration: 1
-    Duration: 5
+    DefaultDuration: 5
     Font: {fileID: 0}
     FontSize: 24
-    TextColor: {r: 1, g: 1, b: 1, a: 1}
+    TextColor:
+      r: 1
+      g: 1
+      b: 1
+      a: 1
     TextMaterial: {fileID: 0}
     FontPath: 
     PrefabPath: 
@@ -39,12 +42,11 @@ MonoBehaviour:
     - EffectType: Fade
       Duration: 1
       Delay: 0
+      <Target>k__BackingField: {fileID: 0}
       Phase: 0
       AnimationCurve:
-        serializedVersion: 2
         m_Curve:
-        - serializedVersion: 3
-          time: 0
+        - time: 0
           value: 0
           inSlope: 0
           outSlope: 0
@@ -52,8 +54,7 @@ MonoBehaviour:
           weightedMode: 0
           inWeight: 0
           outWeight: 0
-        - serializedVersion: 3
-          time: 1
+        - time: 1
           value: 1
           inSlope: 0
           outSlope: 0
@@ -67,12 +68,11 @@ MonoBehaviour:
     - EffectType: Fade
       Duration: 1
       Delay: 0
+      <Target>k__BackingField: {fileID: 0}
       Phase: 2
       AnimationCurve:
-        serializedVersion: 2
         m_Curve:
-        - serializedVersion: 3
-          time: 0
+        - time: 0
           value: 0
           inSlope: 1
           outSlope: 1
@@ -80,8 +80,7 @@ MonoBehaviour:
           weightedMode: 0
           inWeight: 0
           outWeight: 0
-        - serializedVersion: 3
-          time: 1
+        - time: 1
           value: 1
           inSlope: 1
           outSlope: 1
@@ -92,11 +91,3 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
-    Is3D: 0
-    AnchorPointName: 
-    TargetCamera: {fileID: 0}
-    UILayer: 5
-    ParentTransform: {fileID: 0}
-  _enablePreview: 1
-  _previewCamera: {fileID: 0}
-  _previewParent: {fileID: 0}

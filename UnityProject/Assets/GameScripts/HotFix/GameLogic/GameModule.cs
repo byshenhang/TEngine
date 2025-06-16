@@ -121,9 +121,9 @@ public class GameModule
     //private static XRInteractionManager _xrInteraction;
 
 
-    public static SubtitleModule Subtitle => _subtitle ??= SubtitleModule.Instance;
+    //public static SubtitleModule Subtitle => _subtitle ??= SubtitleModule.Instance;
 
-    private static SubtitleModule _subtitle;
+    //private static SubtitleModule _subtitle;
     #endregion
 
     /// <summary>
@@ -160,7 +160,7 @@ public class GameModule
         
         // 战斗模块作为Singleton由GameApp.Release处理
         _combat = null;
-        _subtitle = null;
+        //_subtitle = null;
         //_xrInteraction = null;
     }
 }
