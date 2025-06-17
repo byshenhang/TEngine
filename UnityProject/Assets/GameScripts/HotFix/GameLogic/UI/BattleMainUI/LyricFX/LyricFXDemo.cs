@@ -104,7 +104,9 @@ namespace LyricFX
                     "默认淡入淡出 (default_fade)",
                     "模糊文字 (blur_font)",
                     "随机颜色渐变 (random_color_fade)",
-                    "从左到右渐变 (left_to_right_fade)"
+                    "从左到右渐变 (left_to_right_fade)",
+                    "随机批量淡入淡出 (random_batch_fade)",
+                    "-----------"
                 });
                 
                 effectDropdown.onValueChanged.AddListener((index) => {
@@ -114,6 +116,8 @@ namespace LyricFX
                         case 1: currentEffectId = "blur_font"; break;
                         case 2: currentEffectId = "random_color_fade"; break;
                         case 3: currentEffectId = "left_to_right_fade"; break;
+                        case 4: currentEffectId = "random_batch_fade"; break;
+                        case 5: currentEffectId = "random_batch_fade"; break;
                         default: currentEffectId = "default_fade"; break;
                     }
                 });
@@ -154,7 +158,7 @@ namespace LyricFX
             // 创建歌词行
             Vector3 position = new Vector3(0, 0, 0);
             activeLyricLineId = await lyricManager.CreateLyricLine(lyric, currentLayoutId, currentEffectId, position);
-            
+
             if (activeLyricLineId >= 0)
             {
                 // 播放歌词行

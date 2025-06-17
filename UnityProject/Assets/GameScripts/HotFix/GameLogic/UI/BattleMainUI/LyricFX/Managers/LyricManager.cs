@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 
 namespace LyricFX.Managers
 {
@@ -218,6 +219,8 @@ namespace LyricFX.Managers
             
             try
             {
+                line.State = LineState.Playing;
+                
                 // 触发行开始事件
                 LyricEvents.TriggerLineStarted(new LineEventArgs
                 {
@@ -227,67 +230,145 @@ namespace LyricFX.Managers
                     LayoutId = line.LayoutId
                 });
                 
-                // 应用效果 - 为每个字符创建独立的效果实例
-                var effectProvider = EffectRegistry.GetEffectProvider(line.EffectId);
-                if (effectProvider != null)
+                // 检查是否需要使用行级协调器
+                if (EffectRegistry.RequiresCoordinator(line.EffectId))
                 {
-                    foreach (var character in line.Characters)
-                    {
-                        // 为每个字符创建独立的效果实例
-                        ILyricEffect characterEffect = null;
-                        
-                        if (effectProvider is DefaultFadeEffect)
-                        {
-                            characterEffect = new DefaultFadeEffect();
-                        }
-                        else if (effectProvider is SequentialBlurEffect)
-                        {
-                            characterEffect = new SequentialBlurEffect();
-                        }
-                        else if (effectProvider is RandomColorFadeEffect)
-                        {
-                            characterEffect = new RandomColorFadeEffect();
-                        }
-                        else if (effectProvider is LeftToRightFadeEffect)
-                        {
-                            characterEffect = new LeftToRightFadeEffect();
-                        }
-                        else
-                        {
-                            // 对于其他效果类型，可以添加相应的创建逻辑
-                            Debug.LogWarning($"[歌词管理器] 未知效果类型: {effectProvider.GetType().Name}");
-                            continue;
-                        }
-                        
-                        if (characterEffect != null)
-                        {
-                            await characterEffect.Initialize(character, null, cts.Token);
-                            UniTask.Void(async () => 
-                            {
-                                try 
-                                {
-                                    await characterEffect.Play(cts.Token);
-                                }
-                                catch (OperationCanceledException) 
-                                { 
-                                    // 忽略取消异常 
-                                }
-                            });
-                        }
-                    }
+                    await PlayWithCoordinator(line, cts.Token);
+                }
+                else
+                {
+                    // 向后兼容：使用原有的字符级效果逻辑
+                    await PlayWithCharacterEffects(line, cts.Token);
                 }
                 
-                Debug.Log($"[歌词管理器] 行播放开始, ID: {lineId}");
+                line.State = LineState.Completed;
+                Debug.Log($"[歌词管理器] 行播放完成, ID: {lineId}");
             }
             catch (OperationCanceledException)
             {
+                line.State = LineState.Stopped;
                 Debug.Log($"[歌词管理器] 行播放被取消: {lineId}");
             }
             catch (Exception ex)
             {
+                line.State = LineState.Stopped;
                 Debug.LogError($"[歌词管理器] 行播放失败: {ex}");
             }
         }
+        
+        /// <summary>
+        /// 使用行级协调器播放效果
+        /// </summary>
+        private async UniTask PlayWithCoordinator(LyricLine line, CancellationToken cancellationToken)
+        {
+            // 创建或获取协调器
+            if (line.EffectCoordinator == null)
+            {
+                line.EffectCoordinator = EffectRegistry.CreateCoordinator(line.EffectId);
+                if (line.EffectCoordinator == null)
+                {
+                    Debug.LogError($"[歌词管理器] 无法创建协调器: {line.EffectId}");
+                    return;
+                }
+            }
+            
+            // 初始化协调器
+            await line.EffectCoordinator.Initialize(line.Container, null, cancellationToken);
+            
+            // 播放效果
+            await line.EffectCoordinator.Play(cancellationToken);
+        }
+        
+        /// <summary>
+        /// 使用传统字符级效果播放（向后兼容）
+        /// </summary>
+        private async UniTask PlayWithCharacterEffects(LyricLine line, CancellationToken cancellationToken)
+        {
+            var effectProvider = EffectRegistry.GetEffectProvider(line.EffectId);
+            if (effectProvider == null)
+            {
+                Debug.LogWarning($"[歌词管理器] 未找到效果提供器: {line.EffectId}");
+                return;
+            }
+            
+            // 清理之前的效果
+            line.CharacterEffects.Clear();
+            
+            foreach (var character in line.Characters)
+            {
+                // 为每个字符创建独立的效果实例
+                ILyricEffect characterEffect = CreateCharacterEffect(effectProvider);
+                
+                if (characterEffect != null)
+                {
+                    line.CharacterEffects.Add(characterEffect);
+                    await characterEffect.Initialize(character, null, cancellationToken);
+                    
+                    // 异步播放字符效果
+                    UniTask.Void(async () => 
+                    {
+                        try 
+                        {
+                            await characterEffect.Play(cancellationToken);
+                        }
+                        catch (OperationCanceledException) 
+                        { 
+                            // 忽略取消异常 
+                        }
+                    });
+                }
+            }
+        }
+        
+        /// <summary>
+         /// 创建字符级效果实例（向后兼容）
+         /// </summary>
+         private ILyricEffect CreateCharacterEffect(ILyricEffect effectProvider)
+         {
+             if (effectProvider is DefaultFadeEffect)
+             {
+                 return new DefaultFadeEffect();
+             }
+             else if (effectProvider is SequentialBlurEffect)
+             {
+                 return new SequentialBlurEffect();
+             }
+             else if (effectProvider is RandomColorFadeEffect)
+             {
+                 return new RandomColorFadeEffect();
+             }
+             else if (effectProvider is LeftToRightFadeEffect)
+             {
+                 return new LeftToRightFadeEffect();
+             }
+             else
+             {
+                 Debug.LogWarning($"[歌词管理器] 未知效果类型: {effectProvider.GetType().Name}");
+                 return null;
+             }
+         }
+         
+         /// <summary>
+         /// 停止字符级效果（向后兼容）
+         /// </summary>
+         private async UniTask StopCharacterEffects(LyricLine line)
+         {
+             // 停止所有字符效果
+             foreach (var effect in line.CharacterEffects)
+             {
+                 try
+                 {
+                     await effect.Stop(CancellationToken.None);
+                 }
+                 catch (Exception ex)
+                 {
+                     Debug.LogWarning($"[歌词管理器] 停止字符效果失败: {ex.Message}");
+                 }
+             }
+             
+             // 清理效果列表
+             line.CharacterEffects.Clear();
+         }
         
         /// <summary>
         /// 停止歌词行
@@ -310,14 +391,17 @@ namespace LyricFX.Managers
             
             try
             {
-                // 停止效果
-                var effectProvider = EffectRegistry.GetEffectProvider(line.EffectId);
-                if (effectProvider != null)
+                line.State = LineState.Stopped;
+                
+                // 停止效果 - 优先使用协调器
+                if (line.EffectCoordinator != null)
                 {
-                    foreach (var character in line.Characters)
-                    {
-                        await effectProvider.Stop(CancellationToken.None);
-                    }
+                    await line.EffectCoordinator.Stop(CancellationToken.None);
+                }
+                else
+                {
+                    // 向后兼容：停止字符级效果
+                    await StopCharacterEffects(line);
                 }
                 
                 // 触发行完成事件
@@ -459,6 +543,34 @@ namespace LyricFX.Managers
         {
             if (activeLines.TryGetValue(lineId, out var line))
             {
+                // 清理协调器
+                if (line.EffectCoordinator != null)
+                {
+                    try
+                    {
+                        line.EffectCoordinator.Reset();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning($"[歌词管理器] 重置协调器失败: {ex.Message}");
+                    }
+                    line.EffectCoordinator = null;
+                }
+                
+                // 清理字符级效果
+                foreach (var effect in line.CharacterEffects)
+                {
+                    try
+                    {
+                        effect.Reset();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning($"[歌词管理器] 重置字符效果失败: {ex.Message}");
+                    }
+                }
+                line.CharacterEffects.Clear();
+                
                 // 回收字符对象
                 foreach (var character in line.Characters)
                 {
@@ -526,7 +638,40 @@ namespace LyricFX.Managers
             public string LayoutId { get; set; }
             public string EffectId { get; set; }
             public GameObject GameObject { get; set; }
+            public GameObject Container => GameObject;
             public List<GameObject> Characters { get; set; }
+            
+            // 新增：行级协调器支持
+            public ILineEffectCoordinator EffectCoordinator { get; set; }
+            
+            // 新增：字符级效果列表
+            public List<ILyricEffect> CharacterEffects { get; set; }
+            
+            // 新增：行级状态管理
+            public LineState State { get; set; }
+            
+            // 新增：进度属性
+            public float Progress => EffectCoordinator?.Progress ?? 0f;
+            
+            public LyricLine()
+            {
+                Characters = new List<GameObject>();
+                CharacterEffects = new List<ILyricEffect>();
+                State = LineState.Created;
+            }
+        }
+        
+        /// <summary>
+        /// 行状态枚举
+        /// </summary>
+        public enum LineState
+        {
+            Created,
+            Initializing,
+            Ready,
+            Playing,
+            Completed,
+            Stopped
         }
     }
 }

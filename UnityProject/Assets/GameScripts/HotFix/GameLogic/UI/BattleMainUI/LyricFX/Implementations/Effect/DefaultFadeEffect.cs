@@ -30,9 +30,19 @@ namespace LyricFX.Implementations.Effect
         private CancellationTokenSource effectCts;
         
         /// <summary>
+        /// 默认无参数构造函数
+        /// </summary>
+        public DefaultFadeEffect()
+        {
+            fadeInDuration = 0.3f;
+            holdDuration = 1.0f;
+            fadeOutDuration = 0.3f;
+        }
+        
+        /// <summary>
         /// 构造函数，可以传入配置参数
         /// </summary>
-        public DefaultFadeEffect(float fadeIn = 0.3f, float hold = 1.0f, float fadeOut = 0.3f)
+        public DefaultFadeEffect(float fadeIn, float hold, float fadeOut)
         {
             fadeInDuration = fadeIn;
             holdDuration = hold;
