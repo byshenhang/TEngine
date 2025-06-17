@@ -115,9 +115,23 @@ namespace LyricFX.Factory
                 obj = new GameObject("Character");
                 obj.transform.SetParent(poolContainer);
                 
+                // 添加RectTransform组件并设置基本属性
+                var rectTransform = obj.AddComponent<RectTransform>();
+                rectTransform.sizeDelta = new Vector2(50, 50); // 设置字符大小
+                rectTransform.anchorMin = new Vector2(0, 0.5f); // 左中锚点
+                rectTransform.anchorMax = new Vector2(0, 0.5f); // 左中锚点
+                rectTransform.pivot = new Vector2(0, 0.5f); // 左中心为轴点
+                
                 var textComponent = obj.AddComponent<TextMeshProUGUI>();
                 textComponent.alignment = TextAlignmentOptions.Center;
                 textComponent.fontSize = 36;
+                
+                // 设置TextMeshPro的RectTransform填充整个字符对象
+                var textRect = textComponent.rectTransform;
+                textRect.anchorMin = Vector2.zero;
+                textRect.anchorMax = Vector2.one;
+                textRect.offsetMin = Vector2.zero;
+                textRect.offsetMax = Vector2.zero;
             }
             
             obj.SetActive(false);

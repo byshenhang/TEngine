@@ -10,9 +10,9 @@ namespace LyricFX.Factory
     /// <summary>
     /// 处理器工厂 - 负责创建各种管道处理器
     /// </summary>
-    public class ProcessorFactory : MonoBehaviour
+    public class ProcessorFactory 
     {
-        [SerializeField] private CharacterFactory characterFactory;
+        private CharacterFactory characterFactory;
         
         // 存储处理器类型和预制体的映射
         private Dictionary<string, GameObject> processorPrefabs = new Dictionary<string, GameObject>();
@@ -20,11 +20,11 @@ namespace LyricFX.Factory
         /// <summary>
         /// 初始化处理器工厂
         /// </summary>
-        public async UniTask Initialize()
+        public async UniTask Initialize(CharacterFactory character)
         {
             if (characterFactory == null)
             {
-                characterFactory = GetComponentInParent<CharacterFactory>();
+                characterFactory = character;
                 if (characterFactory == null)
                 {
                     Debug.LogError("[处理器工厂] 未找到字符工厂，处理器可能无法正常工作");
@@ -49,48 +49,32 @@ namespace LyricFX.Factory
             // 尝试从预制体创建
             if (processorPrefabs.TryGetValue(processorName, out var prefab))
             {
-                var instance = Instantiate(prefab, transform);
-                var processor = instance.GetComponent<T>();
                 
-                if (processor != null)
-                {
-                    Debug.Log($"[处理器工厂] 从预制体创建处理器: {processorName}");
-                    return processor;
-                }
-                else
-                {
-                    Debug.LogError($"[处理器工厂] 预制体没有实现接口: {processorName}");
-                    Destroy(instance);
-                }
+                var processor = Activator.CreateInstance(typeof(T));
             }
             
             // 自动创建内置处理器
             if (typeof(T) == typeof(CharacterCreationProcessor))
             {
-                var processor = new GameObject($"Processor_{processorName}").AddComponent<CharacterCreationProcessor>();
-                processor.transform.SetParent(transform);
+                var processor = Activator.CreateInstance(typeof(CharacterCreationProcessor)) as CharacterCreationProcessor;
                 processor.Initialize(characterFactory);
                 return (T)(ICharacterProcessor)processor;
             }
             else if (typeof(T) == typeof(LayoutApplicationProcessor))
             {
-                var processor = new GameObject($"Processor_{processorName}").AddComponent<LayoutApplicationProcessor>();
-                processor.transform.SetParent(transform);
+                var processor = Activator.CreateInstance(typeof(LayoutApplicationProcessor)) as LayoutApplicationProcessor;
                 return (T)(ICharacterProcessor)processor;
             }
             else if (typeof(T) == typeof(EffectApplicationProcessor))
             {
-                var processor = new GameObject($"Processor_{processorName}").AddComponent<EffectApplicationProcessor>();
-                processor.transform.SetParent(transform);
+                var processor = Activator.CreateInstance(typeof(EffectApplicationProcessor)) as EffectApplicationProcessor;
                 return (T)(ICharacterProcessor)processor;
             }
             
             // 如果是自定义处理器，尝试创建实例
             try
             {
-                var gameObject = new GameObject($"Processor_{processorName}");
-                gameObject.transform.SetParent(transform);
-                var processor = gameObject.AddComponent(typeof(T)) as ICharacterProcessor;
+                var processor = Activator.CreateInstance(typeof(T)) as ICharacterProcessor;  
                 
                 if (processor != null)
                 {
@@ -100,7 +84,6 @@ namespace LyricFX.Factory
                 else
                 {
                     Debug.LogError($"[处理器工厂] 无法添加组件: {processorName}");
-                    Destroy(gameObject);
                 }
             }
             catch (Exception ex)

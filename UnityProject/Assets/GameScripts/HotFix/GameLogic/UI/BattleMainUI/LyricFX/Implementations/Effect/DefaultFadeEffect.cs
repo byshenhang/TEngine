@@ -10,13 +10,13 @@ namespace LyricFX.Implementations.Effect
     /// <summary>
     /// 默认淡入淡出效果 - 简单的透明度变化效果
     /// </summary>
-    public class DefaultFadeEffect : MonoBehaviour, ILyricEffect
+    public class DefaultFadeEffect : ILyricEffect
     {
-        [SerializeField] private float fadeInDuration = 0.3f;
-        [SerializeField] private float holdDuration = 1.0f;
-        [SerializeField] private float fadeOutDuration = 0.3f;
-        [SerializeField] private AnimationCurve fadeInCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
-        [SerializeField] private AnimationCurve fadeOutCurve = AnimationCurve.EaseInOut(0, 1, 1, 0);
+        private float fadeInDuration = 0.3f;
+        private float holdDuration = 1.0f;
+        private float fadeOutDuration = 0.3f;
+        private AnimationCurve fadeInCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+        private AnimationCurve fadeOutCurve = AnimationCurve.EaseInOut(0, 1, 1, 0);
         
         private TextMeshProUGUI textComponent;
         private float effectProgress = 0f;
@@ -28,6 +28,16 @@ namespace LyricFX.Implementations.Effect
         public string EffectId => "default_fade";
         
         private CancellationTokenSource effectCts;
+        
+        /// <summary>
+        /// 构造函数，可以传入配置参数
+        /// </summary>
+        public DefaultFadeEffect(float fadeIn = 0.3f, float hold = 1.0f, float fadeOut = 0.3f)
+        {
+            fadeInDuration = fadeIn;
+            holdDuration = hold;
+            fadeOutDuration = fadeOut;
+        }
         
         /// <summary>
         /// 初始化效果

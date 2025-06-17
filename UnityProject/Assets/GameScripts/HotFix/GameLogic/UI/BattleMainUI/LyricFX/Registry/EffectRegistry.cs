@@ -1,6 +1,7 @@
 using Cysharp.Threading.Tasks;
 using LyricFX.Core.Interfaces;
 using LyricFX.Implementations.Effect;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,43 +10,18 @@ namespace LyricFX.Registry
     /// <summary>
     /// 效果注册表 - 管理和提供可用的视觉效果实现
     /// </summary>
-    public class EffectRegistry : MonoBehaviour
+    public static class EffectRegistry
     {
-        [SerializeField] private List<GameObject> effectProviderPrefabs = new List<GameObject>();
-        
-        private Dictionary<string, ILyricEffect> effectProviders = new Dictionary<string, ILyricEffect>();
-        private ILyricEffect defaultProvider;
+        private static Dictionary<string, ILyricEffect> effectProviders = new Dictionary<string, ILyricEffect>();
+        private static ILyricEffect defaultProvider;
         
         /// <summary>
         /// 初始化效果注册表
         /// </summary>
-        public async UniTask Initialize()
+        public static async UniTask Initialize()
         {
-            // 注册所有配置的效果提供器
-            foreach (var prefab in effectProviderPrefabs)
-            {
-                if (prefab != null)
-                {
-                    var instance = Instantiate(prefab, transform);
-                    var provider = instance.GetComponent<ILyricEffect>();
-                    
-                    if (provider != null)
-                    {
-                        RegisterEffectProvider(provider);
-                    }
-                    else
-                    {
-                        Debug.LogError($"[效果注册表] 预制体 {prefab.name} 没有实现 ILyricEffect 接口");
-                        Destroy(instance);
-                    }
-                }
-            }
-            
-            // 如果没有效果提供器，创建一个默认的
-            if (effectProviders.Count == 0)
-            {
-                CreateDefaultEffectProvider();
-            }
+            // 手动注册效果提供器
+            RegisterDefaultEffects();
             
             await UniTask.CompletedTask;
             
@@ -55,7 +31,7 @@ namespace LyricFX.Registry
         /// <summary>
         /// 注册一个效果提供器
         /// </summary>
-        public void RegisterEffectProvider(ILyricEffect provider)
+        public static void RegisterEffectProvider(ILyricEffect provider)
         {
             if (provider == null)
                 return;
@@ -87,7 +63,7 @@ namespace LyricFX.Registry
         /// <summary>
         /// 获取效果提供器
         /// </summary>
-        public ILyricEffect GetEffectProvider(string effectId)
+        public static ILyricEffect GetEffectProvider(string effectId)
         {
             // 如果找不到请求的效果，返回默认效果
             if (string.IsNullOrEmpty(effectId) || !effectProviders.TryGetValue(effectId, out var provider))
@@ -103,14 +79,45 @@ namespace LyricFX.Registry
         }
         
         /// <summary>
+        /// 手动注册默认效果提供器
+        /// </summary>
+        private static void RegisterDefaultEffects()
+        {
+            // 手动注册默认效果
+            //RegisterCustomEffect<DefaultFadeEffect>();
+            //RegisterCustomEffect<SequentialBlurEffect>();
+            RegisterCustomEffect<RandomColorFadeEffect>();
+            RegisterCustomEffect<LeftToRightFadeEffect>();
+        }
+        
+        /// <summary>
+        /// 注册自定义效果（泛型方法，用于手动注册普通类型的效果）
+        /// </summary>
+        public static void RegisterCustomEffect<T>() where T : class, ILyricEffect, new()
+        {
+            var provider = new T();
+            RegisterEffectProvider(provider);
+            Debug.Log($"[效果注册表] 手动注册效果: {provider.EffectId}");
+        }
+        
+        /// <summary>
+        /// 注册普通类效果提供器
+        /// </summary>
+        public static void RegisterEffect(ILyricEffect provider)
+        {
+            if (provider != null)
+            {
+                RegisterEffectProvider(provider);
+                Debug.Log($"[效果注册表] 手动注册效果: {provider.EffectId}");
+            }
+        }
+        
+        /// <summary>
         /// 创建默认效果提供器
         /// </summary>
-        private void CreateDefaultEffectProvider()
+        private static void CreateDefaultEffectProvider()
         {
-            var defaultObj = new GameObject("DefaultFadeEffect");
-            defaultObj.transform.SetParent(transform);
-            
-            var defaultEffect = defaultObj.AddComponent<DefaultFadeEffect>();
+            var defaultEffect = new DefaultFadeEffect();
             RegisterEffectProvider(defaultEffect);
             
             Debug.Log("[效果注册表] 创建默认淡入淡出效果");

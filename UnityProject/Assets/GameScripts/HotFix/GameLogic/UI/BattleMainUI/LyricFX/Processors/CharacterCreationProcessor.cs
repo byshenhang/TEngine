@@ -10,7 +10,7 @@ namespace LyricFX.Processors
     /// <summary>
     /// 字符创建处理器 - 负责从对象池创建字符实例
     /// </summary>
-    public class CharacterCreationProcessor : MonoBehaviour, ICharacterProcessor
+    public class CharacterCreationProcessor : ICharacterProcessor
     {
         private CharacterFactory characterFactory;
         

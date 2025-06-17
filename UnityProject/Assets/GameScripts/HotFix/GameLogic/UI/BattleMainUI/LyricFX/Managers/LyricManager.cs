@@ -3,6 +3,7 @@ using LyricFX.Core;
 using LyricFX.Core.Interfaces;
 using LyricFX.Core.Pipeline;
 using LyricFX.Factory;
+using LyricFX.Implementations.Effect;
 using LyricFX.Parser;
 using LyricFX.Processors;
 using LyricFX.Registry;
@@ -20,8 +21,6 @@ namespace LyricFX.Managers
     {
         [SerializeField] private Transform lyricsContainer;
         [SerializeField] private CharacterFactory characterFactory;
-        [SerializeField] private LayoutRegistry layoutRegistry;
-        [SerializeField] private EffectRegistry effectRegistry;
         
         // 包含各种处理器的工厂
         [SerializeField] private ProcessorFactory processorFactory;
@@ -52,16 +51,14 @@ namespace LyricFX.Managers
         public async UniTask Initialize()
         {
             if (characterFactory == null) characterFactory = GetComponentInChildren<CharacterFactory>();
-            if (layoutRegistry == null) layoutRegistry = GetComponentInChildren<LayoutRegistry>();
-            if (effectRegistry == null) effectRegistry = GetComponentInChildren<EffectRegistry>();
-            if (processorFactory == null) processorFactory = GetComponentInChildren<ProcessorFactory>();
-            if (lrcParser == null) lrcParser = GetComponentInChildren<LrcParser>();
+            if (processorFactory == null) processorFactory = new ProcessorFactory();
+            if (lrcParser == null) lrcParser = new LrcParser();
             
             // 初始化工厂和注册表
             await characterFactory.Initialize();
-            await layoutRegistry.Initialize();
-            await effectRegistry.Initialize();
-            await processorFactory.Initialize();
+            await LayoutRegistry.Initialize();
+            await EffectRegistry.Initialize();
+            await processorFactory.Initialize(characterFactory);
             
             // 注册默认处理器
             await RegisterDefaultProcessors();
@@ -95,19 +92,19 @@ namespace LyricFX.Managers
             lineContainer.transform.position = position;
             
             // 获取布局和效果
-            var layoutProvider = layoutRegistry.GetLayoutProvider(layoutId);
-            var effectProvider = effectRegistry.GetEffectProvider(effectId);
+            var layoutProvider = LayoutRegistry.GetLayoutProvider(layoutId);
+            var effectProvider = EffectRegistry.GetEffectProvider(effectId);
             
             if (layoutProvider == null)
             {
                 Debug.LogError($"[歌词管理器] 未找到布局: {layoutId}, 使用默认布局");
-                layoutProvider = layoutRegistry.GetLayoutProvider("default");
+                layoutProvider = LayoutRegistry.GetLayoutProvider("default");
             }
             
             if (effectProvider == null)
             {
                 Debug.LogError($"[歌词管理器] 未找到效果: {effectId}, 使用默认效果");
-                effectProvider = effectRegistry.GetEffectProvider("default");
+                effectProvider = EffectRegistry.GetEffectProvider("default");
             }
             
             // 创建行对象
@@ -230,24 +227,53 @@ namespace LyricFX.Managers
                     LayoutId = line.LayoutId
                 });
                 
-                // 应用效果
-                var effectProvider = effectRegistry.GetEffectProvider(line.EffectId);
+                // 应用效果 - 为每个字符创建独立的效果实例
+                var effectProvider = EffectRegistry.GetEffectProvider(line.EffectId);
                 if (effectProvider != null)
                 {
                     foreach (var character in line.Characters)
                     {
-                        await effectProvider.Initialize(character, null, cts.Token);
-                        UniTask.Void(async () => 
+                        // 为每个字符创建独立的效果实例
+                        ILyricEffect characterEffect = null;
+                        
+                        if (effectProvider is DefaultFadeEffect)
                         {
-                            try 
+                            characterEffect = new DefaultFadeEffect();
+                        }
+                        else if (effectProvider is SequentialBlurEffect)
+                        {
+                            characterEffect = new SequentialBlurEffect();
+                        }
+                        else if (effectProvider is RandomColorFadeEffect)
+                        {
+                            characterEffect = new RandomColorFadeEffect();
+                        }
+                        else if (effectProvider is LeftToRightFadeEffect)
+                        {
+                            characterEffect = new LeftToRightFadeEffect();
+                        }
+                        else
+                        {
+                            // 对于其他效果类型，可以添加相应的创建逻辑
+                            Debug.LogWarning($"[歌词管理器] 未知效果类型: {effectProvider.GetType().Name}");
+                            continue;
+                        }
+                        
+                        if (characterEffect != null)
+                        {
+                            await characterEffect.Initialize(character, null, cts.Token);
+                            UniTask.Void(async () => 
                             {
-                                await effectProvider.Play(cts.Token);
-                            }
-                            catch (OperationCanceledException) 
-                            { 
-                                // 忽略取消异常 
-                            }
-                        });
+                                try 
+                                {
+                                    await characterEffect.Play(cts.Token);
+                                }
+                                catch (OperationCanceledException) 
+                                { 
+                                    // 忽略取消异常 
+                                }
+                            });
+                        }
                     }
                 }
                 
@@ -285,7 +311,7 @@ namespace LyricFX.Managers
             try
             {
                 // 停止效果
-                var effectProvider = effectRegistry.GetEffectProvider(line.EffectId);
+                var effectProvider = EffectRegistry.GetEffectProvider(line.EffectId);
                 if (effectProvider != null)
                 {
                     foreach (var character in line.Characters)

@@ -9,18 +9,20 @@ using UnityEngine;
 namespace LyricFX.Implementations.Effect
 {
     /// <summary>
-    /// 序列模糊效果 - 实现字符交替出现、从模糊到清晰、最后整体淡出效果
+    /// 顺序模糊效果 - 字符逐个出现的模糊到清晰效果
     /// </summary>
-    public class SequentialBlurEffect : MonoBehaviour, ILyricEffect
+    public class SequentialBlurEffect : ILyricEffect
     {
-        [Header("模糊效果配置")]
-        [SerializeField] private Material blurMaterial;
-        [SerializeField] private float blurStart = 30.0f;
-        [SerializeField] private float blurThreshold = 10f;
-        [SerializeField] private float blurFadeDuration = 1.0f;
-        [SerializeField] private float finalFadeDuration = 0.5f;
-        [SerializeField] private float delayBetweenRounds = 0.5f;
-        [SerializeField] private AnimationCurve blurCurve;
+        private float characterDelay = 0.1f;
+        private float blurDuration = 0.5f;
+        private float maxBlurStrength = 5.0f;
+        private AnimationCurve blurCurve = AnimationCurve.EaseInOut(0, 1, 1, 0);
+        private Material blurMaterial;
+        private float blurStart = 30.0f;
+        private float blurThreshold = 10f;
+        private float blurFadeDuration = 1.0f;
+        private float finalFadeDuration = 0.5f;
+        private float delayBetweenRounds = 0.5f;
         
         public bool IsCompleted { get; private set; } = false;
         public float Progress { get; private set; } = 0f;
@@ -35,26 +37,19 @@ namespace LyricFX.Implementations.Effect
         private List<Material> blurMaterials = new List<Material>();
         private CancellationTokenSource effectCts;
         
-        private void Awake()
+        /// <summary>
+        /// 构造函数，可以传入配置参数
+        /// </summary>
+        public SequentialBlurEffect(float charDelay = 0.1f, float blurDur = 0.5f, float maxBlur = 5.0f)
         {
+            characterDelay = charDelay;
+            blurDuration = blurDur;
+            maxBlurStrength = maxBlur;
+            
             // 检查是否有模糊材质
             if (blurMaterial == null)
             {
-                // 尝试加载默认的模糊材质
-                blurMaterial = Resources.Load<Material>("Materials/BlurFontMaterial");
-                
-                if (blurMaterial == null)
-                {
-                    Debug.LogError("[序列模糊效果] 未设置模糊材质，效果将不可用");
-                }
-            }
-            
-            // 初始化动画曲线（如果未设置）
-            if (blurCurve == null || blurCurve.length == 0)
-            {
-                blurCurve = new AnimationCurve(new Keyframe(0, 0), new Keyframe(1, 1));
-                blurCurve.SmoothTangents(0, 0.5f);
-                blurCurve.SmoothTangents(1, 0.5f);
+                Debug.LogWarning("[序列模糊效果] 未设置模糊材质，将使用默认材质");
             }
         }
         
@@ -410,7 +405,7 @@ namespace LyricFX.Implementations.Effect
             {
                 if (material != null)
                 {
-                    Destroy(material);
+                    GameObject.Destroy(material);
                 }
             }
             

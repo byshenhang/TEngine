@@ -10,7 +10,7 @@ namespace LyricFX.Parser
     /// <summary>
     /// LRC解析器 - 解析LRC格式的歌词文件
     /// </summary>
-    public class LrcParser : MonoBehaviour
+    public class LrcParser
     {
         // 时间戳正则表达式
         private static readonly Regex TimeTagRegex = new Regex(@"\[(\d{2}):(\d{2})\.(\d{2,3})\]", RegexOptions.Compiled);

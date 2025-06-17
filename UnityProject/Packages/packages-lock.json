@@ -34,7 +34,7 @@
       "url": "https://packages.unity.cn"
     },
     "com.unity.burst": {
-      "version": "1.8.15",
+      "version": "1.8.13",
       "depth": 1,
       "source": "registry",
       "dependencies": {
@@ -99,7 +99,7 @@
       "url": "https://packages.unity.cn"
     },
     "com.unity.pico.livepreview": {
-      "version": "file:E:/TEngine/Package/PICO_PREVIEW",
+      "version": "file:R:/TEngine_SELF/Package/PICO_PREVIEW",
       "depth": 0,
       "source": "local",
       "dependencies": {
@@ -276,7 +276,7 @@
       "url": "https://packages.unity.cn"
     },
     "com.unity.xr.picoxr": {
-      "version": "file:E:/TEngine/Package/PICO_SDK",
+      "version": "file:R:/TEngine_SELF/Package/PICO_SDK",
       "depth": 0,
       "source": "local",
       "dependencies": {
