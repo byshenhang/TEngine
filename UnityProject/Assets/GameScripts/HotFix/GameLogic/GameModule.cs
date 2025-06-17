@@ -126,9 +126,9 @@ public class GameModule
     //private static SubtitleModule _subtitle;
 
 
-    public static LyricModule Lyric => _lyric ??= LyricModule.Instance;
+    //public static LyricModule Lyric => _lyric ??= LyricModule.Instance;
 
-    private static LyricModule _lyric;
+    //private static LyricModule _lyric;
     #endregion
 
     /// <summary>

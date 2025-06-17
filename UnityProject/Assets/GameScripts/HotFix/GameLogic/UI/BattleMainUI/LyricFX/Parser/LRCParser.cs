@@ -1,167 +1,198 @@
+using Cysharp.Threading.Tasks;
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using System.Threading;
-using Cysharp.Threading.Tasks;
-using LyricFX.Core;
-using UnityEngine;
 using System.IO;
+using System.Text.RegularExpressions;
+using UnityEngine;
 
 namespace LyricFX.Parser
 {
     /// <summary>
-    /// LRC格式歌词解析器
+    /// LRC解析器 - 解析LRC格式的歌词文件
     /// </summary>
-    public class LRCParser : ILyricParser
+    public class LrcParser : MonoBehaviour
     {
-        private static readonly Regex _timeTagRegex = new Regex(@"\[(\d{2}):(\d{2})\.(\d{2,3})\]");
-        private static readonly Regex _metadataRegex = new Regex(@"\[([a-z]+):(.+?)\]");
+        // 时间戳正则表达式
+        private static readonly Regex TimeTagRegex = new Regex(@"\[(\d{2}):(\d{2})\.(\d{2,3})\]", RegexOptions.Compiled);
+        
+        // 元数据标签正则表达式
+        private static readonly Regex MetaTagRegex = new Regex(@"\[([\w\d]+):(.+?)\]", RegexOptions.Compiled);
         
         /// <summary>
-        /// 解析LRC格式的歌词文本
+        /// 解析LRC文件
         /// </summary>
-        public async UniTask<LyricSequence> ParseAsync(string content, CancellationToken token = default)
+        /// <param name="filePath">文件路径</param>
+        /// <returns>解析后的歌词列表</returns>
+        public async UniTask<List<LrcLine>> ParseLrcFile(string filePath)
         {
-            var sequence = new LyricSequence();
-            var lines = content.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            string content;
             
-            int lineIndex = 0;
+            try
+            {
+                // 判断是Resources路径还是普通文件路径
+                if (filePath.StartsWith("Assets/Resources/") || filePath.StartsWith("Resources/"))
+                {
+                    // 从Resources加载
+                    string resourcePath = filePath.Replace("Assets/Resources/", "").Replace("Resources/", "");
+                    resourcePath = Path.ChangeExtension(resourcePath, null); // 去除扩展名
+                    
+                    var textAsset = Resources.Load<TextAsset>(resourcePath);
+                    if (textAsset == null)
+                    {
+                        Debug.LogError($"[LRC解析器] 无法从Resources加载LRC文件: {resourcePath}");
+                        return new List<LrcLine>();
+                    }
+                    
+                    content = textAsset.text;
+                }
+                else
+                {
+                    // 读取本地文件
+                    content = await File.ReadAllTextAsync(filePath);
+                }
+                
+                return ParseLrcContent(content);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[LRC解析器] 解析LRC文件失败: {ex.Message}");
+                return new List<LrcLine>();
+            }
+        }
+        
+        /// <summary>
+        /// 解析LRC内容
+        /// </summary>
+        /// <param name="content">LRC文件内容</param>
+        /// <returns>解析后的歌词列表</returns>
+        public List<LrcLine> ParseLrcContent(string content)
+        {
+            var result = new List<LrcLine>();
+            var metadata = new LrcMetadata();
             
-            // 首先处理元数据
+            // 按行分割
+            string[] lines = content.Replace("\r", "").Split('\n');
+            
             foreach (var line in lines)
             {
-                if (token.IsCancellationRequested) break;
+                string trimmedLine = line.Trim();
+                if (string.IsNullOrEmpty(trimmedLine))
+                    continue;
                 
-                // 处理元数据
-                var metaMatch = _metadataRegex.Match(line);
-                if (metaMatch.Success && !_timeTagRegex.IsMatch(line))
+                // 检查是否是元数据行
+                var metaMatch = MetaTagRegex.Match(trimmedLine);
+                if (metaMatch.Success && !TimeTagRegex.IsMatch(trimmedLine))
                 {
+                    // 处理元数据
                     string key = metaMatch.Groups[1].Value.ToLower();
                     string value = metaMatch.Groups[2].Value;
                     
                     switch (key)
                     {
-                        case "ti":
-                            sequence.Title = value;
-                            break;
-                        case "ar":
-                            sequence.Artist = value;
-                            break;
-                        case "al":
-                            sequence.Album = value;
+                        case "ti": metadata.Title = value; break;
+                        case "ar": metadata.Artist = value; break;
+                        case "al": metadata.Album = value; break;
+                        case "by": metadata.Creator = value; break;
+                        case "offset": 
+                            if (float.TryParse(value, out float offset))
+                                metadata.Offset = offset;
                             break;
                     }
                     
                     continue;
                 }
-            }
-            
-            // 然后处理歌词行
-            foreach (var line in lines)
-            {
-                if (token.IsCancellationRequested) break;
                 
-                if (_timeTagRegex.IsMatch(line))
+                // 处理带时间戳的行
+                var timeMatches = TimeTagRegex.Matches(trimmedLine);
+                if (timeMatches.Count > 0)
                 {
-                    var match = _timeTagRegex.Match(line);
+                    // 提取歌词内容（去除所有时间标签）
+                    string lyricContent = TimeTagRegex.Replace(trimmedLine, "").Trim();
                     
-                    while (match.Success)
+                    // 处理每个时间标签
+                    foreach (Match match in timeMatches)
                     {
                         int minutes = int.Parse(match.Groups[1].Value);
                         int seconds = int.Parse(match.Groups[2].Value);
+                        int milliseconds;
                         
                         // 处理毫秒，可能是2位或3位
                         string msStr = match.Groups[3].Value;
-                        int ms = int.Parse(msStr);
-                        if (msStr.Length == 2) ms *= 10; // 如果是2位，转换为毫秒
+                        if (msStr.Length == 2)
+                            milliseconds = int.Parse(msStr) * 10;
+                        else
+                            milliseconds = int.Parse(msStr);
                         
-                        float startTime = minutes * 60 + seconds + ms / 1000f;
+                        // 计算总时间（秒）
+                        double timeStamp = minutes * 60 + seconds + milliseconds / 1000.0;
                         
-                        // 获取歌词内容，去掉所有时间标签
-                        string text = _timeTagRegex.Replace(line, string.Empty).Trim();
+                        // 应用偏移（毫秒转换为秒）
+                        timeStamp += metadata.Offset / 1000.0;
                         
-                        var lyricLine = new LyricLine
+                        // 添加到结果
+                        result.Add(new LrcLine
                         {
-                            Index = lineIndex,
-                            StartTime = startTime,
-                            EndTime = startTime + 5.0f, // 默认5秒，后续处理会修正
-                            Text = text
-                        };
-                        
-                        // 创建字符数据
-                        CreateCharactersForLine(lyricLine);
-                        
-                        // 添加到序列
-                        sequence.Lines.Add(lyricLine);
-                        lineIndex++;
-                        
-                        match = match.NextMatch();
+                            TimeStamp = timeStamp,
+                            Text = lyricContent
+                        });
                     }
                 }
             }
             
-            // 设置正确的结束时间
-            for (int i = 0; i < sequence.Lines.Count - 1; i++)
-            {
-                sequence.Lines[i].EndTime = sequence.Lines[i + 1].StartTime;
-            }
+            // 按时间戳排序
+            result.Sort((a, b) => a.TimeStamp.CompareTo(b.TimeStamp));
             
-            // 设置总时长
-            if (sequence.Lines.Count > 0)
-            {
-                var lastLine = sequence.Lines[sequence.Lines.Count - 1];
-                sequence.TotalDuration = lastLine.EndTime;
-            }
-            
-            // 在工作线程上等待一帧，避免阻塞主线程
-            await UniTask.Yield();
-            
-            return sequence;
+            Debug.Log($"[LRC解析器] 解析完成, 共 {result.Count} 行歌词");
+            return result;
         }
+    }
+    
+    /// <summary>
+    /// LRC歌词行
+    /// </summary>
+    [Serializable]
+    public class LrcLine
+    {
+        /// <summary>
+        /// 时间戳（秒）
+        /// </summary>
+        public double TimeStamp;
         
         /// <summary>
-        /// 为歌词行创建字符数据
+        /// 歌词文本
         /// </summary>
-        private void CreateCharactersForLine(LyricLine line)
-        {
-            for (int i = 0; i < line.Text.Length; i++)
-            {
-                var character = new LyricCharacter
-                {
-                    Character = line.Text[i],
-                    Index = i,
-                    LineIndex = line.Index
-                };
-                
-                line.Characters.Add(character);
-            }
-        }
+        public string Text;
     }
     
     /// <summary>
-    /// 歌词解析器接口
+    /// LRC元数据
     /// </summary>
-    public interface ILyricParser
+    [Serializable]
+    public class LrcMetadata
     {
-        UniTask<LyricSequence> ParseAsync(string content, CancellationToken token = default);
-    }
-    
-    /// <summary>
-    /// 歌词解析器工厂
-    /// </summary>
-    public static class LyricParserFactory
-    {
-        public static ILyricParser CreateParser(string filename)
-        {
-            string extension = Path.GetExtension(filename).ToLower();
-            
-            switch (extension)
-            {
-                case ".lrc":
-                    return new LRCParser();
-                default:
-                    return new LRCParser(); // 默认使用LRC解析器
-            }
-        }
+        /// <summary>
+        /// 歌曲标题
+        /// </summary>
+        public string Title;
+        
+        /// <summary>
+        /// 艺术家
+        /// </summary>
+        public string Artist;
+        
+        /// <summary>
+        /// 专辑
+        /// </summary>
+        public string Album;
+        
+        /// <summary>
+        /// 创建者
+        /// </summary>
+        public string Creator;
+        
+        /// <summary>
+        /// 时间偏移（毫秒）
+        /// </summary>
+        public float Offset = 0;
     }
 }

@@ -36,12 +36,12 @@ namespace GameLogic
             //var config = LyricExtensions.GetFlyInFromTopConfig();
             //GameModule.Lyric.PlaySimpleText("I saw you dancing in the moonlight", 0f, config);
 
-            var config = LyricExtensions.GetTypewriterConfig();
-            // 设置为单行复用模式
-            config.DisplayMode = LyricDisplayMode.SingleLineReuse;
-            //await GameModule.Lyric.PlaySimpleText("Every word tells a story", 0f, config);
-            string testLrcPath = "Assets/StreamingAssets/Lyrics/test.lrc";
-            await GameModule.Lyric.LoadAndPlayLyric(testLrcPath, config);
+            //var config = LyricExtensions.GetFlyInFromTopConfig();
+            //// 设置为单行复用模式
+            //config.DisplayMode = LyricDisplayMode.SingleLineReuse;
+            ////await GameModule.Lyric.PlaySimpleText("Every word tells a story", 0f, config);
+            //string testLrcPath = "Assets/AssetArt/LRC/test.lrc";
+            //await GameModule.Lyric.LoadAndPlayLyric(testLrcPath, config);
             GameModule.UI3D.CloseUI3D<BattleMainUI>();
         }
         #endregion
