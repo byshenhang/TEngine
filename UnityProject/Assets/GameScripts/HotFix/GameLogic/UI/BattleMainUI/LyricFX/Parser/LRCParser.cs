@@ -21,37 +21,17 @@ namespace LyricFX.Parser
         /// <summary>
         /// 解析LRC文件
         /// </summary>
-        /// <param name="filePath">文件路径</param>
+        /// <param name="fileContent">文件路径</param>
         /// <returns>解析后的歌词列表</returns>
-        public async UniTask<List<LrcLine>> ParseLrcFile(string filePath)
+        public async UniTask<List<LrcLine>> ParseLrcFile(string fileContent)
         {
-            string content;
-            
             try
             {
-                // 判断是Resources路径还是普通文件路径
-                if (filePath.StartsWith("Assets/Resources/") || filePath.StartsWith("Resources/"))
+                if (!string.IsNullOrEmpty(fileContent))
                 {
-                    // 从Resources加载
-                    string resourcePath = filePath.Replace("Assets/Resources/", "").Replace("Resources/", "");
-                    resourcePath = Path.ChangeExtension(resourcePath, null); // 去除扩展名
-                    
-                    var textAsset = Resources.Load<TextAsset>(resourcePath);
-                    if (textAsset == null)
-                    {
-                        Debug.LogError($"[LRC解析器] 无法从Resources加载LRC文件: {resourcePath}");
-                        return new List<LrcLine>();
-                    }
-                    
-                    content = textAsset.text;
+                    return ParseLrcContent(fileContent);
                 }
-                else
-                {
-                    // 读取本地文件
-                    content = await File.ReadAllTextAsync(filePath);
-                }
-                
-                return ParseLrcContent(content);
+                return null;
             }
             catch (Exception ex)
             {

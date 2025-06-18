@@ -225,7 +225,7 @@ namespace LyricFX.Implementations.Coordinator
         public int MaxBatchSize = 5;            // 每批最多显示的字符数
         
         [Range(0.1f, 2.0f)]
-        public float BatchInterval = 0.3f;      // 批次间隔时间
+        public float BatchInterval = 0.1f;      // 批次间隔时间
         
         [Header("动画时间")]
         [Range(0.1f, 3.0f)]

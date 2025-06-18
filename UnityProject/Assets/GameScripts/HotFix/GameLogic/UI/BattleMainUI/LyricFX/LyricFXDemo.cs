@@ -44,7 +44,10 @@ namespace LyricFX
         
         // 取消令牌
         private CancellationTokenSource demoCts;
-        
+
+        private string LRC_CONTENT = "[ti:Example Song]\r\n[ar:Sample Artist]\r\n[al:Demo Album]\r\n[by:DeepSeek Chat]\r\n\r\n[00:00.00]This is an example LRC file\r\n[00:02.30]Showing how timestamps work\r\n[00:05.45]Each line begins with time in brackets\r\n[00:08.60]\r\n[00:10.15]Empty lines are allowed too\r\n[00:13.20]For better readability\r\n[00:16.35]\r\n[00:18.50][01:23.45]You can have multiple timestamps\r\n[00:21.65][01:26.60]For repeated lyrics sections\r\n[00:24.80]\r\n[00:27.95]End of example LRC file";
+
+
         private void Awake()
         {
             if (lyricManager == null)
@@ -102,22 +105,18 @@ namespace LyricFX
                 effectDropdown.AddOptions(new System.Collections.Generic.List<string> 
                 { 
                     "默认淡入淡出 (default_fade)",
-                    "模糊文字 (blur_font)",
                     "随机颜色渐变 (random_color_fade)",
                     "从左到右渐变 (left_to_right_fade)",
                     "随机批量淡入淡出 (random_batch_fade)",
-                    "-----------"
                 });
                 
                 effectDropdown.onValueChanged.AddListener((index) => {
                     switch (index)
                     {
                         case 0: currentEffectId = "default_fade"; break;
-                        case 1: currentEffectId = "blur_font"; break;
-                        case 2: currentEffectId = "random_color_fade"; break;
-                        case 3: currentEffectId = "left_to_right_fade"; break;
-                        case 4: currentEffectId = "random_batch_fade"; break;
-                        case 5: currentEffectId = "random_batch_fade"; break;
+                        case 1: currentEffectId = "random_color_fade"; break;
+                        case 2: currentEffectId = "left_to_right_fade"; break;
+                        case 3: currentEffectId = "random_batch_fade"; break;
                         default: currentEffectId = "default_fade"; break;
                     }
                 });
@@ -178,9 +177,9 @@ namespace LyricFX
         {
             StopCurrentLine();
             
-            Debug.Log($"[歌词特效演示] 播放LRC文件: {lrcFilePath}, 效果: {currentEffectId}, 布局: {currentLayoutId}");
+            Debug.Log($"[歌词特效演示] 播放LRC文件: {LRC_CONTENT}, 效果: {currentEffectId}, 布局: {currentLayoutId}");
             
-            await lyricManager.PlayLrcFile(lrcFilePath, currentLayoutId, currentEffectId);
+            await lyricManager.PlayLrcFile(LRC_CONTENT, currentLayoutId, currentEffectId);
         }
         
         /// <summary>
@@ -236,7 +235,7 @@ namespace LyricFX
             
             // 7. 播放完整LRC文件
             await manager.PlayLrcFile(
-                "Assets/Resources/Lyrics/MySong.lrc",  // LRC文件路径
+                LRC_CONTENT,  // LRC文件路径
                 "default_linear",                      // 布局ID
                 "default_fade"                         // 效果ID
             );

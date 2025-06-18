@@ -95,18 +95,11 @@ namespace LyricFX.Managers
 
             // 获取布局和效果
             var layoutProvider = LayoutRegistry.GetLayoutProvider(layoutId);
-            var effectProvider = EffectRegistry.GetEffectProvider(effectId);
 
             if (layoutProvider == null)
             {
                 Debug.LogError($"[歌词管理器] 未找到布局: {layoutId}, 使用默认布局");
                 layoutProvider = LayoutRegistry.GetLayoutProvider("default");
-            }
-
-            if (effectProvider == null)
-            {
-                Debug.LogError($"[歌词管理器] 未找到效果: {effectId}, 使用默认效果");
-                effectProvider = EffectRegistry.GetEffectProvider("default");
             }
 
             // 创建行对象
@@ -116,7 +109,7 @@ namespace LyricFX.Managers
                 Id = lineId,
                 Text = text,
                 LayoutId = layoutProvider.LayoutId,
-                EffectId = effectProvider.EffectId,
+                EffectId = effectId,
                 GameObject = lineContainer,
                 Characters = new List<GameObject>()
             };
@@ -128,7 +121,7 @@ namespace LyricFX.Managers
             {
                 LineId = lineId,
                 Content = text,
-                EffectId = effectProvider.EffectId,
+                EffectId = effectId,
                 LayoutId = layoutProvider.LayoutId
             });
 
@@ -167,7 +160,7 @@ namespace LyricFX.Managers
 
                     // 添加布局和效果信息
                     context.SetMetadata("layoutId", layoutProvider.LayoutId);
-                    context.SetMetadata("effectId", effectProvider.EffectId);
+                    context.SetMetadata("effectId", effectId);
 
                     contexts.Add(context);
                 }
@@ -422,7 +415,7 @@ namespace LyricFX.Managers
         /// <summary>
         /// 播放LRC文件
         /// </summary>
-        public async UniTask PlayLrcFile(string filePath, string layoutId, string effectId)
+        public async UniTask PlayLrcFile(string content, string layoutId, string effectId)
         {
             try
             {
@@ -430,7 +423,7 @@ namespace LyricFX.Managers
                 StopAll();
 
                 // 解析LRC
-                var lyrics = await lrcParser.ParseLrcFile(filePath);
+                var lyrics = await lrcParser.ParseLrcFile(content);
                 if (lyrics == null || lyrics.Count == 0)
                 {
                     Debug.LogError("[歌词管理器] LRC解析失败或为空");
