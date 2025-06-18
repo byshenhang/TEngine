@@ -53,7 +53,7 @@ namespace LyricFX.Implementations.Effect
             this.colorChangeCount = colorChangeCount;
         }
         
-        public async UniTask Initialize(GameObject target, object config, CancellationToken cancellationToken = default)
+        public async UniTask Initialize(GameObject target, IEffectConfig config, CancellationToken cancellationToken = default)
         {
             textComponent = target.GetComponent<TextMeshProUGUI>();
             if (textComponent != null)

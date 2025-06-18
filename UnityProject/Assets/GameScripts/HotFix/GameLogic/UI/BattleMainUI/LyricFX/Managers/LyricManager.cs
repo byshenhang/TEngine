@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
+using UnityEngine.UIElements;
 
 namespace LyricFX.Managers
 {
@@ -28,7 +29,12 @@ namespace LyricFX.Managers
         
         // LRC解析器
         [SerializeField] private LrcParser lrcParser;
-        
+
+        public GameObject characterPrefab;
+        public Transform poolContainer;
+        public int initialPoolSize = 20;
+        public int maxPoolSize = 100;
+
         // 活动的歌词行
         private Dictionary<int, LyricLine> activeLines = new Dictionary<int, LyricLine>();
         
@@ -51,12 +57,12 @@ namespace LyricFX.Managers
         
         public async UniTask Initialize()
         {
-            if (characterFactory == null) characterFactory = GetComponentInChildren<CharacterFactory>();
+            if (characterFactory == null) characterFactory = new CharacterFactory();
             if (processorFactory == null) processorFactory = new ProcessorFactory();
             if (lrcParser == null) lrcParser = new LrcParser();
             
             // 初始化工厂和注册表
-            await characterFactory.Initialize();
+            await characterFactory.Initialize(characterPrefab, poolContainer, initialPoolSize, maxPoolSize);
             await LayoutRegistry.Initialize();
             await EffectRegistry.Initialize();
             await processorFactory.Initialize(characterFactory);
@@ -77,9 +83,6 @@ namespace LyricFX.Managers
             pipeline.RegisterProcessor(await processorFactory.CreateProcessor<LayoutApplicationProcessor>());
             pipeline.RegisterProcessor(await processorFactory.CreateProcessor<EffectApplicationProcessor>());
             
-            // 其他可选处理器
-            // pipeline.RegisterProcessor(await processorFactory.CreateProcessor<DelayProcessor>());
-            // pipeline.RegisterProcessor(await processorFactory.CreateProcessor<ProgressUpdateProcessor>());
         }
         
         /// <summary>
@@ -321,32 +324,24 @@ namespace LyricFX.Managers
         }
         
         /// <summary>
-         /// 创建字符级效果实例（向后兼容）
-         /// </summary>
-         private ILyricEffect CreateCharacterEffect(ILyricEffect effectProvider)
-         {
-             if (effectProvider is DefaultFadeEffect)
-             {
-                 return new DefaultFadeEffect();
-             }
-             else if (effectProvider is SequentialBlurEffect)
-             {
-                 return new SequentialBlurEffect();
-             }
-             else if (effectProvider is RandomColorFadeEffect)
-             {
-                 return new RandomColorFadeEffect();
-             }
-             else if (effectProvider is LeftToRightFadeEffect)
-             {
-                 return new LeftToRightFadeEffect();
-             }
-             else
-             {
-                 Debug.LogWarning($"[歌词管理器] 未知效果类型: {effectProvider.GetType().Name}");
-                 return null;
-             }
-         }
+        /// 创建字符级效果实例（向后兼容）
+        /// </summary>
+        private ILyricEffect CreateCharacterEffect(ILyricEffect effectProvider)
+        {
+            // 使用反射自动创建相同类型的实例，无需硬编码每种效果类型
+            Type effectType = effectProvider.GetType();
+            
+            try
+            {
+                // 尝试创建无参构造函数的实例
+                return (ILyricEffect)Activator.CreateInstance(effectType);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[歌词管理器] 创建效果实例失败: {effectType.Name}, 错误: {ex.Message}");
+                return null;
+            }
+        }
          
          /// <summary>
          /// 停止字符级效果（向后兼容）

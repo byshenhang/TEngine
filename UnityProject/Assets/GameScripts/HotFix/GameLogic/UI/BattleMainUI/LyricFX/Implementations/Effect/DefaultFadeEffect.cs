@@ -52,7 +52,7 @@ namespace LyricFX.Implementations.Effect
         /// <summary>
         /// 初始化效果
         /// </summary>
-        public async UniTask Initialize(GameObject target, object config, CancellationToken cancellationToken = default)
+        public async UniTask Initialize(GameObject target, IEffectConfig config, CancellationToken cancellationToken = default)
         {
             // 取消之前的效果
             StopEffectInternal();

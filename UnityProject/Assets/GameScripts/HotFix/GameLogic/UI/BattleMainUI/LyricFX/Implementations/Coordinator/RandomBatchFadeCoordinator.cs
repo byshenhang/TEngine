@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using GameLogic;
 using LyricFX.Core;
 using LyricFX.Implementations.Effect;
 using UnityEngine;
@@ -31,7 +32,7 @@ namespace LyricFX.Implementations.Coordinator
         /// <summary>
         /// 创建字符效果实例
         /// </summary>
-        protected override async UniTask CreateCharacterEffects(object config, CancellationToken cancellationToken)
+        protected override async UniTask CreateCharacterEffects(ICoordinatorConfig config, CancellationToken cancellationToken)
         {
             // 应用配置
             if (config is RandomBatchFadeConfig batchConfig)
@@ -217,7 +218,7 @@ namespace LyricFX.Implementations.Coordinator
     /// 随机批量淡入淡出配置
     /// </summary>
     [Serializable]
-    public class RandomBatchFadeConfig
+    public class RandomBatchFadeConfig : ICoordinatorConfig
     {
         [Header("批次设置")]
         [Range(1, 10)]

@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using GameLogic;
 using System.Threading;
 using UnityEngine;
 
@@ -16,7 +17,7 @@ namespace LyricFX.Core.Interfaces
         /// <param name="lineContainer">行容器对象</param>
         /// <param name="config">配置对象</param>
         /// <param name="cancellationToken">取消令牌</param>
-        UniTask Initialize(GameObject lineContainer, object config, CancellationToken cancellationToken = default);
+        UniTask Initialize(GameObject lineContainer, ICoordinatorConfig config, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// 播放效果

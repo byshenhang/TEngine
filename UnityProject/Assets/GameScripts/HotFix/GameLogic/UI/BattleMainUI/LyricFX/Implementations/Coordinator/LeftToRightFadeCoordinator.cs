@@ -5,6 +5,7 @@ using Cysharp.Threading.Tasks;
 using System;
 using System.Threading;
 using UnityEngine;
+using GameLogic;
 
 namespace LyricFX.Implementations.Coordinator
 {
@@ -25,7 +26,7 @@ namespace LyricFX.Implementations.Coordinator
         /// <summary>
         /// 创建字符效果实例
         /// </summary>
-        protected override async UniTask CreateCharacterEffects(object config, CancellationToken cancellationToken)
+        protected override async UniTask CreateCharacterEffects(ICoordinatorConfig config, CancellationToken cancellationToken)
         {
             // 应用配置
             if (config is LeftToRightFadeConfig fadeConfig)
@@ -200,7 +201,7 @@ namespace LyricFX.Implementations.Coordinator
     /// <summary>
     /// 从左到右渐变效果配置
     /// </summary>
-    public class LeftToRightFadeConfig
+    public class LeftToRightFadeConfig : ICoordinatorConfig
     {
         public float CharacterDelay { get; set; } = 0.15f;
         public float FadeInDuration { get; set; } = 0.4f;

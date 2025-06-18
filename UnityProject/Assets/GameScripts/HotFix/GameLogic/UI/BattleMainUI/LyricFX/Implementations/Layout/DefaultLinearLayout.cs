@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using GameLogic;
 using LyricFX.Core.Interfaces;
 using System.Threading;
 using UnityEngine;
@@ -29,8 +30,8 @@ namespace LyricFX.Implementations.Layout
         /// </summary>
         public async UniTask<Vector3[]> CalculateLayout(
             string text, 
-            Transform container, 
-            object config, 
+            Transform container,
+            ILayoutConfig config, 
             CancellationToken cancellationToken = default)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -103,7 +104,7 @@ namespace LyricFX.Implementations.Layout
     /// 线性布局配置
     /// </summary>
     [System.Serializable]
-    public class LinearLayoutConfig
+    public class LinearLayoutConfig : ILayoutConfig
     {
         public float CharacterSpacing = 0.5f;
         public Vector3 StartOffset = Vector3.zero;

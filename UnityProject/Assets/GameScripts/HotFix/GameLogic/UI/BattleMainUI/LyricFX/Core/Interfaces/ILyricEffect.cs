@@ -30,7 +30,7 @@ namespace LyricFX.Core.Interfaces
         /// </summary>
         /// <param name="target">目标游戏对象</param>
         /// <param name="config">效果配置</param>
-        UniTask Initialize(GameObject target, object config, CancellationToken cancellationToken = default);
+        UniTask Initialize(GameObject target, IEffectConfig config, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// 播放效果

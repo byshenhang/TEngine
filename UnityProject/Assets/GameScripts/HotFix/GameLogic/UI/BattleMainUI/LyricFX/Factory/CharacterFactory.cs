@@ -9,30 +9,29 @@ namespace LyricFX.Factory
     /// <summary>
     /// 字符工厂 - 负责创建和回收字符游戏对象
     /// </summary>
-    public class CharacterFactory : MonoBehaviour
+    public class CharacterFactory 
     {
-        [SerializeField] private GameObject characterPrefab;
-        [SerializeField] private Transform poolContainer;
-        [SerializeField] private int initialPoolSize = 20;
-        [SerializeField] private int maxPoolSize = 100;
+        private GameObject characterPrefab;
+        private Transform poolContainer;
+        private int initialPoolSize = 20;
+        private int maxPoolSize = 100;
         
         // 对象池
         private Stack<GameObject> characterPool = new Stack<GameObject>();
         
         // 已使用的字符对象
         private HashSet<GameObject> activeCharacters = new HashSet<GameObject>();
-        
+
         /// <summary>
         /// 初始化字符工厂
         /// </summary>
-        public async UniTask Initialize()
+        public async UniTask Initialize(GameObject characterObj, Transform container, int poolSize = 50, int maxSize = 100)
         {
-            if (poolContainer == null)
-            {
-                poolContainer = new GameObject("CharacterPool").transform;
-                poolContainer.SetParent(transform);
-            }
-            
+            characterPrefab = characterObj;
+            poolContainer = container;
+            initialPoolSize = poolSize;
+            maxPoolSize = maxSize;
+
             // 预先创建对象到池中
             for (int i = 0; i < initialPoolSize; i++)
             {
@@ -84,7 +83,7 @@ namespace LyricFX.Factory
             // 如果池已满，直接销毁
             if (characterPool.Count >= maxPoolSize)
             {
-                Destroy(character);
+               GameObject.Destroy(character);
                 Debug.Log($"[字符工厂] 池已满，销毁对象，当前池容量：{characterPool.Count}");
             }
             else
@@ -107,7 +106,7 @@ namespace LyricFX.Factory
             
             if (characterPrefab != null)
             {
-                obj = Instantiate(characterPrefab, poolContainer);
+                obj = GameObject.Instantiate(characterPrefab, poolContainer);
             }
             else
             {
@@ -175,7 +174,7 @@ namespace LyricFX.Factory
             while (characterPool.Count > 0)
             {
                 var obj = characterPool.Pop();
-                Destroy(obj);
+                GameObject.Destroy(obj);
             }
             
             Debug.Log("[字符工厂] 对象池已清空");

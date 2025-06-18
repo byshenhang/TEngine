@@ -5,6 +5,7 @@ using System.Threading;
 using UnityEngine;
 using TMPro;
 using System;
+using GameLogic;
 
 namespace LyricFX.Core
 {
@@ -33,7 +34,7 @@ namespace LyricFX.Core
         /// <summary>
         /// 初始化协调器
         /// </summary>
-        public virtual async UniTask Initialize(GameObject lineContainer, object config, CancellationToken cancellationToken = default)
+        public virtual async UniTask Initialize(GameObject lineContainer, ICoordinatorConfig config, CancellationToken cancellationToken = default)
         {
             this.lineContainer = lineContainer;
             
@@ -120,7 +121,7 @@ namespace LyricFX.Core
         /// 创建字符效果实例的抽象方法
         /// 子类需要实现具体的效果创建逻辑
         /// </summary>
-        protected abstract UniTask CreateCharacterEffects(object config, CancellationToken cancellationToken);
+        protected abstract UniTask CreateCharacterEffects(ICoordinatorConfig config, CancellationToken cancellationToken);
         
         /// <summary>
         /// 收集字符对象
