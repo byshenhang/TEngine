@@ -286,12 +286,21 @@ namespace LyricFX.Implementations.Effect
     /// 淡入淡出效果配置
     /// </summary>
     [System.Serializable]
-    public class FadeEffectConfig
+    public class FadeEffectConfig : IEffectConfig, IAdjustConfig
     {
         public float FadeInDuration = 0.3f;
         public float HoldDuration = 1.0f;
         public float FadeOutDuration = 0.3f;
         public AnimationCurve FadeInCurve;
         public AnimationCurve FadeOutCurve;
+
+        public void AdjustDuration(float availableDuration, int characterCount)
+        {
+        }
+
+        public float GetTotalDuration(int characterCount)
+        {
+            return -1;
+        }
     }
 }

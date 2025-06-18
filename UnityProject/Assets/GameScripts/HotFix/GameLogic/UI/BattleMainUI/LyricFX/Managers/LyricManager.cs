@@ -485,7 +485,41 @@ namespace LyricFX.Managers
 
                 if (lineId >= 0)
                 {
-                    await PlayLyricLine(lineId);
+                    if (!activeLines.TryGetValue(lineId, out var lineData))
+                    {
+                        Debug.LogError($"[歌词管理器] 未找到行: {lineId}");
+                        return;
+                    }
+                    
+                    // 计算可用时间（到下一行歌词的时间）
+                    float availableDuration;
+                    if (i + 1 < lyrics.Count)
+                    {
+                        availableDuration = (float)(lyrics[i + 1].TimeStamp - line.TimeStamp);
+                    }
+                    else
+                    {
+                        // 最后一行，给一个默认时间
+                        availableDuration = 3.0f;
+                    }
+                    
+                    // 使用反射获取配置对象
+                    var config = GetConfigForEffect(effectId, availableDuration, line.Text.Length);
+                    
+                    // 根据类型转换为对应的配置对象
+                    IEffectConfig effectConfig = null;
+                    ICoordinatorConfig coordinatorConfig = null;
+                    
+                    if (config is IEffectConfig eConfig)
+                    {
+                        effectConfig = eConfig;
+                    }
+                    else if (config is ICoordinatorConfig cConfig)
+                    {
+                        coordinatorConfig = cConfig;
+                    }
+
+                    await PlayLyricLine(lineId, effectConfig, coordinatorConfig);
 
                     // 如果有下一行，计算显示时长
                     if (i + 1 < lyrics.Count)
@@ -522,6 +556,83 @@ namespace LyricFX.Managers
             Debug.Log("[歌词管理器] 歌词序列播放完成");
         }
 
+        /// <summary>
+        /// 根据效果ID获取对应的配置对象
+        /// </summary>
+        /// <param name="effectId">效果ID</param>
+        /// <param name="availableDuration">可用时间</param>
+        /// <param name="characterCount">字符数量（用于协调器效果）</param>
+        /// <returns>配置对象（IEffectConfig 或 ICoordinatorConfig）</returns>
+        private object GetConfigForEffect(string effectId, float availableDuration, int characterCount)
+        {
+            try
+            {
+                // 获取效果提供器或协调器类型
+                Type targetType = null;
+                
+                if (EffectRegistry.RequiresCoordinator(effectId))
+                {
+                    // 获取协调器类型
+                    var metadata = EffectRegistry.GetEffectMetadata(effectId);
+                    if (metadata?.CoordinatorType != null)
+                    {
+                        targetType = metadata.CoordinatorType;
+                    }
+                }
+                else
+                {
+                    // 获取效果提供器类型
+                    var provider = EffectRegistry.GetEffectProvider(effectId);
+                    if (provider != null)
+                    {
+                        targetType = provider.GetType();
+                    }
+                }
+                
+                if (targetType == null)
+                {
+                    Debug.LogWarning($"[歌词管理器] 未找到效果类型: {effectId}");
+                    return null;
+                }
+                
+                // 查找配置特性
+                var configAttribute = targetType.GetCustomAttributes(typeof(LyricFX.Core.Attributes.EffectConfigAttribute), true);
+                Type configType = null;
+                
+                // 如果有配置特性，使用特性中指定的配置类型
+                if (configAttribute != null && configAttribute.Length > 0)
+                {
+                    configType = (configAttribute[0] as LyricFX.Core.Attributes.EffectConfigAttribute)?.ConfigType;
+                }
+              
+                // 如果找到配置类型，创建实例并调整持续时间
+                if (configType != null)
+                {
+                    var config = Activator.CreateInstance(configType) as IAdjustConfig;
+                    
+                    if (config != null)
+                    {
+                        try
+                        {
+                            config.AdjustDuration(availableDuration, characterCount);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogError($"[歌词管理器] 调用 AdjustDuration 失败: {ex.Message}");
+                        }
+                    }
+                    
+                    return config;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[歌词管理器] 创建配置对象失败: {ex}");
+            }
+            
+            return null;
+        }
+        
         /// <summary>
         /// 清理特定行
         /// </summary>

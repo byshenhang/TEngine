@@ -6,6 +6,7 @@ using System;
 using System.Threading;
 using UnityEngine;
 using GameLogic;
+using LyricFX.Core.Attributes;
 
 namespace LyricFX.Implementations.Coordinator
 {
@@ -13,6 +14,7 @@ namespace LyricFX.Implementations.Coordinator
     /// 从左到右渐变效果协调器
     /// 统一管理整行字符的从左到右渐变显示
     /// </summary>
+    [EffectConfig(typeof(LeftToRightFadeConfig))]
     public class LeftToRightFadeCoordinator : LineEffectCoordinator
     {
         // 配置参数
@@ -32,9 +34,9 @@ namespace LyricFX.Implementations.Coordinator
             if (config is LeftToRightFadeConfig fadeConfig)
             {
                 characterDelay = fadeConfig.CharacterDelay;
-                fadeInDuration = fadeConfig.FadeInDuration;
+                fadeInDuration = fadeConfig.InDuration;
                 holdDuration = fadeConfig.HoldDuration;
-                fadeOutDuration = fadeConfig.FadeOutDuration;
+                fadeOutDuration = fadeConfig.OutDuration;
                 
                 if (fadeConfig.FadeInCurve != null)
                     fadeInCurve = fadeConfig.FadeInCurve;
@@ -201,13 +203,71 @@ namespace LyricFX.Implementations.Coordinator
     /// <summary>
     /// 从左到右渐变效果配置
     /// </summary>
-    public class LeftToRightFadeConfig : ICoordinatorConfig
+    public class LeftToRightFadeConfig : ICoordinatorConfig, IAdjustConfig
     {
         public float CharacterDelay { get; set; } = 0.15f;
-        public float FadeInDuration { get; set; } = 0.4f;
+        public float InDuration { get; set; } = 0.4f;
+        public float OutDuration { get; set; } = 0.3f;
         public float HoldDuration { get; set; } = 2.0f;
-        public float FadeOutDuration { get; set; } = 0.3f;
         public AnimationCurve FadeInCurve { get; set; }
         public AnimationCurve FadeOutCurve { get; set; }
+        
+        /// <summary>
+        /// 获取总持续时间（包括所有字符的延迟时间）
+        /// </summary>
+        /// <param name="characterCount">字符数量</param>
+        /// <returns>总持续时间</returns>
+        public float GetTotalDuration(int characterCount = 10)
+        {
+            // 估算字符延迟总时间（默认假设10个字符）
+            float totalCharacterDelay = CharacterDelay * (characterCount - 1);
+            
+            // 总时间 = 字符延迟总时间 + 最后一个字符的淡入时间 + 保持时间 + 淡出时间
+            return totalCharacterDelay + InDuration + HoldDuration + OutDuration;
+        }
+        
+        /// <summary>
+        /// 根据可用时间调整持续时间，保持原有比例
+        /// </summary>
+        /// <param name="availableDuration">可用的总时间</param>
+        /// <param name="characterCount">字符数量</param>
+        public void AdjustDuration(float availableDuration, int characterCount = 10)
+        {
+            if (availableDuration <= 0)
+                return;
+                
+            // 计算当前总时长
+            float totalDuration = GetTotalDuration(characterCount);
+            // 如果可用时间小于总时长，按比例缩放
+            if (availableDuration < totalDuration)
+            {
+                var oldTime = GetTotalDuration(characterCount);
+
+                float ratio = availableDuration / totalDuration;
+                
+                // 保持最小时间
+                float minDuration = 0.05f;
+                float minDelay = 0.02f;
+                
+                // 计算新的时间，确保各阶段至少有最小时间
+                CharacterDelay = Mathf.Max(CharacterDelay * ratio, minDelay);
+                InDuration = Mathf.Max(InDuration * ratio, minDuration);
+                OutDuration = Mathf.Max(OutDuration * ratio, minDuration);
+                
+                // 剩余时间分配给保持阶段
+                float totalCharacterDelay = CharacterDelay * (characterCount - 1);
+                float remainingTime = availableDuration - totalCharacterDelay - InDuration - OutDuration;
+                HoldDuration = Mathf.Max(remainingTime, 0);
+
+                Debug.Log("修正时间 >> :" + GetTotalDuration(characterCount) + "  : 修正时间 >> : " + oldTime);
+            }
+            else
+            {
+                // 如果可用时间充足，增加保持时间
+                HoldDuration += (availableDuration - totalDuration);
+            }
+        }
+
+       
     }
 }

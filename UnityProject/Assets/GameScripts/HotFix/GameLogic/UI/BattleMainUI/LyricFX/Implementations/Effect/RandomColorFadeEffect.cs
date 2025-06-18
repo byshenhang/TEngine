@@ -233,4 +233,21 @@ namespace LyricFX.Implementations.Effect
             return randomColors[randomIndex];
         }
     }
+
+
+    /// <summary>
+    /// 淡入淡出效果配置
+    /// </summary>
+    [System.Serializable]
+    public class RandomColorConfig : IEffectConfig, IAdjustConfig
+    {
+        public void AdjustDuration(float availableDuration, int characterCount)
+        {
+        }
+
+        public float GetTotalDuration(int characterCount)
+        {
+            return 0;
+        }
+    }
 }

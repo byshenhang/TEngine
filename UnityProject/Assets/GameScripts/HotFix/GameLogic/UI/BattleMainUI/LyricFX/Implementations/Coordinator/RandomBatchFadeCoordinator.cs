@@ -5,6 +5,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using GameLogic;
 using LyricFX.Core;
+using LyricFX.Core.Attributes;
 using LyricFX.Implementations.Effect;
 using UnityEngine;
 
@@ -14,6 +15,7 @@ namespace LyricFX.Implementations.Coordinator
     /// 随机批量淡入淡出协调器
     /// 实现随机字符分批显示（一次最多5个），最后整体淡出的效果
     /// </summary>
+    [EffectConfig(typeof(RandomBatchFadeConfig))]
     public class RandomBatchFadeCoordinator : LineEffectCoordinator
     {
         // 配置参数
@@ -39,9 +41,9 @@ namespace LyricFX.Implementations.Coordinator
             {
                 maxBatchSize = batchConfig.MaxBatchSize;
                 batchInterval = batchConfig.BatchInterval;
-                fadeInDuration = batchConfig.FadeInDuration;
+                fadeInDuration = batchConfig.InDuration;
                 holdDuration = batchConfig.HoldDuration;
-                fadeOutDuration = batchConfig.FadeOutDuration;
+                fadeOutDuration = batchConfig.OutDuration;
                 
                 if (batchConfig.FadeInCurve != null)
                     fadeInCurve = batchConfig.FadeInCurve;
@@ -218,7 +220,7 @@ namespace LyricFX.Implementations.Coordinator
     /// 随机批量淡入淡出配置
     /// </summary>
     [Serializable]
-    public class RandomBatchFadeConfig : ICoordinatorConfig
+    public class RandomBatchFadeConfig : ICoordinatorConfig, IAdjustConfig
     {
         [Header("批次设置")]
         [Range(1, 10)]
@@ -226,19 +228,23 @@ namespace LyricFX.Implementations.Coordinator
         
         [Range(0.1f, 2.0f)]
         public float BatchInterval = 0.1f;      // 批次间隔时间
-        
-        [Header("动画时间")]
-        [Range(0.1f, 3.0f)]
-        public float FadeInDuration = 0.5f;     // 单个字符淡入时间
-        
-        [Range(0.5f, 5.0f)]
-        public float HoldDuration = 2.0f;       // 保持显示时间
-        
-        [Range(0.5f, 3.0f)]
-        public float FadeOutDuration = 1.0f;    // 整体淡出时间
-        
+
+        public float InDuration { get; set; } = 0.5f;
+        public float OutDuration { get; set; } = 1.0f;
+        public float HoldDuration { get; set; } = 2.0f;
+
         [Header("动画曲线")]
         public AnimationCurve FadeInCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
         public AnimationCurve FadeOutCurve = AnimationCurve.EaseInOut(0, 1, 1, 0);
+
+        public float GetTotalDuration(int characterCount)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AdjustDuration(float availableDuration, int characterCount)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
