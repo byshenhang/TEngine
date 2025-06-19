@@ -153,7 +153,7 @@ MonoBehaviour:
   _algorithm: 100
   _downSample: 0
   _blurAxes2D: 0
-  _blur: 10
+  _blur: 0
   _applyAlphaCurve: 0
   _alphaCurve:
     serializedVersion: 2

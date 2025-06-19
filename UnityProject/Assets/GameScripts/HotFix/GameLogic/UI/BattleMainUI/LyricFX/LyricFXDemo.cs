@@ -144,6 +144,7 @@ namespace LyricFX
                     "从左到右渐变 (left_to_right_fade)",
                     "随机批量淡入淡出 (random_batch_fade)",
                     "字符抖动效果 (shake_character)",
+                    "随机模糊 (random_blur)",
                 });
                 
                 effectDropdown.onValueChanged.AddListener((index) => {
@@ -154,6 +155,7 @@ namespace LyricFX
                         case 2: currentEffectId = "left_to_right_fade"; break;
                         case 3: currentEffectId = "random_batch_fade"; break;
                         case 4: currentEffectId = "shake_character"; break;
+                        case 5: currentEffectId = "random_blur"; break;
                         default: currentEffectId = "default_fade"; break;
                     }
                 });
