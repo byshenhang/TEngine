@@ -239,12 +239,69 @@ namespace LyricFX.Implementations.Coordinator
 
         public float GetTotalDuration(int characterCount)
         {
-            throw new NotImplementedException();
+            // 计算批次数
+            int totalBatches = Mathf.CeilToInt((float)characterCount / MaxBatchSize);
+            
+            // 批次显示总时间 = (批次-1)的间隔 + 最后一个批次淡入时间
+            float fadeInPhaseTime = (totalBatches - 1) * BatchInterval + InDuration;
+            
+            // 总时间 = 淡入阶段 + 保持阶段 + 淡出阶段
+            return fadeInPhaseTime + HoldDuration + OutDuration;
         }
 
         public void AdjustDuration(float availableDuration, int characterCount)
         {
-            throw new NotImplementedException();
+            if (availableDuration <= 0)
+                return;
+            
+            // 计算当前总时长
+            float totalDuration = GetTotalDuration(characterCount);
+            
+            // 如果可用时间小于总时长，需要缩减时间
+            if (availableDuration < totalDuration)
+            {
+                float ratio = availableDuration / totalDuration;
+                Debug.Log($"[RandomBatchFadeConfig] 需要缩减时间至 {availableDuration:F2}s，原来总时间 {totalDuration:F2}s，缩放比例 {ratio:F2}");
+                
+                // 设置最小值
+                float minDuration = 0.05f;
+                float minInterval = 0.02f;
+                
+                // 按比例缩放时间，保证最小值
+                BatchInterval = Mathf.Max(BatchInterval * ratio, minInterval);
+                InDuration = Mathf.Max(InDuration * ratio, minDuration);
+                OutDuration = Mathf.Max(OutDuration * ratio, minDuration);
+                
+                // 计算批次淡入总时间
+                int totalBatches = Mathf.CeilToInt((float)characterCount / MaxBatchSize);
+                float batchPhaseDuration = (totalBatches - 1) * BatchInterval + InDuration;
+                
+                // 剩余时间给保持阶段
+                HoldDuration = Mathf.Max(availableDuration - batchPhaseDuration - OutDuration, 0f);
+                
+                // 如果时间实在太紧，可以减少批次数
+                if (batchPhaseDuration + OutDuration > availableDuration)
+                {
+                    // 减少批次导致每批字符数增多
+                    MaxBatchSize = Mathf.Max(Mathf.CeilToInt((float)characterCount / Mathf.FloorToInt(availableDuration / BatchInterval)), 1);
+                    Debug.Log($"[RandomBatchFadeConfig] 时间过紧，增加每批字符数至 {MaxBatchSize}");
+                    
+                    // 重新计算批次时间
+                    totalBatches = Mathf.CeilToInt((float)characterCount / MaxBatchSize);
+                    batchPhaseDuration = (totalBatches - 1) * BatchInterval + InDuration;
+                    
+                    // 再次调整保持时间
+                    HoldDuration = Mathf.Max(availableDuration - batchPhaseDuration - OutDuration, 0f);
+                }
+                
+                Debug.Log($"[RandomBatchFadeConfig] 调整后: 批间隔={BatchInterval:F2}s, 淡入={InDuration:F2}s, 保持={HoldDuration:F2}s, 淡出={OutDuration:F2}s, 总时间={GetTotalDuration(characterCount):F2}s");
+            }
+            else if (availableDuration > totalDuration)
+            {
+                // 如果时间充足，增加保持时间
+                HoldDuration += (availableDuration - totalDuration);
+                Debug.Log($"[RandomBatchFadeConfig] 时间充足，增加保持时间至 {HoldDuration:F2}s，总时间={GetTotalDuration(characterCount):F2}s");
+            }
         }
     }
 }

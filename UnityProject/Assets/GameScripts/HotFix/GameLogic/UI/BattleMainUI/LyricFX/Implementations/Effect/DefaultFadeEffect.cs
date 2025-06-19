@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using LyricFX.Core.Attributes;
 using LyricFX.Core.Interfaces;
 using System;
 using System.Threading;
@@ -10,6 +11,7 @@ namespace LyricFX.Implementations.Effect
     /// <summary>
     /// 默认淡入淡出效果 - 简单的透明度变化效果
     /// </summary>
+    [EffectConfig(typeof(FadeEffectConfig))]
     public class DefaultFadeEffect : ILyricEffect
     {
         private float fadeInDuration = 0.3f;
@@ -296,11 +298,50 @@ namespace LyricFX.Implementations.Effect
 
         public void AdjustDuration(float availableDuration, int characterCount)
         {
+            if (availableDuration <= 0)
+                return;
+                
+            // 计算当前总时长
+            float totalDuration = GetTotalDuration(characterCount);
+            
+            // 如果可用时间小于总时长，按比例缩放
+            if (availableDuration < totalDuration && totalDuration > 0)
+            {
+                float ratio = availableDuration / totalDuration;
+                
+                // 保持最小时间
+                float minDuration = 0.05f;
+                
+                // 按比例调整各阶段时间，确保不小于最小时间
+                FadeInDuration = Mathf.Max(FadeInDuration * ratio, minDuration);
+                HoldDuration = Mathf.Max(HoldDuration * ratio, minDuration);
+                FadeOutDuration = Mathf.Max(FadeOutDuration * ratio, minDuration);
+                
+                // 验证总持续时间是否符合期望
+                float adjustedTotal = FadeInDuration + HoldDuration + FadeOutDuration;
+                
+                // 如果调整后总时间超过了可用时间，从保持阶段减去多余时间
+                if (adjustedTotal > availableDuration)
+                {
+                    float excess = adjustedTotal - availableDuration;
+                    HoldDuration = Mathf.Max(HoldDuration - excess, 0.01f);
+                }
+                
+                Debug.Log($"[FadeEffectConfig] 调整持续时间: {FadeInDuration:F2}+{HoldDuration:F2}+{FadeOutDuration:F2}={GetTotalDuration(characterCount):F2}s");
+            }
+            else if (availableDuration > totalDuration)
+            {
+                // 如果可用时间充足，增加保持时间
+                HoldDuration += (availableDuration - totalDuration);
+                Debug.Log($"[FadeEffectConfig] 增加保持时间: {HoldDuration:F2}s, 总时间={GetTotalDuration(characterCount):F2}s");
+            }
         }
 
         public float GetTotalDuration(int characterCount)
         {
-            return -1;
+            // 字符效果总持续时间是淡入+保持+淡出的总和
+            // 字符数量在字符级效果里不影响总时间
+            return FadeInDuration + HoldDuration + FadeOutDuration;
         }
     }
 }

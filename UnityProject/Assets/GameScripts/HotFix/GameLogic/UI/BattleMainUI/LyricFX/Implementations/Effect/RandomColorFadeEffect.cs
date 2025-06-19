@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using LyricFX.Core.Attributes;
 using LyricFX.Core.Interfaces;
 using System.Threading;
 using TMPro;
@@ -9,6 +10,7 @@ namespace LyricFX.Implementations.Effect
     /// <summary>
     /// 随机变换颜色效果 - 随机变换颜色然后渐变消失
     /// </summary>
+    [EffectConfig(typeof(RandomColorFadeEffect))]
     public class RandomColorFadeEffect : ILyricEffect
     {
         public string EffectId => "random_color_fade";

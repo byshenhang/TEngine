@@ -1,11 +1,22 @@
+/*
+ * @Author: shenhang 2322974451@qq.com
+ * @Date: 2025-06-17 18:25:23
+ * @LastEditors: shenhang 2322974451@qq.com
+ * @LastEditTime: 2025-06-19 11:20:57
+ * @FilePath: \LyricFX\LyricFXDemo.cs
+ * @Description: 歌词特效演示脚本，集成调试功能
+ */
 using Cysharp.Threading.Tasks;
 using LyricFX.Core;
 using LyricFX.Implementations.Effect;
 using LyricFX.Implementations.Layout;
 using LyricFX.Managers;
+using LyricFX.Utils;
+using System;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 namespace LyricFX
 {
@@ -16,6 +27,11 @@ namespace LyricFX
     {
         [Header("管理器引用")]
         [SerializeField] private LyricManager lyricManager;
+        
+        [Header("调试设置")]
+        [SerializeField] private bool enableDebugger = false;
+        [SerializeField] private float audioStartDelay = 0.1f; // 音频延迟播放时间(秒)
+        [SerializeField] private float syncOffset = 0.0f; // 歌词同步偏移(秒), 正值延迟歌词, 负值提前歌词
         
         [Header("示例文本")]
         [SerializeField] private string[] sampleLyrics = new string[]
@@ -41,12 +57,18 @@ namespace LyricFX
         
         // 活动行ID
         private int activeLyricLineId = -1;
-        
+        public TextAsset LRCFile;
         // 取消令牌
         private CancellationTokenSource demoCts;
 
-        private string LRC_CONTENT = "[ti:Example Song]\r\n[ar:Sample Artist]\r\n[al:Demo Album]\r\n[by:DeepSeek Chat]\r\n\r\n[00:00.00]This is an example LRC file\r\n[00:02.30]Showing how timestamps work\r\n[00:05.45]Each line begins with time in brackets\r\n[00:08.60]\r\n[00:10.15]Empty lines are allowed too\r\n[00:13.20]For better readability\r\n[00:16.35]\r\n[00:18.50][01:23.45]You can have multiple timestamps\r\n[00:21.65][01:26.60]For repeated lyrics sections\r\n[00:24.80]\r\n[00:27.95]End of example LRC file";
-
+        private string LRC_CONTENT
+        {
+            get
+            {
+                return LRCFile.text;
+            }
+        }
+        public AudioSource Audio;
 
         private void Awake()
         {
@@ -65,6 +87,19 @@ namespace LyricFX
                 
             if (stopButton != null)
                 stopButton.onClick.AddListener(StopDemo);
+                
+            // 初始化调试工具
+            LyricFXDebugger.Instance.EnableDebug = enableDebugger;
+            if (enableDebugger)
+            {
+                Debug.Log("[歌词特效演示] 调试模式已启用，将记录详细执行时间");
+            }
+            
+            // 配置LyricManager的同步偏移
+            if (lyricManager != null && syncOffset != 0)
+            {
+                lyricManager.SetSyncOffset(syncOffset);
+            }
         }
         
         private void Start()
@@ -154,19 +189,50 @@ namespace LyricFX
             
             Debug.Log($"[歌词特效演示] 播放单行歌词: '{lyric}', 效果: {currentEffectId}, 布局: {currentLayoutId}");
             
+            // 开始调试会话
+            if (enableDebugger)
+            {
+                LyricFXDebugger.Instance.StartSession("单行歌词播放");
+                LyricFXDebugger.Instance.SetCurrentLyric(lyric);
+                LyricFXDebugger.Instance.RecordTimePoint("开始创建歌词行");
+            }
+            
             // 创建歌词行
             Vector3 position = new Vector3(0, 0, 0);
             activeLyricLineId = await lyricManager.CreateLyricLine(lyric, currentLayoutId, currentEffectId, position);
 
             if (activeLyricLineId >= 0)
             {
+                if (enableDebugger)
+                {
+                    LyricFXDebugger.Instance.RecordTimePoint("歌词行创建完成");
+                    LyricFXDebugger.Instance.RecordStageDuration("开始创建歌词行", "歌词行创建完成", "歌词行创建耗时");
+                    LyricFXDebugger.Instance.RecordTimePoint("开始播放歌词行");
+                }
+                
                 // 播放歌词行
                 await lyricManager.PlayLyricLine(activeLyricLineId);
+                
+                if (enableDebugger)
+                {
+                    LyricFXDebugger.Instance.RecordTimePoint("歌词行播放完成");
+                    LyricFXDebugger.Instance.RecordStageDuration("开始播放歌词行", "歌词行播放完成", "歌词行播放耗时");
+                }
                 
                 // 5秒后自动停止
                 await UniTask.Delay(5000, cancellationToken: demoCts.Token);
                 await lyricManager.StopLyricLine(activeLyricLineId);
                 activeLyricLineId = -1;
+                
+                if (enableDebugger)
+                {
+                    LyricFXDebugger.Instance.EndSession("单行歌词播放完成");
+                }
+            }
+            else if (enableDebugger)
+            {
+                LyricFXDebugger.Instance.RecordError("创建歌词行失败");
+                LyricFXDebugger.Instance.EndSession("单行歌词播放失败");
             }
         }
         
@@ -177,9 +243,56 @@ namespace LyricFX
         {
             StopCurrentLine();
             
-            Debug.Log($"[歌词特效演示] 播放LRC文件: {LRC_CONTENT}, 效果: {currentEffectId}, 布局: {currentLayoutId}");
+            Debug.Log($"[歌词特效演示] 播放LRC文件, 效果: {currentEffectId}, 布局: {currentLayoutId}");
             
-            await lyricManager.PlayLrcFile(LRC_CONTENT, currentLayoutId, currentEffectId);
+            // 开始调试会话
+            if (enableDebugger)
+            {
+                LyricFXDebugger.Instance.StartSession("LRC文件播放");
+                LyricFXDebugger.Instance.RecordTimePoint("开始处理LRC");
+            }
+            
+            try
+            {
+                // 在播放音频前开始处理LRC
+                var processTask = lyricManager.PlayLrcFile(LRC_CONTENT, currentLayoutId, currentEffectId);
+                
+                if (enableDebugger)
+                {
+                    LyricFXDebugger.Instance.RecordTimePoint("LRC处理开始");
+                }
+                
+                // 延迟音频开始，以便为初始处理留出时间
+                await UniTask.Delay(TimeSpan.FromSeconds(audioStartDelay));
+                
+                if (enableDebugger)
+                {
+                    LyricFXDebugger.Instance.RecordTimePoint("音频开始播放");
+                }
+                
+                // 开始播放音频
+                Audio.Play();
+                
+                // 等待LRC处理完成
+                await processTask;
+                
+                if (enableDebugger)
+                {
+                    LyricFXDebugger.Instance.RecordTimePoint("LRC播放完成");
+                    LyricFXDebugger.Instance.RecordStageDuration("开始处理LRC", "LRC播放完成", "LRC总播放耗时");
+                    LyricFXDebugger.Instance.EndSession("LRC文件播放完成");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[歌词特效演示] 播放LRC文件失败: {ex}");
+                
+                if (enableDebugger)
+                {
+                    LyricFXDebugger.Instance.RecordError("播放LRC文件失败", ex);
+                    LyricFXDebugger.Instance.EndSession("LRC播放出错");
+                }
+            }
         }
         
         /// <summary>

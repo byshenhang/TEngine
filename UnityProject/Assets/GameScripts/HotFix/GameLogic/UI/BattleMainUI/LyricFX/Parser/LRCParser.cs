@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using UnityEngine;
+using LyricFX.Utils;
 
 namespace LyricFX.Parser
 {
@@ -75,7 +76,16 @@ namespace LyricFX.Parser
                         case "by": metadata.Creator = value; break;
                         case "offset": 
                             if (float.TryParse(value, out float offset))
+                            {
                                 metadata.Offset = offset;
+                                Debug.Log($"[LRC解析器] 检测到偏移标签: {offset} 毫秒 ({offset/1000.0:F3} 秒)");
+                                
+                                // 记录调试信息
+                                if (LyricFXDebugger.Instance.EnableDebug)
+                                {
+                                    LyricFXDebugger.Instance.RecordTimePoint($"LRC文件包含偏移标签: {offset} 毫秒 ({offset/1000.0:F3} 秒)");
+                                }
+                            }
                             break;
                     }
                     
@@ -110,11 +120,19 @@ namespace LyricFX.Parser
                         timeStamp += metadata.Offset / 1000.0;
                         
                         // 添加到结果
-                        result.Add(new LrcLine
+                        var newLine = new LrcLine
                         {
                             TimeStamp = timeStamp,
                             Text = lyricContent
-                        });
+                        };
+                        
+                        result.Add(newLine);
+                        
+                        // 记录调试信息
+                        if (LyricFXDebugger.Instance.EnableDebug)
+                        {
+                            LyricFXDebugger.Instance.RecordTimePoint($"解析LRC行: {timeStamp:F3}秒 - \"{lyricContent}\"");
+                        }
                     }
                 }
             }
@@ -123,6 +141,20 @@ namespace LyricFX.Parser
             result.Sort((a, b) => a.TimeStamp.CompareTo(b.TimeStamp));
             
             Debug.Log($"[LRC解析器] 解析完成, 共 {result.Count} 行歌词");
+            
+            // 记录调试信息
+            if (LyricFXDebugger.Instance.EnableDebug)
+            {
+                LyricFXDebugger.Instance.RecordTimePoint($"LRC解析完成, 共 {result.Count} 行歌词");
+                
+                if (result.Count > 0)
+                {
+                    LyricFXDebugger.Instance.RecordTimePoint($"首行时间: {result[0].TimeStamp:F3}秒, 末行时间: {result[result.Count-1].TimeStamp:F3}秒");
+                    float totalDuration = (float)(result[result.Count-1].TimeStamp - result[0].TimeStamp);
+                    LyricFXDebugger.Instance.RecordTimePoint($"LRC总时长: {totalDuration:F3}秒");
+                }
+            }
+            
             return result;
         }
     }
