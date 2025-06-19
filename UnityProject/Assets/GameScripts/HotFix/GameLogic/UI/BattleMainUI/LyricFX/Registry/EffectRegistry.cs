@@ -134,6 +134,7 @@ namespace LyricFX.Registry
             // 注册字符级效果
             RegisterEffect<DefaultFadeEffect>("default_fade", EffectScope.Character);
             RegisterEffect<RandomColorFadeEffect>("random_color_fade", EffectScope.Character);
+            RegisterEffect<ShakeCharacterEffect>("shake_character", EffectScope.Character);
 
             // 注册行级效果（需要协调器）
             RegisterCoordinatorEffect<LeftToRightFadeCoordinator>("left_to_right_fade", EffectScope.Line);
