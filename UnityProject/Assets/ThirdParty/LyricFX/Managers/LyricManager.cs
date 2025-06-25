@@ -51,8 +51,11 @@ namespace LyricFX.Managers
         // 播放会话开始时间
         private float playSessionStartTime;
 
-
-        public LyricManager(Transform root, GameObject charPrefab, Transform poolRoot, int initPool = 20, int maxPool = 100)
+        public LyricManager()
+        {
+            pipeline = new CharacterProcessingPipeline();
+        }
+        public LyricManager(Transform root, GameObject charPrefab, Transform poolRoot, int initPool = 20, int maxPool = 100):base()
         {
             lyricsContainer = root;
             characterPrefab = charPrefab;
@@ -63,6 +66,13 @@ namespace LyricFX.Managers
             pipeline = new CharacterProcessingPipeline();
         }
 
+
+        public void Setup(Transform root, GameObject charPrefab, Transform poolRoot)
+        {
+            lyricsContainer = root;
+            characterPrefab = charPrefab;
+            poolContainer = poolRoot;
+        }
 
         /// <summary>
         /// 设置同步偏移量

@@ -36,8 +36,46 @@ namespace GameLogic
             base.OnInit();
             _cts = new CancellationTokenSource();
             Log.Info("LyricFXModule initialized");
-            
-            InitLyrics();
+
+            _lyricManager = new LyricManager();
+
+            try
+            {
+                if (_lyricManager == null)
+                {
+                    Log.Error("LyricFXModule: 尚未设置LyricManager实例");
+                    return ;
+                }
+
+                if (_enableDebugger)
+                {
+                    LyricFXDebugger.Instance.StartSession("初始化歌词管理器");
+                    LyricFXDebugger.Instance.RecordTimePoint("开始初始化");
+                }
+
+                _lyricManager.Initialize().Forget();
+
+                if (_enableDebugger)
+                {
+                    LyricFXDebugger.Instance.RecordTimePoint("初始化完成");
+                    LyricFXDebugger.Instance.EndSession("初始化成功");
+                }
+
+                Log.Info("LyricFXModule: 初始化成功");
+                return ;
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"LyricFXModule: 初始化失败: {ex}");
+
+                if (_enableDebugger)
+                {
+                    LyricFXDebugger.Instance.RecordError("初始化失败", ex);
+                    LyricFXDebugger.Instance.EndSession("初始化失败");
+                }
+
+                return ;
+            }
         }
 
         public override void Release()
@@ -153,51 +191,6 @@ namespace GameLogic
             if (!string.IsNullOrEmpty(layoutId))
             {
                 _defaultLayoutId = layoutId;
-            }
-        }
-        
-        /// <summary>
-        /// 初始化歌词管理器
-        /// </summary>
-        /// <returns>初始化是否成功</returns>
-        public async UniTask<bool> InitLyrics()
-        {
-            try
-            {
-                if (_lyricManager == null)
-                {
-                    Log.Error("LyricFXModule: 尚未设置LyricManager实例");
-                    return false;
-                }
-                
-                if (_enableDebugger)
-                {
-                    LyricFXDebugger.Instance.StartSession("初始化歌词管理器");
-                    LyricFXDebugger.Instance.RecordTimePoint("开始初始化");
-                }
-                
-                await _lyricManager.Initialize();
-                
-                if (_enableDebugger)
-                {
-                    LyricFXDebugger.Instance.RecordTimePoint("初始化完成");
-                    LyricFXDebugger.Instance.EndSession("初始化成功");
-                }
-                
-                Log.Info("LyricFXModule: 初始化成功");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"LyricFXModule: 初始化失败: {ex}");
-                
-                if (_enableDebugger)
-                {
-                    LyricFXDebugger.Instance.RecordError("初始化失败", ex);
-                    LyricFXDebugger.Instance.EndSession("初始化失败");
-                }
-                
-                return false;
             }
         }
         
