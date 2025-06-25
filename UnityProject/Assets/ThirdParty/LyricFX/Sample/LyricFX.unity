@@ -38,7 +38,6 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -586,7 +585,6 @@ GameObject:
   - component: {fileID: 309786389}
   - component: {fileID: 309786388}
   - component: {fileID: 309786387}
-  - component: {fileID: 309786386}
   - component: {fileID: 309786392}
   m_Layer: 5
   m_Name: Canvas
@@ -595,24 +593,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &309786386
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 309786384}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 390ac31582b485c43a02361fb89b11f6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  lyricsContainer: {fileID: 1016797600}
-  syncOffset: 0
-  characterPrefab: {fileID: 7701595583448557235, guid: 3f701aaed69ec64499ac63701e95e664, type: 3}
-  poolContainer: {fileID: 189401802}
-  initialPoolSize: 20
-  maxPoolSize: 100
 --- !u!114 &309786387
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -625,7 +605,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af0fe38bfdc910546889378bc341764f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lyricManager: {fileID: 309786386}
+  lyricsContainer: {fileID: 1016797600}
+  characterPrefab: {fileID: 4359610560032916008}
+  poolContainer: {fileID: 189401802}
   enableDebugger: 1
   audioStartDelay: 0.1
   syncOffset: 0
@@ -3518,6 +3500,11 @@ PrefabInstance:
 --- !u!224 &4359610560032916007 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 7242345313098717428, guid: 3f701aaed69ec64499ac63701e95e664, type: 3}
+  m_PrefabInstance: {fileID: 4359610560032916006}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &4359610560032916008 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7701595583448557235, guid: 3f701aaed69ec64499ac63701e95e664, type: 3}
   m_PrefabInstance: {fileID: 4359610560032916006}
   m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807

@@ -113,6 +113,10 @@ public class GameModule
 
     private static XRIModule _xri;
 
+    public static LyricFXModule LYRIC => _lyric ??= LyricFXModule.Instance;
+
+    private static LyricFXModule _lyric;
+
     ///// <summary>
     ///// 获取XR交互模块。
     ///// </summary>
@@ -162,7 +166,9 @@ public class GameModule
         _ui3d = null;
         _xrPlayer = null;
         _xri = null;
-        
+
+        _lyric = null;
+
         // 战斗模块作为Singleton由GameApp.Release处理
         _combat = null;
         //_subtitle = null;

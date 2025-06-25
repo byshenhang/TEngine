@@ -25,6 +25,10 @@ namespace LyricFX
     /// </summary>
     public class LyricFXDemo : MonoBehaviour
     {
+        public Transform lyricsContainer;
+        public GameObject characterPrefab;
+        public Transform poolContainer;
+
         [Header("管理器引用")]
         [SerializeField] private LyricManager lyricManager;
         
@@ -73,7 +77,7 @@ namespace LyricFX
         private void Awake()
         {
             if (lyricManager == null)
-                lyricManager = GetComponentInChildren<LyricManager>();
+                lyricManager = new LyricManager(lyricsContainer, characterPrefab, poolContainer);
                 
             // 初始化下拉菜单
             InitializeDropdowns();
@@ -100,14 +104,10 @@ namespace LyricFX
             {
                 lyricManager.SetSyncOffset(syncOffset);
             }
-        }
-        
-        private void Start()
-        {
-            // 初始化系统
+
             InitializeAsync().Forget();
         }
-        
+
         /// <summary>
         /// 初始化系统
         /// </summary>
@@ -328,7 +328,7 @@ namespace LyricFX
         public async UniTask ProgrammaticExample()
         {
             // 1. 从这个MonoBehaviour获取或找到LyricManager实例
-            var manager = FindObjectOfType<LyricManager>();
+            var manager = new LyricManager(lyricsContainer, characterPrefab, poolContainer);
             
             // 2. 初始化管理器（如果尚未初始化）
             await manager.Initialize();

@@ -36,6 +36,8 @@ namespace GameLogic
             base.OnInit();
             _cts = new CancellationTokenSource();
             Log.Info("LyricFXModule initialized");
+            
+            InitLyrics();
         }
 
         public override void Release()
@@ -158,7 +160,7 @@ namespace GameLogic
         /// 初始化歌词管理器
         /// </summary>
         /// <returns>初始化是否成功</returns>
-        public async UniTask<bool> Initialize()
+        public async UniTask<bool> InitLyrics()
         {
             try
             {
@@ -502,5 +504,8 @@ namespace GameLogic
             
             return await PlayLrcFile(lrcTextAsset.text, audioSource, audioStartDelay, effectId, layoutId);
         }
+    
+    
+    
     }
 }
