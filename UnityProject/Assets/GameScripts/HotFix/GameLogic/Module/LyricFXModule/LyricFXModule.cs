@@ -403,7 +403,7 @@ namespace GameLogic
         /// <param name="effectId">特效ID，为空则使用默认特效</param>
         /// <param name="layoutId">布局ID，为空则使用默认布局</param>
         /// <returns>是否播放成功</returns>
-        public async UniTask<bool> PlayLrcFile(string lrcContent, UnityEngine.AudioSource audioSource = null, float audioStartDelay = 0.1f, string effectId = null, string layoutId = null)
+        public async UniTask<bool> PlayLrcFile(string lrcContent, Vector3 position, AudioSource audioSource = null,float audioStartDelay = 0.1f, string effectId = null, string layoutId = null)
         {
             if (_lyricManager == null)
             {
@@ -430,7 +430,7 @@ namespace GameLogic
                 }
                 
                 // 开始处理LRC
-                var processTask = _lyricManager.PlayLrcFile(lrcContent, finalLayoutId, finalEffectId);
+                var processTask = _lyricManager.PlayLrcFile(lrcContent, finalLayoutId, finalEffectId, position);
                 
                 if (_enableDebugger)
                 {
@@ -478,27 +478,7 @@ namespace GameLogic
             }
         }
         
-        /// <summary>
-        /// 从文本资源加载LRC并播放
-        /// </summary>
-        /// <param name="lrcTextAsset">LRC文本资源</param>
-        /// <param name="audioSource">音频源，可选</param>
-        /// <param name="audioStartDelay">音频开始播放的延迟时间（秒）</param>
-        /// <param name="effectId">特效ID</param>
-        /// <param name="layoutId">布局ID</param>
-        /// <returns>是否播放成功</returns>
-        public async UniTask<bool> PlayLrcFromTextAsset(UnityEngine.TextAsset lrcTextAsset, UnityEngine.AudioSource audioSource = null, float audioStartDelay = 0.1f, string effectId = null, string layoutId = null)
-        {
-            if (lrcTextAsset == null)
-            {
-                Log.Error("LyricFXModule: LRC文本资源为空");
-                return false;
-            }
-            
-            return await PlayLrcFile(lrcTextAsset.text, audioSource, audioStartDelay, effectId, layoutId);
-        }
-    
-    
+       
     
     }
 }

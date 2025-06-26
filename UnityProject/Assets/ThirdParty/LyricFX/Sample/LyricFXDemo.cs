@@ -259,7 +259,7 @@ namespace LyricFX
             try
             {
                 // 在播放音频前开始处理LRC
-                var processTask = lyricManager.PlayLrcFile(LRC_CONTENT, currentLayoutId, currentEffectId);
+                var processTask = lyricManager.PlayLrcFile(LRC_CONTENT, currentLayoutId, currentEffectId, Vector3.zero);
                 
                 if (enableDebugger)
                 {
@@ -355,6 +355,7 @@ namespace LyricFX
                 LRC_CONTENT,  // LRC文件路径
                 "default_linear",                      // 布局ID
                 "default_fade"                         // 效果ID
+                ,Vector3.zero
             );
             
             // 8. 停止所有活动

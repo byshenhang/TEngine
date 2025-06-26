@@ -450,7 +450,7 @@ namespace LyricFX.Managers
         /// <summary>
         /// 播放LRC文件
         /// </summary>
-        public async UniTask PlayLrcFile(string content, string layoutId, string effectId)
+        public async UniTask PlayLrcFile(string content, string layoutId, string effectId, Vector3 position)
         {
             try
             {
@@ -485,7 +485,7 @@ namespace LyricFX.Managers
                 globalCts = new CancellationTokenSource();
 
                 // 播放歌词序列
-                await PlayLyricSequence(lyrics, layoutId, effectId, globalCts.Token);
+                await PlayLyricSequence(lyrics, layoutId, effectId, position, globalCts.Token);
             }
             catch (OperationCanceledException)
             {
@@ -505,7 +505,7 @@ namespace LyricFX.Managers
         /// <summary>
         /// 播放歌词序列
         /// </summary>
-        private async UniTask PlayLyricSequence(List<LrcLine> lyrics, string layoutId, string effectId, CancellationToken cancellationToken)
+        private async UniTask PlayLyricSequence(List<LrcLine> lyrics, string layoutId, string effectId, Vector3 position, CancellationToken cancellationToken)
         {
             // 使用实际时间计时，而不是理论时间
             float startTime = playSessionStartTime;
@@ -566,7 +566,6 @@ namespace LyricFX.Managers
                 }
 
                 // 创建并播放当前行
-                Vector3 position = new Vector3(0, 0, 0); // 可以根据需要调整位置
                 int lineId = await CreateLyricLine(line.Text, layoutId, effectId, position);
 
                 if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug)
