@@ -31,7 +31,7 @@ namespace GameLogic
         // 取消令牌源
         private CancellationTokenSource _cts;
         
-        protected override void OnInit()
+        protected override async void OnInit()
         {
             base.OnInit();
             _cts = new CancellationTokenSource();
@@ -53,7 +53,7 @@ namespace GameLogic
                     LyricFXDebugger.Instance.RecordTimePoint("开始初始化");
                 }
 
-                _lyricManager.Initialize().Forget();
+                await _lyricManager.Initialize();
 
                 if (_enableDebugger)
                 {

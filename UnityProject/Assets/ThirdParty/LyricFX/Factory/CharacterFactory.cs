@@ -25,27 +25,31 @@ namespace LyricFX.Factory
         /// <summary>
         /// 初始化字符工厂
         /// </summary>
-        public async UniTask Initialize(GameObject characterObj, Transform container, int poolSize = 50, int maxSize = 100)
+        public async UniTask Initialize(int poolSize = 50, int maxSize = 100)
+        {
+            initialPoolSize = poolSize;
+            maxPoolSize = maxSize;
+
+            Debug.Log($"[字符工厂] 初始化完成，池容量：{characterPool.Count}");
+        }
+        
+        public async UniTask UpdateCharacter(GameObject characterObj, Transform container)
         {
             characterPrefab = characterObj;
             poolContainer = container;
-            initialPoolSize = poolSize;
-            maxPoolSize = maxSize;
 
             // 预先创建对象到池中
             for (int i = 0; i < initialPoolSize; i++)
             {
                 var character = CreateCharacterObject();
                 characterPool.Push(character);
-                
+
                 // 每创建几个对象让出一帧，避免卡顿
                 if (i % 5 == 0)
                     await UniTask.Yield();
             }
-            
-            Debug.Log($"[字符工厂] 初始化完成，池容量：{characterPool.Count}");
         }
-        
+
         /// <summary>
         /// 获取一个字符对象
         /// </summary>

@@ -48,12 +48,12 @@ namespace GameLogic
             var root = GameObject.Find("InstanceRoot");
             var pool = GameObject.Find("InstancePool");
             GameObject prefabInstance = GameModule.Resource.LoadGameObject("DefaultText");
-            manager.Setup(root.transform, prefabInstance, pool.transform);
+            manager.SetupAsync(root.transform, prefabInstance, pool.transform);
 
             string currentEffectId = "default_fade";
             string currentLayoutId = "default_linear";
             Vector3 position = new Vector3(0, 0, 0);
-            int id = await GameModule.LYRIC.CreateLyricLine("Hello Wolrd", position, currentLayoutId, currentEffectId);
+            int id = await GameModule.LYRIC.CreateLyricLine("Hello Wolrd", position,  currentEffectId, currentLayoutId);
             await GameModule.LYRIC.PlayLyricLine(id);
 
             GameModule.UI3D.CloseUI3D<BattleMainUI>();

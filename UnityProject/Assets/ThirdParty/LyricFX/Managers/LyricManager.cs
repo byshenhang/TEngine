@@ -10,6 +10,7 @@ using LyricFX.Registry;
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace LyricFX.Managers
@@ -67,11 +68,13 @@ namespace LyricFX.Managers
         }
 
 
-        public void Setup(Transform root, GameObject charPrefab, Transform poolRoot)
+        public async Task SetupAsync(Transform root, GameObject charPrefab, Transform poolRoot)
         {
             lyricsContainer = root;
             characterPrefab = charPrefab;
             poolContainer = poolRoot;
+
+            await characterFactory.UpdateCharacter(characterPrefab, poolContainer);
         }
 
         /// <summary>
@@ -91,7 +94,7 @@ namespace LyricFX.Managers
             if (lrcParser == null) lrcParser = new LrcParser();
 
             // 初始化工厂和注册表
-            await characterFactory.Initialize(characterPrefab, poolContainer, initialPoolSize, maxPoolSize);
+            await characterFactory.Initialize(initialPoolSize, maxPoolSize);
             await LayoutRegistry.Initialize();
             await EffectRegistry.Initialize();
             await processorFactory.Initialize(characterFactory);
@@ -121,6 +124,7 @@ namespace LyricFX.Managers
         {
             // 创建行容器
             GameObject lineContainer = new GameObject($"LyricLine_{lineIdCounter}");
+            lineContainer.AddComponent<RectTransform>();
             lineContainer.transform.SetParent(lyricsContainer);
             lineContainer.transform.position = position;
 
