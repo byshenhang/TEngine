@@ -29,7 +29,7 @@ namespace LyricFX.Implementations.Layout
         /// <param name="enableDynamic">是否启用动态间距计算</param>
         /// <param name="minSpacing">最小间距</param>
         /// <param name="maxSpacing">最大间距</param>
-        public DefaultLinearLayout(float spacing = 60f, Vector3 offset = default, bool enableDynamic = true, float minSpacing = 4f, float maxSpacing = 100f)
+        public DefaultLinearLayout(float spacing = 60f, Vector3 offset = default, bool enableDynamic = true, float minSpacing = 5f, float maxSpacing = 100f)
         {
             characterSpacing = spacing;
             startOffset = offset;

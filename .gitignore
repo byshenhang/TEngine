@@ -20,3 +20,6 @@ UnityProject/Assets/XR/Settings/OpenXRPackageSettings.asset
 UnityProject/Assets/XR 2.meta
 UnityProject/Assets/XR 1.meta
 .gitignore
+UnityProject/UserSettings/EditorUserSettings.asset
+UnityProject/UserSettings/Layouts/CurrentMaximizeLayout.dwlt
+UnityProject/UserSettings/Layouts/CurrentMaximizeLayout.dwlt

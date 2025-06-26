@@ -15,6 +15,9 @@ namespace GameLogic
         private GameObject _itemRoleInfo;
         private GameObject _itemMonsterInfo;
         private Button _btn_debug;
+
+        public string LRCFile = "";
+
         protected override void ScriptGenerator()
         {
             _rectContainer = FindChildComponent<RectTransform>("m_rectContainer");
@@ -48,13 +51,15 @@ namespace GameLogic
             var root = GameObject.Find("InstanceRoot");
             var pool = GameObject.Find("InstancePool");
             GameObject prefabInstance = GameModule.Resource.LoadGameObject("DefaultText");
+            var text = GameModule.Resource.LoadAsset<TextAsset>("XUNZHANG").text;
             manager.SetupAsync(root.transform, prefabInstance, pool.transform);
 
             string currentEffectId = "default_fade";
             string currentLayoutId = "default_linear";
             Vector3 position = new Vector3(-45, 0, 0);
-            int id = await GameModule.LYRIC.CreateLyricLine("Hello Wolrd", position,  currentEffectId, currentLayoutId);
-            await GameModule.LYRIC.PlayLyricLine(id);
+            //int id = await GameModule.LYRIC.CreateLyricLine("Hello Wolrd", position,  currentEffectId, currentLayoutId);
+            //await GameModule.LYRIC.PlayLyricLine(id);
+            await GameModule.LYRIC.PlayLrcFile(text);
 
             GameModule.UI3D.CloseUI3D<BattleMainUI>();
         }
