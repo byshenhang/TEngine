@@ -20,6 +20,13 @@ namespace LyricFX.Processors
             
         }
         
+        /// <summary>
+        /// 处理字符对象的父级设置和基础属性配置
+        /// 注意：位置设置由 ILayoutProvider.ApplyLayout 统一处理
+        /// </summary>
+        /// <param name="context">处理上下文</param>
+        /// <param name="cancellationToken">取消令牌</param>
+        /// <returns>处理后的上下文</returns>
         public async UniTask<ProcessingContext> Process(ProcessingContext context, CancellationToken cancellationToken = default)
         {
             if (context.CharacterObject == null)
@@ -39,28 +46,15 @@ namespace LyricFX.Processors
                 // 设置字符对象的父对象为歌词行容器
                 context.CharacterObject.transform.SetParent(lineContainer.transform);
                 
-                // 使用注册表中的布局提供器
-                var layoutProvider = LayoutRegistry.GetLayoutProvider(layoutId);
-                if (layoutProvider != null)
-                {
-                    // 应用单个字符位置
-                    context.CharacterObject.transform.localPosition = context.Position;
-                    
-                    Debug.Log($"[布局应用处理器] 应用布局 '{layoutId}' 到字符: '{context.Character}' (索引: {context.CharacterIndex}), 父对象: {lineContainer.name}");
-                }
-                else
-                {
-                    Debug.LogError($"[布局应用处理器] 未找到布局提供器: {layoutId}");
-                    // 应用默认位置
-                    context.CharacterObject.transform.localPosition = context.Position;
-                }
+                Debug.Log($"[布局应用处理器] 设置字符父对象: '{context.Character}' (索引: {context.CharacterIndex}), 父对象: {lineContainer.name}");
             }
             else
             {
                 Debug.LogError($"[布局应用处理器] 未找到歌词行容器: LyricLine_{lineId}");
             }
             
-            // 可以添加一些额外的定位逻辑，如旋转或缩放
+            // 可以添加一些额外的属性设置，如旋转或缩放
+            // 注意：位置设置由 ILayoutProvider.ApplyLayout 统一处理，避免重复设置
             
             await UniTask.CompletedTask;
             return context;
