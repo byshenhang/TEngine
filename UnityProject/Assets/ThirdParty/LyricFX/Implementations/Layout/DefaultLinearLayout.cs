@@ -14,19 +14,18 @@ namespace LyricFX.Implementations.Layout
     public class DefaultLinearLayout : ILayoutProvider
     {
         private Vector3 startOffset = Vector3.zero;  // 起始偏移
+        private bool centerAlignment = true;  // 是否以起始位置为中心对齐
         public string LayoutId => "default_linear";
         
         /// <summary>
         /// 构造函数，可以传入配置参数
         /// </summary>
-        /// <param name="spacing">默认字符间距</param>
         /// <param name="offset">起始偏移</param>
-        /// <param name="enableDynamic">是否启用动态间距计算</param>
-        /// <param name="minSpacing">最小间距</param>
-        /// <param name="maxSpacing">最大间距</param>
-        public DefaultLinearLayout(Vector3 offset = default)
+        /// <param name="centerAlignment">是否以起始位置为中心对齐</param>
+        public DefaultLinearLayout(Vector3 offset = default, bool centerAlignment = true)
         {
             startOffset = offset;
+            this.centerAlignment = centerAlignment;
         }
         
         /// <summary>
@@ -50,18 +49,30 @@ namespace LyricFX.Implementations.Layout
             // 使用局部变量避免修改实例字段
             float spacing = tmpro.rectTransform.sizeDelta.x;
             Vector3 offset = startOffset;
+            bool useCenterAlignment = centerAlignment;
             
             // 如果配置不为空，可以覆盖默认设置
             if (config is LinearLayoutConfig linearConfig)
             {
                 offset = linearConfig.StartOffset;
+                useCenterAlignment = linearConfig.CenterAlignment;
             }
             
             // 计算字符位置
             var positions = new Vector3[text.Length];
             
-            // 获取起始位置（容器左侧）
-            Vector3 currentPos = offset;
+            // 计算总宽度（用于居中对齐）
+            float totalWidth = (text.Length - 1) * spacing;
+            
+            // 根据对齐方式确定起始位置
+            Vector3 startPos = offset;
+            if (useCenterAlignment)
+            {
+                // 居中对齐：从中心位置向左偏移一半宽度
+                startPos = offset - new Vector3(totalWidth * 0.5f, 0, 0);
+            }
+            
+            Vector3 currentPos = startPos;
             
             for (int i = 0; i < text.Length; i++)
             {
@@ -115,5 +126,9 @@ namespace LyricFX.Implementations.Layout
     {
         [Header("基础设置")]
         public Vector3 StartOffset = Vector3.zero;
+        
+        [Header("对齐设置")]
+        [Tooltip("是否以起始位置为中心对齐。false=左对齐（从StartOffset开始），true=居中对齐（以StartOffset为中心）")]
+        public bool CenterAlignment = true;
     }
 }
