@@ -23,7 +23,7 @@ namespace LyricFX.Core.Interfaces
         /// <param name="config">布局配置</param>
         /// <param name="cancellationToken">取消令牌</param>
         /// <returns>字符位置数组</returns>
-        UniTask<Vector3[]> CalculateLayout(string text, Transform container, ILayoutConfig config, CancellationToken cancellationToken = default);
+        UniTask<Vector3[]> CalculateLayout(string text, Transform container, ILayoutConfig config, GameObject characterPrefab, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// 应用布局到字符对象

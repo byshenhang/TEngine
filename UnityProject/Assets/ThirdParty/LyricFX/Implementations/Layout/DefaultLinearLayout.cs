@@ -13,7 +13,6 @@ namespace LyricFX.Implementations.Layout
     /// </summary>
     public class DefaultLinearLayout : ILayoutProvider
     {
-        private float characterSpacing = 5f;  // 字符间距（像素）
         private Vector3 startOffset = Vector3.zero;  // 起始偏移
         public string LayoutId => "default_linear";
         
@@ -25,9 +24,8 @@ namespace LyricFX.Implementations.Layout
         /// <param name="enableDynamic">是否启用动态间距计算</param>
         /// <param name="minSpacing">最小间距</param>
         /// <param name="maxSpacing">最大间距</param>
-        public DefaultLinearLayout(float spacing = 5f, Vector3 offset = default)
+        public DefaultLinearLayout(Vector3 offset = default)
         {
-            characterSpacing = spacing;
             startOffset = offset;
         }
         
@@ -38,8 +36,11 @@ namespace LyricFX.Implementations.Layout
             string text, 
             Transform container,
             ILayoutConfig config, 
+            GameObject prefab,
             CancellationToken cancellationToken = default)
         {
+            var tmpro = prefab.GetComponent<TextMeshProUGUI>();
+
             if (cancellationToken.IsCancellationRequested)
                 return new Vector3[0];
             
@@ -47,13 +48,12 @@ namespace LyricFX.Implementations.Layout
                 return new Vector3[0];
             
             // 使用局部变量避免修改实例字段
-            float spacing = characterSpacing;
+            float spacing = tmpro.rectTransform.sizeDelta.x;
             Vector3 offset = startOffset;
             
             // 如果配置不为空，可以覆盖默认设置
             if (config is LinearLayoutConfig linearConfig)
             {
-                spacing = linearConfig.CharacterSpacing;
                 offset = linearConfig.StartOffset;
             }
             
@@ -114,7 +114,6 @@ namespace LyricFX.Implementations.Layout
     public class LinearLayoutConfig : ILayoutConfig
     {
         [Header("基础设置")]
-        public float CharacterSpacing = 0.5f;
         public Vector3 StartOffset = Vector3.zero;
     }
 }

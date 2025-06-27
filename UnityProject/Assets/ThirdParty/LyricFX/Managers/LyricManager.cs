@@ -171,6 +171,7 @@ namespace LyricFX.Managers
                     text,
                     lineContainer.transform,
                     config,  // 这里可以传入布局配置
+                    characterPrefab,
                     cts.Token
                 );
 
