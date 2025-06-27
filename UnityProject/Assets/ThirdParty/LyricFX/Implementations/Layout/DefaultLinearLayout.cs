@@ -232,8 +232,17 @@ namespace LyricFX.Implementations.Layout
                     return width;
                 }
                 
-                // 如果没有找到现有组件，创建临时测量对象
-                return await CreateTemporaryMeasureObject(container, cancellationToken);
+                // 如果没有找到现有组件，直接从容器的RectTransform获取宽度
+                RectTransform rectTransform = container.GetComponent<RectTransform>();
+                if (rectTransform != null)
+                {
+                    // 使用RectTransform的宽度作为字符宽度的估算值
+                    float containerWidth = rectTransform.rect.width;
+                    // 假设一个字符占用容器宽度的一定比例，这里使用经验值
+                    return containerWidth > 0 ? containerWidth * 0.1f : 30f;
+                }
+                
+                return 30f; // 返回默认宽度
             }
             catch (System.Exception ex)
             {
@@ -242,40 +251,7 @@ namespace LyricFX.Implementations.Layout
             }
         }
         
-        /// <summary>
-        /// 创建临时测量对象来获取字符宽度
-        /// </summary>
-        /// <param name="container">容器Transform</param>
-        /// <param name="cancellationToken">取消令牌</param>
-        /// <returns>字符宽度</returns>
-        private async UniTask<float> CreateTemporaryMeasureObject(Transform container, CancellationToken cancellationToken)
-        {
-            GameObject tempObj = null;
-            try
-            {
-                tempObj = new GameObject("TempMeasure");
-                tempObj.transform.SetParent(container, false);
-                
-                var rectTransform = tempObj.AddComponent<RectTransform>();
-                var textComponent = tempObj.AddComponent<TextMeshProUGUI>();
-                
-                textComponent.text = "测";
-                textComponent.fontSize = 36; // 使用默认字体大小
-                textComponent.alignment = TextAlignmentOptions.Center;
-                
-                await UniTask.Yield(); // 等待一帧让UI更新
-                
-                float width = textComponent.preferredWidth;
-                return width;
-            }
-            finally
-            {
-                if (tempObj != null)
-                {
-                    GameObject.DestroyImmediate(tempObj);
-                }
-            }
-        }
+
         
         /// <summary>
         /// 根据Canvas模式计算合适的间距，确保字符不超出Canvas边界
