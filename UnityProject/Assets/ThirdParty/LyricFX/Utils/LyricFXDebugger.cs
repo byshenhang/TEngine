@@ -290,7 +290,7 @@ namespace LyricFX.Utils
             // 仅在支持的平台上写入文件
             try
             {
-                if (!string.IsNullOrEmpty(logFilePath) && File.Exists(Path.GetDirectoryName(logFilePath)))
+                if (!string.IsNullOrEmpty(logFilePath) && Directory.Exists(Path.GetDirectoryName(logFilePath)))
                 {
                     using (StreamWriter writer = File.AppendText(logFilePath))
                     {

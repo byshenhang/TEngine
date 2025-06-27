@@ -53,11 +53,14 @@ namespace GameLogic
             GameObject prefabInstance = GameModule.Resource.LoadGameObject("DefaultText");
             var AudioSourceTest = GameModule.Resource.LoadGameObject("AudioSourceTest").GetComponent<AudioSource>();
             AudioSourceTest.Stop();
-            
+
+
+            GameModule.LYRIC.EnableDebugger(true);
+
             var text = GameModule.Resource.LoadAsset<TextAsset>("XUNZHANG").text;
             manager.SetupAsync(root.transform, prefabInstance, pool.transform);
 
-            string currentEffectId = "random_color_fade";
+            string currentEffectId = "left_to_right_fade";
             string currentLayoutId = "default_linear";
             Vector3 position = new Vector3(-45, 0, 0);
             //int id = await GameModule.LYRIC.CreateLyricLine("Hello Wolrd", position,  currentEffectId, currentLayoutId);
