@@ -1,11 +1,7 @@
-/*
- * @Author: shenhang 2322974451@qq.com
- * @Date: 2025-06-19 11:20:57
- * @LastEditors: shenhang 2322974451@qq.com
- * @LastEditTime: 2025-06-19 11:20:57
- * @FilePath: \LyricFX\Utils\LyricFXDebugger.cs
- * @Description: 歌词特效调试工具
- */
+#if UNITY_EDITOR || UNITY_STANDALONE
+#define ENABLE_FILE_LOGGING
+#endif
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -65,8 +61,16 @@ namespace LyricFX.Utils
         /// </summary>
         private void InitLogFile()
         {
+#if ENABLE_FILE_LOGGING
             try
             {
+                // 检查平台是否支持文件操作
+                if (!IsFileOperationSupported())
+                {
+                    Debug.LogWarning("[LyricFXDebugger] 当前平台不支持文件日志记录，仅使用控制台输出");
+                    return;
+                }
+                
                 // 使用持久化数据路径
                 string directory = Path.Combine(Application.persistentDataPath, "LyricFXLogs");
                 
@@ -84,6 +88,8 @@ namespace LyricFX.Utils
                 StringBuilder sb = new StringBuilder();
                 sb.AppendLine("==================================================");
                 sb.AppendLine($"LyricFX 调试日志 - 会话开始: {DateTime.Now}");
+                sb.AppendLine($"平台: {Application.platform}");
+                sb.AppendLine($"设备型号: {SystemInfo.deviceModel}");
                 sb.AppendLine("==================================================");
                 
                 // 写入文件
@@ -94,7 +100,11 @@ namespace LyricFX.Utils
             catch (Exception ex)
             {
                 Debug.LogError($"[LyricFXDebugger] 无法初始化日志文件: {ex.Message}");
+                logFilePath = null; // 确保后续不会尝试写入文件
             }
+#else
+            Debug.Log("[LyricFXDebugger] 移动平台模式，仅使用控制台日志输出");
+#endif
         }
         
         /// <summary>
@@ -249,25 +259,53 @@ namespace LyricFX.Utils
         }
         
         /// <summary>
+        /// 检查当前平台是否支持文件操作
+        /// </summary>
+        /// <returns>是否支持文件操作</returns>
+        private bool IsFileOperationSupported()
+        {
+            // 在某些移动平台或受限环境中，文件操作可能受限
+            try
+            {
+                // 尝试访问持久化数据路径
+                string testPath = Application.persistentDataPath;
+                return !string.IsNullOrEmpty(testPath) && Directory.Exists(Path.GetDirectoryName(testPath));
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        
+        /// <summary>
         /// 追加内容到日志文件
         /// </summary>
         /// <param name="content">日志内容</param>
         private void AppendToLog(string content)
         {
+            // 始终输出到控制台，便于移动端调试
+            Debug.Log($"[LyricFXDebugger] {content}");
+            
+#if ENABLE_FILE_LOGGING
+            // 仅在支持的平台上写入文件
             try
             {
-                if (!string.IsNullOrEmpty(logFilePath))
+                if (!string.IsNullOrEmpty(logFilePath) && File.Exists(Path.GetDirectoryName(logFilePath)))
                 {
                     using (StreamWriter writer = File.AppendText(logFilePath))
                     {
-                        writer.WriteLine(content);
+                        writer.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] {content}");
+                        writer.Flush(); // 确保立即写入，防止应用崩溃时丢失日志
                     }
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[LyricFXDebugger] 写入日志失败: {ex.Message}");
+                Debug.LogError($"[LyricFXDebugger] 写入日志文件失败: {ex.Message}");
+                // 文件写入失败时，清空路径避免后续重复尝试
+                logFilePath = null;
             }
+#endif
         }
     }
 }
