@@ -39,7 +39,7 @@ namespace GameLogic
         private async void OnClick_debugBtn()
         {
             Debug.Log("---------------------------------- AudioLyricCoordinator 同步播放测试 ----------------------------------");
-            
+
             // ========== 注释掉的原有调用方式 ==========
             /*
             Debug.Log("开始使用单行复用模式播放测试字幕内容");
@@ -74,8 +74,13 @@ namespace GameLogic
             //await GameModule.LYRIC.PlayLyricLine(id);
             GameModule.LYRIC.PlayLrcFile(text, position, AudioSourceTest, 0.1f, currentEffectId, currentLayoutId);
             */
-            
+
             // ========== 使用自动发现的AudioLyricCoordinator同步调用方式 ==========
+            GameObject prefabInstance = GameModule.Resource.LoadGameObject("DefaultText");
+            var root = GameObject.Find("InstanceRoot");
+            var pool = GameObject.Find("InstancePool");
+            GameModule.UI3D.CloseUI3D<BattleMainUI>();
+
             try
             {
                 Debug.Log("开始使用AudioLyricCoordinator进行音频歌词同步播放");
@@ -106,10 +111,10 @@ namespace GameLogic
                 
                 // 3. 启用调试模式
                 coordinator.EnableDebugger(true);
-                
                 // 4. 设置同步偏移（可选）
+                coordinator.SetLyric(root.transform, prefabInstance, pool.transform);
                 coordinator.SetSyncOffset(0.1f); // 歌词提前0.1秒显示
-                
+
                 // 5. 自动发现和初始化协调器
                 Debug.Log("自动发现AudioReactor并初始化...");
                 bool initSuccess = await coordinator.AutoInitialize();
@@ -152,7 +157,7 @@ namespace GameLogic
                 }
                 
                 // 8. 开始同步播放
-                await coordinator.PlaySynchronized();
+                coordinator.PlaySynchronized();
                 Debug.Log("开始音频歌词同步播放");
                 
                 Debug.Log($"当前播放状态: {(coordinator.IsPlaying() ? "播放中" : "已停止")}");
@@ -163,8 +168,6 @@ namespace GameLogic
                 Debug.LogError($"AudioLyricCoordinator同步播放过程中发生错误: {ex}");
             }
             
-            // 注意：这里不立即关闭UI，让用户可以观察播放效果
-            // GameModule.UI3D.CloseUI3D<BattleMainUI>();
         }
         #endregion
 

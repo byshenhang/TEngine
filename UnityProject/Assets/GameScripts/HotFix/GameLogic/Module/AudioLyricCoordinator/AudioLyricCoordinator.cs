@@ -58,7 +58,12 @@ namespace GameLogic
             
             Log.Info("AudioLyricCoordinator initialized");
         }
-        
+
+        public async void SetLyric(Transform c, GameObject prefabInstance, Transform pool)
+        {
+           await _lyricFX.GetLyricManager().SetupAsync(pool, prefabInstance, pool);
+        }
+
         public override void Release()
         {
             base.Release();
@@ -976,5 +981,7 @@ namespace GameLogic
                 return false;
             }
         }
+
+
     }
 }
