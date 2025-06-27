@@ -1,5 +1,5 @@
-using GameLogic;
 using TEngine;
+using GameLogic;
 using Object = UnityEngine.Object;
 
 public class GameModule
@@ -116,6 +116,20 @@ public class GameModule
     public static LyricFXModule LYRIC => _lyric ??= LyricFXModule.Instance;
 
     private static LyricFXModule _lyric;
+    
+    /// <summary>
+    /// 获取音频同步模块。
+    /// </summary>
+    public static AudioSyncModule AUDIO_SYNC => _audioSync ??= AudioSyncModule.Instance;
+
+    private static AudioSyncModule _audioSync;
+    
+    /// <summary>
+    /// 获取音频歌词协调器模块。
+    /// </summary>
+    public static AudioLyricCoordinator AUDIO_LYRIC => _audioLyricCoordinator ??= AudioLyricCoordinator.Instance;
+
+    private static AudioLyricCoordinator _audioLyricCoordinator;
 
     ///// <summary>
     ///// 获取XR交互模块。
@@ -168,6 +182,8 @@ public class GameModule
         _xri = null;
 
         _lyric = null;
+        _audioSync = null;
+        _audioLyricCoordinator = null;
 
         // 战斗模块作为Singleton由GameApp.Release处理
         _combat = null;
