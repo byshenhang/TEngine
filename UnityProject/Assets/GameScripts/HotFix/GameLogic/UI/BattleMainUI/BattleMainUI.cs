@@ -62,7 +62,7 @@ namespace GameLogic
 
             string currentEffectId = "left_to_right_fade";
             string currentLayoutId = "default_linear";
-            Vector3 position = new Vector3(-45, 0, 0);
+            Vector3 position = new Vector3(0, 0, 0);
             //int id = await GameModule.LYRIC.CreateLyricLine("Hello Wolrd", position,  currentEffectId, currentLayoutId);
             //await GameModule.LYRIC.PlayLyricLine(id);
            GameModule.LYRIC.PlayLrcFile(text, position, AudioSourceTest, 0.1f, currentEffectId, currentLayoutId);
