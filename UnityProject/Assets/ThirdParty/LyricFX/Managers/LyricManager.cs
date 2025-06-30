@@ -18,7 +18,7 @@ namespace LyricFX.Managers
     /// <summary>
     /// 歌词管理器 - 框架核心类，但只负责高层次协调
     /// </summary>
-    public class LyricManager 
+    public class LyricManager
     {
         private CharacterFactory characterFactory;
         // 包含各种处理器的工厂
@@ -56,7 +56,7 @@ namespace LyricFX.Managers
         {
             pipeline = new CharacterProcessingPipeline();
         }
-        public LyricManager(Transform root, GameObject charPrefab, Transform poolRoot, int initPool = 20, int maxPool = 100):base()
+        public LyricManager(Transform root, GameObject charPrefab, Transform poolRoot, int initPool = 20, int maxPool = 100) : base()
         {
             lyricsContainer = root;
             characterPrefab = charPrefab;
@@ -211,6 +211,12 @@ namespace LyricFX.Managers
                     {
                         line.Characters.Add(result.CharacterObject);
                     }
+                }
+
+                // 应用布局到字符对象
+                if (line.Characters.Count > 0)
+                {
+                    await layoutProvider.ApplyLayout(line.Characters.ToArray(), positions, cts.Token);
                 }
 
                 Debug.Log($"[歌词管理器] 创建行完成, ID: {lineId}, 字符数: {line.Characters.Count}");
