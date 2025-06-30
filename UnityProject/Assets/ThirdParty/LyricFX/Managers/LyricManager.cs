@@ -213,12 +213,6 @@ namespace LyricFX.Managers
                     }
                 }
 
-                // 应用布局到字符对象
-                if (line.Characters.Count > 0)
-                {
-                    await layoutProvider.ApplyLayout(line.Characters.ToArray(), positions, cts.Token);
-                }
-
                 Debug.Log($"[歌词管理器] 创建行完成, ID: {lineId}, 字符数: {line.Characters.Count}");
                 return lineId;
             }

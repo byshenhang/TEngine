@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Reflection;
+using Cysharp.Threading.Tasks;
 using GameConfig.item;
 using GameLogic;
 using TEngine;
@@ -39,7 +40,21 @@ public partial class GameApp
 
         //GameModule.UI.ShowUIAsync<BattleMainUI>();
         //GameModule.UI3D.ShowUI3D<BattleMainUI>(Vector3.zero, Quaternion.identity, null);
-        GameModule.UI3D.ShowUI3DAtAnchor<BattleMainUI>("MainUI", null);
+        // UI3D调用移到场景加载完成后，避免锚点未注册的问题
+        // GameModule.UI3D.ShowUI3DAtAnchor<BattleMainUI>("MainUI", null);
+    }
+    
+    /// <summary>
+    /// 在主场景加载完成后显示UI3D
+    /// 此方法应该在场景加载完成后调用
+    /// </summary>
+    public static void ShowMainSceneUI()
+    {
+        // 延迟一帧确保锚点已注册
+        UniTask.DelayFrame(1).ContinueWith(() =>
+        {
+            GameModule.UI3D.ShowUI3DAtAnchor<BattleMainUI>("MainUI", null);
+        }).Forget();
     }
     
     private static void Release()

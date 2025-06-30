@@ -27,18 +27,5 @@ public class ListAllComponents : MonoBehaviour
         Debug.Log("Total components: " + components.Length);
     }
 
-    // 可选：在编辑器模式下也可以查看
-#if UNITY_EDITOR
-    [ContextMenu("List Components")]
-    private void ListComponentsInEditor()
-    {
-        Component[] components = GetComponents<Component>();
-        Debug.Log("Editor - GameObject: " + gameObject.name + " has the following components:");
-        foreach (Component component in components)
-        {
-            Debug.Log("- " + component.GetType().Name);
-        }
-        Debug.Log("Total components: " + components.Length);
-    }
-#endif
+    
 }
