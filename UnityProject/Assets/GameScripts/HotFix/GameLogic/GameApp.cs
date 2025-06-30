@@ -1,10 +1,13 @@
+using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using GameConfig.item;
 using GameLogic;
 using TEngine;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 #pragma warning disable CS0436
 
 
@@ -42,21 +45,36 @@ public partial class GameApp
         //GameModule.UI3D.ShowUI3D<BattleMainUI>(Vector3.zero, Quaternion.identity, null);
         // UI3D调用移到场景加载完成后，避免锚点未注册的问题
         // GameModule.UI3D.ShowUI3DAtAnchor<BattleMainUI>("MainUI", null);
+        ShowMainSceneUIAsync();
     }
     
     /// <summary>
     /// 在主场景加载完成后显示UI3D
     /// 此方法应该在场景加载完成后调用
     /// </summary>
-    public static void ShowMainSceneUI()
+    public static async Task ShowMainSceneUIAsync()
     {
         // 延迟一帧确保锚点已注册
-        UniTask.DelayFrame(1).ContinueWith(() =>
+        var scene = await GameModule.Scene.LoadSceneAsync(
+               "main",                           // 场景定位地址
+               LoadSceneMode.Single,             // 单场景模式（替换当前场景）
+               false,                            // 不挂起加载
+               100,                              // 优先级
+               true                     // 加载后回收垃圾
+               ,OnLoadSuccess
+           );
+
+        Log.Info($"场景切换完成: {scene.name}");
+    }
+
+    private static void OnLoadSuccess(float obj)
+    {
+        UniTask.Delay(1000).ContinueWith(() =>
         {
             GameModule.UI3D.ShowUI3DAtAnchor<BattleMainUI>("MainUI", null);
         }).Forget();
     }
-    
+
     private static void Release()
     {
         // 关闭战斗模块
