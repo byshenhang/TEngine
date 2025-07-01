@@ -89,6 +89,7 @@ namespace AudioReactiveShader
         private void Awake()
         {
             rawSpectrumData = new float[128];
+            numBands = Mathf.Max(numBands, 8);
         }
         /// <summary>
         /// 组件启用时的初始化

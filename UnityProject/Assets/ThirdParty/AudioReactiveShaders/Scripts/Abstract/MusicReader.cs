@@ -55,7 +55,7 @@ namespace AudioReactiveShader
         /// <summary>当前音频源</summary>
         public AudioSource audioSource { get { return _audioSource; } set { _audioSource = value; } }
         /// <summary>频段数量</summary>
-        public int numBands { get { return _numBands; } set { _numBands = value; } }
+        public int numBands { get { return _numBands; } set { Debug.Log("Set _numBands " + _numBands); _numBands = value; } }
         /// <summary>声道选择</summary>
         public int channelSelection { get { return _channelSelection; } set { _channelSelection = value; } }
 

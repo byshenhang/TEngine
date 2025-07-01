@@ -14,7 +14,7 @@ namespace GameLogic
     public class AudioSyncModule : Singleton<AudioSyncModule>, IUpdate
     {
         // 当前AudioReactor实例
-        private AudioReactor _audioReactor;
+        private TelePresent.AudioSyncPro.AudioReactor _audioReactor;
 
         // 当前AudioSourcePlus实例
         private AudioSourcePlus _audioSourcePlus;
@@ -105,7 +105,7 @@ namespace GameLogic
         /// <param name="audioReactor">AudioReactor实例</param>
         /// <param name="audioSourcePlus">AudioSourcePlus实例，可选</param>
         /// <returns>是否初始化成功</returns>
-        public bool Initialize(AudioReactor audioReactor, AudioSourcePlus audioSourcePlus = null)
+        public bool Initialize(TelePresent.AudioSyncPro.AudioReactor audioReactor, AudioSourcePlus audioSourcePlus = null)
         {
             if (audioReactor == null)
             {
@@ -553,7 +553,7 @@ namespace GameLogic
         /// 获取AudioReactor实例
         /// </summary>
         /// <returns>AudioReactor实例</returns>
-        public AudioReactor GetAudioReactor()
+        public TelePresent.AudioSyncPro.AudioReactor GetAudioReactor()
         {
             return _audioReactor;
         }

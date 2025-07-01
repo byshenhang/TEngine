@@ -117,7 +117,7 @@ namespace GameLogic
 
                 // 5. 自动发现和初始化协调器
                 Debug.Log("自动发现AudioReactor并初始化...");
-                bool initSuccess = await coordinator.AutoInitialize();
+                bool initSuccess = await coordinator.AutoInitializeAsync();
                 
                 if (!initSuccess)
                 {

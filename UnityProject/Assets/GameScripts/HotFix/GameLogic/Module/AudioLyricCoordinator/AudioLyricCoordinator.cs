@@ -1,4 +1,5 @@
 using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -8,6 +9,7 @@ using Cysharp.Threading.Tasks;
 using TelePresent.AudioSyncPro;
 using LyricFX.Managers;
 using LyricFX.Utils;
+using GameLogic.AudioReactor;
 using Object = UnityEngine.Object;
 
 namespace GameLogic
@@ -15,13 +17,14 @@ namespace GameLogic
     /// <summary>
     /// 音频歌词协调器 - 统一管理音频同步和歌词播放的协调模块
     /// 采用协调器模式，提供最佳的可维护性和扩展性，同时保持各模块职责单一性
-    /// 支持自动发现AudioReactor和多AudioReactor管理
+    /// 重构版本：集成新的AudioReactorManager统一音频反应器管理系统
     /// </summary>
     public class AudioLyricCoordinator : Singleton<AudioLyricCoordinator>, IUpdate
     {
         // 模块引用
         private AudioSyncModule _audioSync;
         private LyricFXModule _lyricFX;
+        private AudioReactorManager _audioReactorManager;
         
         // 协调状态
         private bool _isInitialized = false;
@@ -33,10 +36,8 @@ namespace GameLogic
         private string _currentLyricContent = "";
         private float _syncOffset = 0f;
         
-        // AudioReactor管理
-        private Dictionary<string, AudioReactor> _discoveredAudioReactors = new Dictionary<string, AudioReactor>();
-        private AudioReactor _currentAudioReactor;
-        private string _currentAudioReactorId;
+        // 音频源管理
+        private AudioSource _globalAudioSource;
         
         // 取消令牌源
         private CancellationTokenSource _cts;
@@ -55,8 +56,12 @@ namespace GameLogic
             // 获取模块实例
             _audioSync = AudioSyncModule.Instance;
             _lyricFX = LyricFXModule.Instance;
+            _audioReactorManager = AudioReactorManager.Instance;
             
-            Log.Info("AudioLyricCoordinator initialized");
+            // 订阅音频反应器管理器事件
+            SubscribeToAudioReactorManagerEvents();
+            
+            Log.Info("AudioLyricCoordinator initialized with AudioReactorManager");
         }
 
         public async void SetLyric(Transform c, GameObject prefabInstance, Transform pool)
@@ -73,6 +78,7 @@ namespace GameLogic
             
             // 清理事件订阅
             UnsubscribeFromAudioEvents();
+            UnsubscribeFromAudioReactorManagerEvents();
             
             // 清理资源
             if (_cts != null)
@@ -84,6 +90,8 @@ namespace GameLogic
             
             _audioSync = null;
             _lyricFX = null;
+            _audioReactorManager = null;
+            _globalAudioSource = null;
             
             Log.Info("AudioLyricCoordinator released");
         }
@@ -98,179 +106,282 @@ namespace GameLogic
         }
         
         /// <summary>
-        /// 自动发现场景中的AudioReactor组件
+        /// 自动发现并注册音频反应器
         /// </summary>
-        /// <param name="searchInChildren">是否在子对象中搜索</param>
-        /// <returns>发现的AudioReactor数量</returns>
-        public int DiscoverAudioReactors(bool searchInChildren = true)
+        /// <returns>发现并注册的音频反应器数量</returns>
+        public async UniTask<int> DiscoverAudioReactorsAsync()
         {
-            _discoveredAudioReactors.Clear();
-            
-            AudioReactor[] audioReactors;
-            if (searchInChildren)
+            if (_audioReactorManager == null)
             {
-                audioReactors = Object.FindObjectsOfType<AudioReactor>();
-            }
-            else
-            {
-                audioReactors = Object.FindObjectsOfType<AudioReactor>();
+                Log.Error("AudioLyricCoordinator: AudioReactorManager未初始化");
+                return 0;
             }
             
-            for (int i = 0; i < audioReactors.Length; i++)
-            {
-                var reactor = audioReactors[i];
-                string id = $"{reactor.gameObject.name}_{reactor.GetInstanceID()}";
-                _discoveredAudioReactors[id] = reactor;
-                
-                if (_enableDebugger)
-                {
-                    Log.Info($"AudioLyricCoordinator: 发现AudioReactor - {id}");
-                }
-            }
+            int discoveredCount = await _audioReactorManager.AutoDiscoverReactorsAsync();
             
             if (_enableDebugger)
             {
-                Log.Info($"AudioLyricCoordinator: 总共发现 {_discoveredAudioReactors.Count} 个AudioReactor");
+                Log.Info($"AudioLyricCoordinator: 通过AudioReactorManager发现并注册了 {discoveredCount} 个音频反应器");
             }
             
-            return _discoveredAudioReactors.Count;
+            return discoveredCount;
         }
         
         /// <summary>
-        /// 获取所有已发现的AudioReactor信息
+        /// 获取所有已注册的音频反应器信息
         /// </summary>
-        /// <returns>AudioReactor ID和名称的字典</returns>
+        /// <returns>音频反应器信息字典</returns>
+        public Dictionary<string, (string displayName, string type, bool isEnabled)> GetRegisteredAudioReactors()
+        {
+            if (_audioReactorManager == null)
+            {
+                Log.Warning("AudioLyricCoordinator: AudioReactorManager未初始化");
+                return new Dictionary<string, (string, string, bool)>();
+            }
+            
+            return _audioReactorManager.GetRegisteredReactors();
+        }
+        
+        /// <summary>
+        /// 获取当前使用的音频反应器
+        /// </summary>
+        /// <returns>当前音频反应器信息</returns>
+        public (string name, string id) GetCurrentAudioReactor()
+        {
+            if (_audioReactorManager == null)
+            {
+                Log.Warning("AudioLyricCoordinator: AudioReactorManager未初始化");
+                return ("None", "none");
+            }
+            
+            var registeredReactors = _audioReactorManager.GetRegisteredReactors();
+            var enabledReactor = registeredReactors.FirstOrDefault(r => r.Value.isEnabled);
+            
+            if (enabledReactor.Key != null)
+            {
+                return (enabledReactor.Value.displayName, enabledReactor.Key);
+            }
+            
+            return ("None", "none");
+        }
+        
+        /// <summary>
+        /// 获取所有已发现的音频反应器
+        /// </summary>
+        /// <returns>已发现的音频反应器字典</returns>
         public Dictionary<string, string> GetDiscoveredAudioReactors()
         {
-            var result = new Dictionary<string, string>();
-            foreach (var kvp in _discoveredAudioReactors)
+            if (_audioReactorManager == null)
             {
-                result[kvp.Key] = kvp.Value.gameObject.name;
+                Log.Warning("AudioLyricCoordinator: AudioReactorManager未初始化");
+                return new Dictionary<string, string>();
             }
+            
+            var registeredReactors = _audioReactorManager.GetRegisteredReactors();
+            var result = new Dictionary<string, string>();
+            
+            foreach (var reactor in registeredReactors)
+            {
+                result[reactor.Key] = reactor.Value.displayName;
+            }
+            
             return result;
         }
         
         /// <summary>
-        /// 自动初始化协调器（使用第一个发现的AudioReactor）
+        /// 自动初始化协调器（同步版本）
         /// </summary>
-        /// <param name="audioSourcePlus">音频源增强组件（可选）</param>
         /// <returns>是否初始化成功</returns>
-        public async UniTask<bool> AutoInitialize(AudioSourcePlus audioSourcePlus = null)
+        public bool AutoInitialize()
         {
-            // 先尝试发现AudioReactor
-            int discoveredCount = DiscoverAudioReactors();
-            if (discoveredCount == 0)
+            try
             {
-                Log.Error("AudioLyricCoordinator: 未发现任何AudioReactor组件");
+                var task = AutoInitializeAsync();
+                return task.GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"AudioLyricCoordinator: 同步自动初始化失败: {ex.Message}");
                 return false;
             }
-            
-            // 使用第一个发现的AudioReactor
-            var firstReactor = _discoveredAudioReactors.Values.First();
-            _currentAudioReactor = firstReactor;
-            _currentAudioReactorId = _discoveredAudioReactors.Keys.First();
-            
-            if (_enableDebugger)
-            {
-                Log.Info($"AudioLyricCoordinator: 自动选择AudioReactor - {_currentAudioReactorId}");
-            }
-            
-            return await InternalInitialize(firstReactor, audioSourcePlus);
         }
         
         /// <summary>
-        /// 切换到指定的AudioReactor
+        /// 自动初始化协调器（自动发现并启用音频反应器）
         /// </summary>
-        /// <param name="audioReactorId">AudioReactor ID</param>
-        /// <param name="audioSourcePlus">音频源增强组件（可选）</param>
-        /// <returns>是否切换成功</returns>
-        public async UniTask<bool> SwitchToAudioReactor(string audioReactorId, AudioSourcePlus audioSourcePlus = null)
+        /// <param name="audioSource">全局音频源（可选）</param>
+        /// <returns>是否初始化成功</returns>
+        public async UniTask<bool> AutoInitializeAsync(AudioSource audioSource = null)
         {
-            if (!_discoveredAudioReactors.ContainsKey(audioReactorId))
+            try
             {
-                Log.Error($"AudioLyricCoordinator: 未找到指定的AudioReactor - {audioReactorId}");
-                return false;
-            }
-            
-            // 停止当前播放
-            if (_isPlaying)
-            {
-                await Stop();
-            }
-            
-            // 释放当前资源
-            if (_isInitialized)
-            {
-                UnsubscribeFromAudioEvents();
-                _audioSync?.Release();
-                _isInitialized = false;
-            }
-            
-            // 切换到新的AudioReactor
-            _currentAudioReactor = _discoveredAudioReactors[audioReactorId];
-            _currentAudioReactorId = audioReactorId;
-            
-            if (_enableDebugger)
-            {
-                Log.Info($"AudioLyricCoordinator: 切换到AudioReactor - {audioReactorId}");
-            }
-            
-            return await InternalInitialize(_currentAudioReactor, audioSourcePlus);
-        }
-        
-        /// <summary>
-        /// 注册所有发现的AudioReactor（批量管理）
-        /// </summary>
-        /// <returns>注册成功的数量</returns>
-        public async UniTask<int> RegisterAllAudioReactors()
-        {
-            int successCount = 0;
-            
-            foreach (var kvp in _discoveredAudioReactors)
-            {
-                try
+                if (_audioReactorManager == null)
                 {
-                    // 这里可以为每个AudioReactor进行预初始化
-                    // 例如检查其AudioSourcePlus组件等
-                    var reactor = kvp.Value;
-                    var audioSourcePlus = reactor.GetComponent<AudioSourcePlus>();
+                    Log.Error("AudioLyricCoordinator: AudioReactorManager未初始化");
+                    return false;
+                }
+                
+                // 自动发现并注册音频反应器
+                int discoveredCount = await DiscoverAudioReactorsAsync();
+                if (discoveredCount == 0)
+                {
+                    Log.Error("AudioLyricCoordinator: 未发现任何音频反应器组件");
+                    return false;
+                }
+                
+                // 设置全局音频源
+                if (audioSource != null)
+                {
+                    await SetGlobalAudioSourceAsync(audioSource);
+                }
+                
+                // 启用所有音频反应器
+                bool enableSuccess = await _audioReactorManager.EnableAllReactorsAsync();
+                if (!enableSuccess)
+                {
+                    Log.Warning("AudioLyricCoordinator: 部分音频反应器启用失败");
+                }
+                
+                return await InternalInitializeAsync();
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"AudioLyricCoordinator: 自动初始化失败: {ex.Message}");
+                return false;
+            }
+        }
+        
+        /// <summary>
+        /// 设置全局音频源
+        /// </summary>
+        /// <param name="audioSource">音频源</param>
+        /// <returns>设置任务</returns>
+        public async UniTask<bool> SetGlobalAudioSourceAsync(AudioSource audioSource)
+        {
+            try
+            {
+                _globalAudioSource = audioSource;
+                
+                if (_audioReactorManager != null)
+                {
+                    bool success = await _audioReactorManager.SetGlobalAudioSourceAsync(audioSource);
                     
                     if (_enableDebugger)
                     {
-                        Log.Info($"AudioLyricCoordinator: 注册AudioReactor - {kvp.Key}, AudioSourcePlus: {(audioSourcePlus != null ? "存在" : "不存在")}");
+                        Log.Info($"AudioLyricCoordinator: 全局音频源已设置 - {(success ? "成功" : "失败")}");
                     }
                     
-                    successCount++;
+                    return success;
                 }
-                catch (Exception ex)
-                {
-                    Log.Error($"AudioLyricCoordinator: 注册AudioReactor失败 - {kvp.Key}: {ex}");
-                }
+                
+                return false;
             }
-            
-            return successCount;
+            catch (Exception ex)
+            {
+                Log.Error($"AudioLyricCoordinator: 设置全局音频源失败: {ex.Message}");
+                return false;
+            }
         }
         
         /// <summary>
-        /// 获取当前使用的AudioReactor信息
+        /// 启用所有音频反应器
         /// </summary>
-        /// <returns>当前AudioReactor的ID和名称</returns>
-        public (string id, string name) GetCurrentAudioReactor()
+        /// <returns>启用任务</returns>
+        public async UniTask<bool> EnableAllAudioReactorsAsync()
         {
-            if (_currentAudioReactor != null && !string.IsNullOrEmpty(_currentAudioReactorId))
+            if (_audioReactorManager == null)
             {
-                return (_currentAudioReactorId, _currentAudioReactor.gameObject.name);
+                Log.Error("AudioLyricCoordinator: AudioReactorManager未初始化");
+                return false;
             }
-            return (string.Empty, string.Empty);
+            
+            bool success = await _audioReactorManager.EnableAllReactorsAsync();
+            
+            if (_enableDebugger)
+            {
+                Log.Info($"AudioLyricCoordinator: 启用所有音频反应器 - {(success ? "成功" : "失败")}");
+            }
+            
+            return success;
         }
+        
+        /// <summary>
+        /// 禁用所有音频反应器
+        /// </summary>
+        /// <returns>禁用任务</returns>
+        public async UniTask<bool> DisableAllAudioReactorsAsync()
+        {
+            if (_audioReactorManager == null)
+            {
+                Log.Error("AudioLyricCoordinator: AudioReactorManager未初始化");
+                return false;
+            }
+            
+            bool success = await _audioReactorManager.DisableAllReactorsAsync();
+            
+            if (_enableDebugger)
+            {
+                Log.Info($"AudioLyricCoordinator: 禁用所有音频反应器 - {(success ? "成功" : "失败")}");
+            }
+            
+            return success;
+        }
+        
+        /// <summary>
+        /// 启用指定的音频反应器
+        /// </summary>
+        /// <param name="reactorId">反应器ID</param>
+        /// <returns>启用任务</returns>
+        public async UniTask<bool> EnableAudioReactorAsync(string reactorId)
+        {
+            if (_audioReactorManager == null)
+            {
+                Log.Error("AudioLyricCoordinator: AudioReactorManager未初始化");
+                return false;
+            }
+            
+            bool success = await _audioReactorManager.EnableReactorAsync(reactorId);
+            
+            if (_enableDebugger)
+            {
+                Log.Info($"AudioLyricCoordinator: 启用音频反应器 {reactorId} - {(success ? "成功" : "失败")}");
+            }
+            
+            return success;
+        }
+        
+        /// <summary>
+        /// 禁用指定的音频反应器
+        /// </summary>
+        /// <param name="reactorId">反应器ID</param>
+        /// <returns>禁用任务</returns>
+        public async UniTask<bool> DisableAudioReactorAsync(string reactorId)
+        {
+            if (_audioReactorManager == null)
+            {
+                Log.Error("AudioLyricCoordinator: AudioReactorManager未初始化");
+                return false;
+            }
+            
+            bool success = await _audioReactorManager.DisableReactorAsync(reactorId);
+            
+            if (_enableDebugger)
+            {
+                Log.Info($"AudioLyricCoordinator: 禁用音频反应器 {reactorId} - {(success ? "成功" : "失败")}");
+            }
+            
+            return success;
+        }
+        
+
+        
+
         
         /// <summary>
         /// 内部初始化方法
         /// </summary>
-        /// <param name="audioReactor">音频反应器</param>
-        /// <param name="audioSourcePlus">音频源增强组件</param>
         /// <returns>是否初始化成功</returns>
-        private async UniTask<bool> InternalInitialize(AudioReactor audioReactor, AudioSourcePlus audioSourcePlus = null)
+        private async UniTask<bool> InternalInitializeAsync()
         {
             if (_audioSync == null || _lyricFX == null)
             {
@@ -284,20 +395,6 @@ namespace GameLogic
                 {
                     Log.Info("AudioLyricCoordinator: 开始初始化协调器");
                 }
-                
-                // 记录当前使用的AudioReactor
-                _currentAudioReactor = audioReactor;
-                _currentAudioReactorId = $"{audioReactor.gameObject.name}_{audioReactor.GetInstanceID()}";
-                
-                // 初始化音频同步模块
-                bool audioInitSuccess = _audioSync.Initialize(audioReactor, audioSourcePlus);
-                if (!audioInitSuccess)
-                {
-                    Log.Error("AudioLyricCoordinator: 音频同步模块初始化失败");
-                    return false;
-                }
-                
-                // 歌词模块已在其构造函数中初始化
                 
                 // 订阅音频事件
                 SubscribeToAudioEvents();
@@ -321,6 +418,29 @@ namespace GameLogic
             {
                 Log.Error($"AudioLyricCoordinator: 初始化失败: {ex}");
                 return false;
+            }
+        }
+        
+        /// <summary>
+        /// 订阅音频反应器管理器事件
+        /// </summary>
+        private void SubscribeToAudioReactorManagerEvents()
+        {
+            if (_audioReactorManager != null)
+            {
+                // 这里可以订阅AudioReactorManager的相关事件
+                // 例如：反应器状态变化、音频数据更新等
+            }
+        }
+        
+        /// <summary>
+        /// 取消订阅音频反应器管理器事件
+        /// </summary>
+        private void UnsubscribeFromAudioReactorManagerEvents()
+        {
+            if (_audioReactorManager != null)
+            {
+                // 这里取消订阅AudioReactorManager的相关事件
             }
         }
         
@@ -913,10 +1033,7 @@ namespace GameLogic
                 _isInitialized = false;
             }
             
-            // 清理AudioReactor相关状态
-            _discoveredAudioReactors.Clear();
-            _currentAudioReactor = null;
-            _currentAudioReactorId = null;
+
             
             if (_enableDebugger)
             {
