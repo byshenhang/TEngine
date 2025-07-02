@@ -507,43 +507,7 @@ namespace GameLogic.AudioReactor.Adapters
         {
             return GetModuleProperty<float>("RMS");
         }
-        
-        /// <summary>
-        /// 获取原始频谱数据
-        /// </summary>
-        /// <returns>原始频谱数组</returns>
-        private float[] GetRawSpectrum()
-        {
-            return GetModuleProperty<float[]>("RawSpectrum") ?? new float[0];
-        }
-        
-        /// <summary>
-        /// 获取分组频段数据
-        /// </summary>
-        /// <returns>分组频段数组</returns>
-        private float[] GetGroupedBands()
-        {
-            return GetModuleProperty<float[]>("GroupedBands") ?? new float[0];
-        }
-        
-        /// <summary>
-        /// 获取五频段数据
-        /// </summary>
-        /// <returns>五频段数组</returns>
-        private float[] GetFiveBands()
-        {
-            return GetModuleProperty<float[]>("FiveBands") ?? new float[5];
-        }
-        
-        /// <summary>
-        /// 获取动态频段数据
-        /// </summary>
-        /// <returns>动态频段数组</returns>
-        private float[] GetDynamicBands()
-        {
-            return GetModuleProperty<float[]>("DynamicBands") ?? new float[0];
-        }
-        
+      
         /// <summary>
         /// 安全地获取模块属性值
         /// </summary>
