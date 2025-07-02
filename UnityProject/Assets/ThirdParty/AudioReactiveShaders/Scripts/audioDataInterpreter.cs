@@ -8,7 +8,7 @@ namespace AudioReactiveShader
     /// 将音频频谱数据转换为5个频段（低频、中低频、中频、中高频、高频）
     /// 并应用平滑处理和响应调整，最终传递给着色器材质
     /// </summary>
-    public class audioDataInterpreter : MonoBehaviour
+    public class AudioDataInterpreter : MonoBehaviour
     {
         [SerializeField] MusicReader MusicSpectrum;  // 音频频谱读取器引用
         [Tooltip("使用小于等于0的值来禁用平滑处理")] [SerializeField] float smoothSpeed;  // 平滑速度

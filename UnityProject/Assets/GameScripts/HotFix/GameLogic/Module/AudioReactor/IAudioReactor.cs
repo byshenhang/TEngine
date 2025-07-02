@@ -32,53 +32,6 @@ namespace GameLogic.AudioReactor
         Released
     }
     
-    /// <summary>
-    /// 标准化音频数据结构
-    /// 用于在不同音频反应器之间传递统一格式的音频数据
-    /// </summary>
-    [Serializable]
-    public struct AudioReactorData
-    {
-        /// <summary>RMS值（音频响度）</summary>
-        public float rms;
-        
-        /// <summary>原始频谱数据（通常512或1024个采样点）</summary>
-        public float[] rawSpectrum;
-        
-        /// <summary>分组频段数据（通常8个频段）</summary>
-        public float[] groupedBands;
-        
-        /// <summary>五频段数据（低音、低中音、中音、高中音、高音）</summary>
-        public float[] fiveBands;
-        
-        /// <summary>动态频段数据（可配置数量）</summary>
-        public float[] dynamicBands;
-        
-        /// <summary>音频时间戳</summary>
-        public float timestamp;
-        
-        /// <summary>采样率</summary>
-        public int sampleRate;
-        
-        /// <summary>数据是否有效</summary>
-        public bool isValid;
-        
-        /// <summary>
-        /// 创建空的音频数据
-        /// </summary>
-        /// <returns>空的音频数据结构</returns>
-        public static AudioReactorData Empty => new AudioReactorData
-        {
-            rms = 0f,
-            rawSpectrum = new float[0],
-            groupedBands = new float[0],
-            fiveBands = new float[0],
-            dynamicBands = new float[0],
-            timestamp = 0f,
-            sampleRate = 0,
-            isValid = false
-        };
-    }
     
     /// <summary>
     /// 统一的音频反应器接口
@@ -123,11 +76,7 @@ namespace GameLogic.AudioReactor
         /// 当前使用的音频源
         /// </summary>
         AudioSource CurrentAudioSource { get; }
-        
-        /// <summary>
-        /// 版本信息
-        /// </summary>
-        string Version { get; }
+
         
         #endregion
         
@@ -137,11 +86,6 @@ namespace GameLogic.AudioReactor
         /// 状态变化事件
         /// </summary>
         event Action<IAudioReactor, AudioReactorState> OnStateChanged;
-        
-        /// <summary>
-        /// 音频数据更新事件
-        /// </summary>
-        event Action<IAudioReactor, AudioReactorData> OnAudioDataUpdated;
         
         /// <summary>
         /// 错误事件

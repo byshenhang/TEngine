@@ -977,7 +977,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &473302491
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -990,35 +990,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 707d0be75e070504793b08089abf8987, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  musicSpectrum: {fileID: 150956355}
+  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 20
-  responseAdjustment:
+  ResponseAdjustment:
     serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 1
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 1
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
+    m_Curve: []
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  materialOutput: 0
-  soundAffectsEmissionRate: 0
   bands: 14
+  MaterialOutput: 0
+  soundAffectsEmmisionRate: 0
 --- !u!64 &473302492
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -1330,39 +1312,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ccfb2793a9436b42b3f11725ef8acc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  musicSpectrum: {fileID: 150956355}
+  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 30
-  responseAdjustment:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 1
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 1
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
+  ResponseAdjustment:
+    m_Curve: []
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  materialOutput: 0
-  soundAffectsEmissionRate: 0
   Low: 0
   MidLow: 0
   Mid: 0
   MidHigh: 0
   High: 0
+  rend: {fileID: 0}
+  img: {fileID: 0}
+  particles: {fileID: 0}
+  mat: {fileID: 0}
+  MaterialOutput: 0
+  soundAffectsParticlesEmmisionRate: 0
+  startingEmmisionRate: 0
+  MidLowPosition: 0
+  MidPosition: 0
+  MidHighPosition: 0
+  HighPosition: 0
 --- !u!1 &519216950
 GameObject:
   m_ObjectHideFlags: 0
@@ -1395,39 +1367,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ccfb2793a9436b42b3f11725ef8acc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  musicSpectrum: {fileID: 150956355}
+  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 30
-  responseAdjustment:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 1
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 1
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
+  ResponseAdjustment:
+    m_Curve: []
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  materialOutput: 0
-  soundAffectsEmissionRate: 0
   Low: 0
   MidLow: 0
   Mid: 0
   MidHigh: 0
   High: 0
+  rend: {fileID: 0}
+  img: {fileID: 0}
+  particles: {fileID: 0}
+  mat: {fileID: 0}
+  MaterialOutput: 0
+  soundAffectsParticlesEmmisionRate: 0
+  startingEmmisionRate: 0
+  MidLowPosition: 0
+  MidPosition: 0
+  MidHighPosition: 0
+  HighPosition: 0
 --- !u!64 &519216952
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -1884,39 +1846,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ccfb2793a9436b42b3f11725ef8acc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  musicSpectrum: {fileID: 150956355}
+  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 15
-  responseAdjustment:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 1
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 1
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
+  ResponseAdjustment:
+    m_Curve: []
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  materialOutput: 0
-  soundAffectsEmissionRate: 0
   Low: 0
   MidLow: 0
   Mid: 0
   MidHigh: 0
   High: 0
+  rend: {fileID: 0}
+  img: {fileID: 0}
+  particles: {fileID: 0}
+  mat: {fileID: 0}
+  MaterialOutput: 0
+  soundAffectsParticlesEmmisionRate: 0
+  startingEmmisionRate: 0
+  MidLowPosition: 0
+  MidPosition: 0
+  MidHighPosition: 0
+  HighPosition: 0
 --- !u!1 &729540634
 GameObject:
   m_ObjectHideFlags: 0
@@ -1936,7 +1888,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &729540635
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1949,35 +1901,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 707d0be75e070504793b08089abf8987, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  musicSpectrum: {fileID: 150956355}
+  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 50
-  responseAdjustment:
+  ResponseAdjustment:
     serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 1
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 1
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
+    m_Curve: []
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  materialOutput: 0
-  soundAffectsEmissionRate: 0
   bands: 30
+  MaterialOutput: 0
+  soundAffectsEmmisionRate: 0
 --- !u!64 &729540636
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -2255,7 +2189,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!64 &959635830
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -2355,35 +2289,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 707d0be75e070504793b08089abf8987, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  musicSpectrum: {fileID: 150956355}
+  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 10
-  responseAdjustment:
+  ResponseAdjustment:
     serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 1
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 1
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
+    m_Curve: []
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  materialOutput: 0
-  soundAffectsEmissionRate: 0
   bands: 16
+  MaterialOutput: 0
+  soundAffectsEmmisionRate: 0
 --- !u!1 &1035640413
 GameObject:
   m_ObjectHideFlags: 0
@@ -2547,7 +2463,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1065883613
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2560,35 +2476,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 707d0be75e070504793b08089abf8987, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  musicSpectrum: {fileID: 150956355}
+  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 50
-  responseAdjustment:
+  ResponseAdjustment:
     serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 1
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 1
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
+    m_Curve: []
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  materialOutput: 0
-  soundAffectsEmissionRate: 0
   bands: 30
+  MaterialOutput: 0
+  soundAffectsEmmisionRate: 0
 --- !u!64 &1065883614
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -2948,39 +2846,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ccfb2793a9436b42b3f11725ef8acc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  musicSpectrum: {fileID: 150956355}
+  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 30
-  responseAdjustment:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 1
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 1
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
+  ResponseAdjustment:
+    m_Curve: []
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  materialOutput: 0
-  soundAffectsEmissionRate: 0
   Low: 0
   MidLow: 0
   Mid: 0
   MidHigh: 0
   High: 0
+  rend: {fileID: 0}
+  img: {fileID: 0}
+  particles: {fileID: 0}
+  mat: {fileID: 0}
+  MaterialOutput: 0
+  soundAffectsParticlesEmmisionRate: 0
+  startingEmmisionRate: 0
+  MidLowPosition: 0
+  MidPosition: 0
+  MidHighPosition: 0
+  HighPosition: 0
 --- !u!64 &1211258977
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -3087,7 +2975,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1252937579
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3100,35 +2988,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 707d0be75e070504793b08089abf8987, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  musicSpectrum: {fileID: 150956355}
+  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 15
-  responseAdjustment:
+  ResponseAdjustment:
     serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 1
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 1
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
+    m_Curve: []
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  materialOutput: 0
-  soundAffectsEmissionRate: 0
   bands: 20
+  MaterialOutput: 0
+  soundAffectsEmmisionRate: 0
 --- !u!64 &1252937580
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -3248,39 +3118,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ccfb2793a9436b42b3f11725ef8acc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  musicSpectrum: {fileID: 150956355}
+  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 30
-  responseAdjustment:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 1
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 1
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
+  ResponseAdjustment:
+    m_Curve: []
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  materialOutput: 0
-  soundAffectsEmissionRate: 0
   Low: 0
   MidLow: 0
   Mid: 0
   MidHigh: 0
   High: 0
+  rend: {fileID: 0}
+  img: {fileID: 0}
+  particles: {fileID: 0}
+  mat: {fileID: 0}
+  MaterialOutput: 0
+  soundAffectsParticlesEmmisionRate: 0
+  startingEmmisionRate: 0
+  MidLowPosition: 0
+  MidPosition: 0
+  MidHighPosition: 0
+  HighPosition: 0
 --- !u!64 &1395805189
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -3422,7 +3282,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1500791652
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3435,35 +3295,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 707d0be75e070504793b08089abf8987, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  musicSpectrum: {fileID: 150956355}
+  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 30
-  responseAdjustment:
+  ResponseAdjustment:
     serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 1
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 1
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
+    m_Curve: []
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  materialOutput: 0
-  soundAffectsEmissionRate: 0
   bands: 30
+  MaterialOutput: 0
+  soundAffectsEmmisionRate: 0
 --- !u!64 &1500791653
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -3598,39 +3440,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ccfb2793a9436b42b3f11725ef8acc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  musicSpectrum: {fileID: 150956355}
+  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 30
-  responseAdjustment:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 1
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 1
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
+  ResponseAdjustment:
+    m_Curve: []
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  materialOutput: 0
-  soundAffectsEmissionRate: 0
   Low: 0
   MidLow: 0
   Mid: 0
   MidHigh: 0
   High: 0
+  rend: {fileID: 0}
+  img: {fileID: 0}
+  particles: {fileID: 0}
+  mat: {fileID: 0}
+  MaterialOutput: 0
+  soundAffectsParticlesEmmisionRate: 0
+  startingEmmisionRate: 0
+  MidLowPosition: 0
+  MidPosition: 0
+  MidHighPosition: 0
+  HighPosition: 0
 --- !u!64 &1523622224
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -3857,39 +3689,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ccfb2793a9436b42b3f11725ef8acc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  musicSpectrum: {fileID: 150956355}
+  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 30
-  responseAdjustment:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 1
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 1
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
+  ResponseAdjustment:
+    m_Curve: []
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  materialOutput: 0
-  soundAffectsEmissionRate: 0
   Low: 0
   MidLow: 0
   Mid: 0
   MidHigh: 0
   High: 0
+  rend: {fileID: 0}
+  img: {fileID: 0}
+  particles: {fileID: 0}
+  mat: {fileID: 0}
+  MaterialOutput: 0
+  soundAffectsParticlesEmmisionRate: 0
+  startingEmmisionRate: 0
+  MidLowPosition: 0
+  MidPosition: 0
+  MidHighPosition: 0
+  HighPosition: 0
 --- !u!23 &1697169922
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4598,39 +4420,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ccfb2793a9436b42b3f11725ef8acc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  musicSpectrum: {fileID: 150956355}
+  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 30
-  responseAdjustment:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 1
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 1
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
+  ResponseAdjustment:
+    m_Curve: []
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  materialOutput: 0
-  soundAffectsEmissionRate: 0
   Low: 0
   MidLow: 0
   Mid: 0
   MidHigh: 0
   High: 0
+  rend: {fileID: 0}
+  img: {fileID: 0}
+  particles: {fileID: 0}
+  mat: {fileID: 0}
+  MaterialOutput: 0
+  soundAffectsParticlesEmmisionRate: 0
+  startingEmmisionRate: 0
+  MidLowPosition: 0
+  MidPosition: 0
+  MidHighPosition: 0
+  HighPosition: 0
 --- !u!64 &1852660815
 MeshCollider:
   m_ObjectHideFlags: 0

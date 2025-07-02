@@ -35,14 +35,12 @@ namespace GameLogic.AudioReactor.Adapters
         public bool IsInitialized => _isInitialized;
         public AudioReactorState CurrentState => _currentState;
         public AudioSource CurrentAudioSource => _audioSource;
-        public string Version => "1.2.1"; // AudioReactiveShaders 版本
         
         #endregion
         
         #region IAudioReactor 事件实现
         
         public event Action<IAudioReactor, AudioReactorState> OnStateChanged;
-        public event Action<IAudioReactor, AudioReactorData> OnAudioDataUpdated;
         public event Action<IAudioReactor, string> OnError;
         
         #endregion
@@ -257,46 +255,7 @@ namespace GameLogic.AudioReactor.Adapters
                 return false;
             }
         }
-        
-        /// <summary>
-        /// 获取当前音频数据
-        /// </summary>
-        /// <returns>音频数据</returns>
-        public async UniTask<AudioReactorData> GetAudioDataAsync()
-        {
-            try
-            {
-                if (_musicReader == null || !_isEnabled)
-                {
-                    return AudioReactorData.Empty;
-                }
-                
-                // 从 MusicReader 获取音频数据
-                var audioData = new AudioReactorData
-                {
-                    rms = 0f, // MusicReader 可能没有直接的 RMS 值
-                    rawSpectrum = _musicReader.clipSamples ?? new float[0],
-                    groupedBands = _musicReader.groupedBands ?? new float[0],
-                    fiveBands = new float[5], // MusicReader 没有直接提供 fiveBands
-                    dynamicBands = new float[0], // MusicReader 没有直接提供 dynamicBands
-                    timestamp = Time.time,
-                    sampleRate = AudioSettings.outputSampleRate,
-                    isValid = true
-                };
-                
-                // 触发音频数据更新事件
-                OnAudioDataUpdated?.Invoke(this, audioData);
-                
-                return audioData;
-            }
-            catch (Exception ex)
-            {
-                OnError?.Invoke(this, $"获取音频数据失败: {ex.Message}");
-                Log.Error($"AudioReactiveShadersAdapter: 获取音频数据失败 - {ex.Message}");
-                return AudioReactorData.Empty;
-            }
-        }
-        
+      
         /// <summary>
         /// 释放资源
         /// </summary>
@@ -436,7 +395,6 @@ namespace GameLogic.AudioReactor.Adapters
                 ["ReactorId"] = ReactorId,
                 ["DisplayName"] = DisplayName,
                 ["ReactorType"] = ReactorType,
-                ["Version"] = Version,
                 ["IsEnabled"] = IsEnabled,
                 ["IsInitialized"] = IsInitialized,
                 ["CurrentState"] = CurrentState.ToString(),

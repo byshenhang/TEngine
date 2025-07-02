@@ -24,3 +24,12 @@ UnityProject/UserSettings/EditorUserSettings.asset
 UnityProject/UserSettings/Layouts/CurrentMaximizeLayout.dwlt
 UnityProject/UserSettings/Layouts/CurrentMaximizeLayout.dwlt
 UnityProject/Unity_BurstDebugInformation_DoNotShip/tempburstlibs/arm64-v8a/lib_burst_generated.txt
+Tools/GameEventSourceGenerator/SourceGenerator/obj/Release/.NETStandard,Version=v2.0.AssemblyAttributes.cs
+Debug
+obj
+GameEventSourceGenerator
+Tools/GameEventSourceGenerator/SourceGenerator/obj/Debug/SourceGenerator.AssemblyInfo.cs
+Tools/GameEventSourceGenerator/SourceGenerator/obj/Debug/SourceGenerator.AssemblyInfoInputs.cache
+Tools/GameEventSourceGenerator/SourceGenerator/obj/Debug/SourceGenerator.assets.cache
+Tools/GameEventSourceGenerator/SourceGenerator/obj/Debug/SourceGenerator.csproj.AssemblyReference.cache
+Tools/GameEventSourceGenerator/SourceGenerator/obj/Debug/SourceGenerator.GeneratedMSBuildEditorConfig.editorconfig

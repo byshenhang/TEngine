@@ -30,8 +30,6 @@ namespace GameLogic.AudioReactor.Adapters
         private bool _isInitialized = false;
         private bool _isEnabled = false;
         
-        // 音频数据缓存
-        private AudioReactorData _cachedAudioData;
         private float _lastDataUpdateTime;
         private const float DATA_UPDATE_INTERVAL = 0.016f; // ~60fps
         
@@ -40,7 +38,6 @@ namespace GameLogic.AudioReactor.Adapters
         
         // 事件
         public event Action<IAudioReactor, AudioReactorState> OnStateChanged;
-        public event Action<IAudioReactor, AudioReactorData> OnAudioDataUpdated;
         public event Action<IAudioReactor, string> OnError;
         
         // IAudioReactor 属性实现
@@ -51,7 +48,6 @@ namespace GameLogic.AudioReactor.Adapters
         public AudioReactorState CurrentState => _currentState;
         public bool IsInitialized => _isInitialized;
         public AudioSource CurrentAudioSource => _currentAudioSource;
-        public string Version => "1.0.0"; // AudioSyncPro 版本
         
         /// <summary>
         /// 构造函数
@@ -65,9 +61,6 @@ namespace GameLogic.AudioReactor.Adapters
             // 生成唯一标识
             _reactorId = $"AudioSyncPro_{audioSyncModule.GetHashCode()}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
             _displayName = customName ?? $"Audio Sync Pro ({audioSyncModule.GetType().Name})";
-            
-            // 初始化音频数据缓存
-            _cachedAudioData = new AudioReactorData();
             
             Log.Info($"AudioSyncProAdapter: 适配器已创建 - {_displayName}");
         }
@@ -213,9 +206,6 @@ namespace GameLogic.AudioReactor.Adapters
                 _isEnabled = true;
                 ChangeState(AudioReactorState.Enabled);
                 
-                // 开始音频数据更新循环
-                StartAudioDataUpdateLoop().Forget();
-                
                 Log.Info($"AudioSyncProAdapter: 适配器已启用 - {_displayName}");
                 return true;
             }
@@ -314,54 +304,7 @@ namespace GameLogic.AudioReactor.Adapters
             }
         }
         
-        /// <summary>
-        /// 异步获取当前音频数据
-        /// </summary>
-        /// <returns>音频数据</returns>
-        public async UniTask<AudioReactorData> GetAudioDataAsync()
-        {
-            return GetAudioData();
-        }
         
-        /// <summary>
-        /// 获取当前音频数据
-        /// </summary>
-        /// <returns>音频数据</returns>
-        public AudioReactorData GetAudioData()
-        {
-            try
-            {
-                if (!_isEnabled || _audioSyncModule == null)
-                {
-                    return new AudioReactorData();
-                }
-                
-                // 从 AudioSyncModule 获取音频数据
-                // 这里需要根据 AudioSyncModule 的具体实现来获取数据
-                var audioData = new AudioReactorData
-                {
-                    timestamp = Time.time,
-                    rms = GetRMSValue(),
-                    rawSpectrum = GetRawSpectrum(),
-                    groupedBands = GetGroupedBands(),
-                    fiveBands = GetFiveBands(),
-                    dynamicBands = GetDynamicBands(),
-                    sampleRate = AudioSettings.outputSampleRate,
-                    isValid = _isEnabled && _audioSyncModule != null
-                };
-                
-                _cachedAudioData = audioData;
-                return audioData;
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"AudioSyncProAdapter: 获取音频数据失败: {ex.Message}");
-                return new AudioReactorData();
-            }
-        }
-        
-        /// <summary>
-        /// 设置参数
         /// </summary>
         /// <param name="key">参数键</param>
         /// <param name="value">参数值</param>
@@ -371,7 +314,6 @@ namespace GameLogic.AudioReactor.Adapters
             try
             {
                 _parameters[key] = value;
-                
                 // 根据参数键应用到 AudioSyncModule
                 await ApplyParameterToModule(key, value);
                 
@@ -419,7 +361,6 @@ namespace GameLogic.AudioReactor.Adapters
                 ["ReactorId"] = ReactorId,
                 ["DisplayName"] = DisplayName,
                 ["ReactorType"] = ReactorType,
-                ["Version"] = Version,
                 ["IsEnabled"] = IsEnabled,
                 ["IsInitialized"] = IsInitialized,
                 ["CurrentState"] = CurrentState.ToString(),
@@ -555,33 +496,6 @@ namespace GameLogic.AudioReactor.Adapters
             catch (Exception ex)
             {
                 Log.Error($"AudioSyncProAdapter: 应用参数失败 - {key}: {ex.Message}");
-            }
-        }
-        
-        /// <summary>
-        /// 开始音频数据更新循环
-        /// </summary>
-        /// <returns>更新任务</returns>
-        private async UniTaskVoid StartAudioDataUpdateLoop()
-        {
-            while (_isEnabled)
-            {
-                try
-                {
-                    if (Time.time - _lastDataUpdateTime >= DATA_UPDATE_INTERVAL)
-                    {
-                        var audioData = GetAudioData();
-                        OnAudioDataUpdated?.Invoke(this, audioData);
-                        _lastDataUpdateTime = Time.time;
-                    }
-                    
-                    await UniTask.Yield();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error($"AudioSyncProAdapter: 音频数据更新循环错误: {ex.Message}");
-                    await UniTask.Delay(100); // 错误时稍作延迟
-                }
             }
         }
         
