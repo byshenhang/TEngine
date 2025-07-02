@@ -241,9 +241,22 @@ namespace GameLogic.AudioReactor.Adapters
                 // 如果 MusicReader 支持设置音频源，在这里设置
                 if (_musicReader != null && audioSource != null)
                 {
-                    // AudioReactiveShaders 的 MusicReader 通常通过 Inspector 配置音频源
-                    // 这里可以根据实际 API 进行设置
-                    Log.Info($"AudioReactiveShadersAdapter: 音频源已设置 - {audioSource.name}");
+                    // 直接设置 MusicSpectrumReader 的 audioSource 属性
+                    _musicReader.audioSource = audioSource;
+                    
+                    // 如果是 MusicSpectrumReader 类型，可能需要刷新音频源
+                    var musicSpectrumReader = _musicReader as MusicSpectrumReader;
+                    if (musicSpectrumReader != null)
+                    {
+                        // 如果使用的是混音器组模式，可能需要刷新音频源列表
+                        if (musicSpectrumReader.audio_input == AudioReactiveShader.MusicReader.AUDIO_INPUT.MixerGroup ||
+                            musicSpectrumReader.audio_input == AudioReactiveShader.MusicReader.AUDIO_INPUT.MixerGroupWebGL)
+                        {
+                            musicSpectrumReader.refreshAudioSourcesOnMixerGroup();
+                        }
+                    }
+                    
+                    Log.Info($"AudioReactiveShadersAdapter: 音频源已设置并同步到 MusicReader - {audioSource.name}");
                 }
                 
                 return true;

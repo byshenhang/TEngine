@@ -18,7 +18,7 @@ namespace AudioReactiveShader
     /// </summary>
     public class MusicSpectrumReader : MusicReader
     {
-        [SerializeField] AUDIO_INPUT audio_input;  // 当前选择的音频输入类型
+        public AUDIO_INPUT audio_input;  // 当前选择的音频输入类型
         
         // 音频数据解释器集中管理
         private List<BaseAudioDataInterpreter> audioDataInterpreters = new List<BaseAudioDataInterpreter>();
@@ -114,6 +114,13 @@ namespace AudioReactiveShader
             else if(audio_input == AUDIO_INPUT.MixerGroup || audio_input == AUDIO_INPUT.MixerGroupWebGL)
             {
                 refreshAudioSourcesOnMixerGroup();
+            }
+
+            // 确保 numBands 不为零，避免除零异常
+            if (numBands <= 0)
+            {
+                numBands = 8; // 设置一个默认值
+                Debug.Log("numBands 被设置为默认值 8，因为原值为 " + _numBands);
             }
 
             // 初始化频段相关数组
@@ -405,6 +412,17 @@ namespace AudioReactiveShader
         /// </summary>
         void dinamicBandsDistribution()
         {
+            // 安全检查：确保 numBands 大于 0
+            if (numBands <= 0)
+            {
+                numBands = 8; // 设置一个默认值
+                Debug.LogWarning("dinamicBandsDistribution: numBands 为 0，已设置为默认值 8");
+                
+                // 重新初始化数组
+                groupedBands = new float[numBands];
+                bandGroupsDistribution = new int[numBands];
+            }
+            
             int totalAdded = 0;  // 已分配的采样点总数
             int progressionAmp = totalSpectrum / (numBands * 4);  // 渐进幅度
             int progressionStart = progressionAmp * ((numBands + 2) / -2);  // 渐进起始值

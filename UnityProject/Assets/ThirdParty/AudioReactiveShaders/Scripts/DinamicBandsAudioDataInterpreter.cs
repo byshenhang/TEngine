@@ -100,17 +100,28 @@ namespace AudioReactiveShader
         /// </summary>
         protected override void UpdateParticleEmission()
         {
-            if (particles != null && soundAffectsEmmisionRate && smoothedIntensisyValues != null && smoothedIntensisyValues.Length > 0)
+            // 确保所有必要的组件和数据都可用
+            if (particles == null || !soundAffectsEmmisionRate || smoothedIntensisyValues == null || smoothedIntensisyValues.Length == 0)
             {
-                try
-                {
-                    var partsEmmision = particles.emission;
-                    partsEmmision.rateOverTime = startingEmmisionRate * smoothedIntensisyValues[0] * bands;
-                }
-                catch (System.Exception e)
-                {
-                    Debug.LogWarning($"更新粒子发射率时出错: {e.Message}");
-                }
+                return;
+            }
+            
+            try
+            {
+                var partsEmmision = particles.emission;
+                
+                // 确保 bands 大于 0，避免乘以 0 导致发射率为 0
+                int safeBands = Mathf.Max(1, bands);
+                
+                // 使用安全的索引访问，避免数组越界
+                float intensityValue = smoothedIntensisyValues.Length > 0 ? smoothedIntensisyValues[0] : 0.5f;
+                
+                // 设置粒子发射率，确保不为负数
+                partsEmmision.rateOverTime = Mathf.Max(0, startingEmmisionRate * intensityValue * safeBands);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"更新粒子发射率时出错: {e.Message}");
             }
         }
 
