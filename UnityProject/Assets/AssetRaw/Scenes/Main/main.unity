@@ -973,7 +973,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &413900006
 Transform:
   m_ObjectHideFlags: 0
@@ -1026,7 +1026,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 707d0be75e070504793b08089abf8987, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 0
   ResponseAdjustment:
     serializedVersion: 2
@@ -1394,7 +1393,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ccfb2793a9436b42b3f11725ef8acc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 30
   ResponseAdjustment:
     serializedVersion: 2
@@ -1841,7 +1839,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ccfb2793a9436b42b3f11725ef8acc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 15
   ResponseAdjustment:
     serializedVersion: 2
@@ -1951,7 +1948,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 707d0be75e070504793b08089abf8987, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 0
   ResponseAdjustment:
     serializedVersion: 2
@@ -2375,7 +2371,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 707d0be75e070504793b08089abf8987, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 0
   ResponseAdjustment:
     serializedVersion: 2
@@ -2608,7 +2603,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 707d0be75e070504793b08089abf8987, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 0
   ResponseAdjustment:
     serializedVersion: 2
@@ -3024,7 +3018,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 707d0be75e070504793b08089abf8987, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 0
   ResponseAdjustment:
     serializedVersion: 2
@@ -3200,7 +3193,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 707d0be75e070504793b08089abf8987, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 0
   ResponseAdjustment:
     serializedVersion: 2
@@ -3498,7 +3490,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ccfb2793a9436b42b3f11725ef8acc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 30
   ResponseAdjustment:
     serializedVersion: 2
@@ -4267,7 +4258,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1800665980
 Transform:
   m_ObjectHideFlags: 0
@@ -4321,7 +4312,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ccfb2793a9436b42b3f11725ef8acc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MusicSpectrum: {fileID: 150956355}
   smoothSpeed: 30
   ResponseAdjustment:
     serializedVersion: 2

@@ -40,7 +40,7 @@ namespace AudioReactiveShader
         [SerializeField] int _channelSelection;                    // 声道选择（0=左声道，1=右声道）
         [HideInInspector] public int totalSpectrum = 64;          // 频谱总数，默认64个频段
         AudioSource _audioSource;                                 // 当前使用的音频源组件
-        [HideInInspector] public int _numBands;                   // 频段数量
+        [HideInInspector] public int _numBands = 8;               // 频段数量，默认为8
         [HideInInspector] public AudioMixerGroup targetMixerGroup; // 目标混音器组
         /*[HideInInspector]*/ public List<AudioSource> audioSourcesInGroup; // 混音器组中的所有音频源列表
 
@@ -55,7 +55,21 @@ namespace AudioReactiveShader
         /// <summary>当前音频源</summary>
         public AudioSource audioSource { get { return _audioSource; } set { _audioSource = value; } }
         /// <summary>频段数量</summary>
-        public int numBands { get { return _numBands; } set { Debug.Log("Set _numBands " + _numBands); _numBands = value; } }
+        public int numBands { 
+            get { return _numBands; } 
+            set { 
+                // 确保 numBands 不小于 1
+                int newValue = Mathf.Max(1, value);
+                if (newValue != value && value <= 0) {
+                    Debug.LogWarning($"尝试将 numBands 设置为 {value}，已自动调整为 {newValue}");
+                }
+                
+                if (_numBands != newValue) {
+                    Debug.Log($"numBands 从 {_numBands} 更改为 {newValue}");
+                    _numBands = newValue;
+                }
+            } 
+        }
         /// <summary>声道选择</summary>
         public int channelSelection { get { return _channelSelection; } set { _channelSelection = value; } }
 

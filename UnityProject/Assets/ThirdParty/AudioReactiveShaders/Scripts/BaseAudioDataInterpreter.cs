@@ -43,12 +43,28 @@ namespace AudioReactiveShader
         {
             if (isInitialized) return;
             
-            MusicSpectrum = musicReader;
-            ValidateFrequencyBands();
-            InitializeComponents();
-            InitializeAudioData();
+            if (musicReader == null)
+            {
+                Debug.LogError("BaseAudioDataInterpreter: 无法初始化，musicReader 为 null");
+                return;
+            }
             
-            isInitialized = true;
+            MusicSpectrum = musicReader;
+            
+            try
+            {
+                ValidateFrequencyBands();
+                InitializeComponents();
+                InitializeAudioData();
+                
+                isInitialized = true;
+                Debug.Log($"BaseAudioDataInterpreter: {gameObject.name} 初始化成功");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"BaseAudioDataInterpreter: {gameObject.name} 初始化失败 - {ex.Message}\n堆栈跟踪: {ex.StackTrace}");
+                isInitialized = false;
+            }
         }
 
         /// <summary>

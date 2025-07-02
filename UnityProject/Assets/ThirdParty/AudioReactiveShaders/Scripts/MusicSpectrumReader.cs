@@ -128,7 +128,7 @@ namespace AudioReactiveShader
             bandGroupsDistribution = new int[numBands];   // 频段分组分布
 
             // 计算动态频段分布
-            dinamicBandsDistribution();
+            DinamicBandsDistribution();
             
             // 自动检索并注册场景中的所有BaseAudioDataInterpreter
             AutoDiscoverAndRegisterInterpreters();
@@ -364,8 +364,38 @@ namespace AudioReactiveShader
         /// </summary>
         void GroupSpectrumData()
         {
+            // 安全检查：确保 numBands 大于 0 且数组已正确初始化
+            if (numBands <= 0)
+            {
+                Debug.LogWarning("GroupSpectrumData: numBands 为 0 或负数，已自动设置为默认值 8");
+                numBands = 8;
+            }
+            
+            // 确保 rawSpectrumData 数组已初始化
+            if (rawSpectrumData == null)
+            {
+                Debug.LogError("GroupSpectrumData: rawSpectrumData 为 null，无法处理频谱数据");
+                return;
+            }
+            
+            // 确保 groupedBands 和 bandGroupsDistribution 数组已正确初始化
+            if (groupedBands == null || groupedBands.Length != numBands ||
+                bandGroupsDistribution == null || bandGroupsDistribution.Length != numBands)
+            {
+                Debug.LogWarning("GroupSpectrumData: 数组未正确初始化，重新调用 DinamicBandsDistribution");
+                DinamicBandsDistribution();
+                
+                // 再次检查初始化是否成功
+                if (groupedBands == null || groupedBands.Length != numBands ||
+                    bandGroupsDistribution == null || bandGroupsDistribution.Length != numBands)
+                {
+                    Debug.LogError("GroupSpectrumData: 重新初始化后数组仍然无效，终止处理");
+                    return;
+                }
+            }
+            
             // 重置分组后的频段数据
-            for (int i = 0; i < numBands; i++)
+            for (int i = 0; i < numBands && i < groupedBands.Length; i++)
             {
                 groupedBands[i] = 0;
             }
@@ -373,35 +403,56 @@ namespace AudioReactiveShader
             int startIndex = 0;  // 当前处理的频谱数据起始索引
             
             // 遍历每个频段
-            for (int i = 0; i < numBands; i++)
+            for (int i = 0; i < numBands && i < bandGroupsDistribution.Length; i++)
             {
                 int size = bandGroupsDistribution[i];  // 当前频段包含的采样点数量
+                
+                // 安全检查：确保不会超出rawSpectrumData数组边界
+                if (size <= 0)
+                {
+                    continue; // 跳过无效的频段大小
+                }
 
                 // 累加当前频段内所有采样点的幅度值
                 for (int j = 0; j < size; j++)
                 {
+                    int dataIndex = startIndex + j;
+                    
+                    // 确保不会超出rawSpectrumData数组边界
+                    if (dataIndex >= rawSpectrumData.Length)
+                    {
+                        Debug.LogWarning($"GroupSpectrumData: 数据索引 {dataIndex} 超出 rawSpectrumData 数组边界 {rawSpectrumData.Length}，跳过剩余数据");
+                        break;
+                    }
+                    
                     if (size <= 1) 
                     {
                         // 单个采样点直接赋值
-                        groupedBands[i] += rawSpectrumData[startIndex + j];
+                        groupedBands[i] += rawSpectrumData[dataIndex];
                     }
                     else
                     {
                         // WebGL平台需要特殊的缩放处理
                         if(audio_input == AUDIO_INPUT.AudioSourceWebGL || audio_input == AUDIO_INPUT.MixerGroupWebGL)
                         {
-                            groupedBands[i] += .01f * rawSpectrumData[startIndex + j] / size;
+                            groupedBands[i] += .01f * rawSpectrumData[dataIndex] / size;
                         }
                         else
                         {
                             // 标准平台计算平均值
-                            groupedBands[i] += rawSpectrumData[startIndex + j] / size;
+                            groupedBands[i] += rawSpectrumData[dataIndex] / size;
                         }
                     }
                 }
 
                 // 移动到下一个频段的起始位置
                 startIndex += size;
+                
+                // 安全检查：防止startIndex超出合理范围
+                if (startIndex >= rawSpectrumData.Length)
+                {
+                    break;
+                }
             }
         }
 
@@ -410,17 +461,30 @@ namespace AudioReactiveShader
         /// 使用渐进式算法将频谱数据分配到不同的频段中
         /// 确保所有64个频谱采样点都被合理分配到各个频段
         /// </summary>
-        void dinamicBandsDistribution()
+        public void DinamicBandsDistribution()
         {
             // 安全检查：确保 numBands 大于 0
             if (numBands <= 0)
             {
                 numBands = 8; // 设置一个默认值
                 Debug.LogWarning("dinamicBandsDistribution: numBands 为 0，已设置为默认值 8");
-                
-                // 重新初始化数组
+            }
+            
+            // 确保数组已正确初始化且长度匹配
+            if (groupedBands == null || groupedBands.Length != numBands)
+            {
                 groupedBands = new float[numBands];
+            }
+            if (bandGroupsDistribution == null || bandGroupsDistribution.Length != numBands)
+            {
                 bandGroupsDistribution = new int[numBands];
+            }
+            
+            // 再次检查numBands，防止在执行过程中被修改
+            if (numBands <= 0)
+            {
+                Debug.LogError("dinamicBandsDistribution: numBands 在执行过程中变为无效值，终止执行");
+                return;
             }
             
             int totalAdded = 0;  // 已分配的采样点总数
@@ -443,14 +507,17 @@ namespace AudioReactiveShader
                 }
             }
             
-            // 调整最后一个频段以确保总数为64
-            if (totalAdded < 64)
+            // 调整最后一个频段以确保总数为64（添加安全检查）
+            if (numBands > 0 && bandGroupsDistribution != null && bandGroupsDistribution.Length >= numBands)
             {
-                bandGroupsDistribution[numBands - 1] += (totalSpectrum - totalAdded);
-            }
-            if (totalAdded > 64)
-            {
-                bandGroupsDistribution[numBands - 1] -= (totalAdded - totalSpectrum);
+                if (totalAdded < 64)
+                {
+                    bandGroupsDistribution[numBands - 1] += (totalSpectrum - totalAdded);
+                }
+                if (totalAdded > 64)
+                {
+                    bandGroupsDistribution[numBands - 1] -= (totalAdded - totalSpectrum);
+                }
             }
         }
         /// <summary>

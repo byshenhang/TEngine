@@ -59,6 +59,34 @@ namespace GameLogic.AudioReactor.Adapters
             // 尝试获取关联的 AudioSource
             _audioSource = musicReader.audioSource;
             
+            // 确保 numBands 已正确初始化
+            if (musicReader.numBands <= 0)
+            {
+                Log.Warning($"AudioReactiveShadersAdapter: MusicReader 的 numBands 为 {musicReader.numBands}，已设置为默认值 8");
+                musicReader.numBands = 8;
+            }
+            
+            // 确保频段相关数组已正确初始化
+            if (musicReader.groupedBands == null || musicReader.groupedBands.Length != musicReader.numBands ||
+                musicReader.bandGroupsDistribution == null || musicReader.bandGroupsDistribution.Length != musicReader.numBands)
+            {
+                Log.Warning("AudioReactiveShadersAdapter: MusicReader 的数组未正确初始化，尝试重新初始化");
+                
+                // 调用 MusicSpectrumReader 的 dinamicBandsDistribution 方法
+                var musicSpectrumReader = musicReader as MusicSpectrumReader;
+                if (musicSpectrumReader != null)
+                {
+                    try
+                    {
+                        musicSpectrumReader.DinamicBandsDistribution();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error($"AudioReactiveShadersAdapter: 重新初始化频段分布失败 - {ex.Message}");
+                    }
+                }
+            }
+            
             SetState(AudioReactorState.Uninitialized);
         }
         
@@ -248,6 +276,36 @@ namespace GameLogic.AudioReactor.Adapters
                     var musicSpectrumReader = _musicReader as MusicSpectrumReader;
                     if (musicSpectrumReader != null)
                     {
+                        // 确保 numBands 已正确初始化
+                        if (musicSpectrumReader.numBands <= 0)
+                        {
+                            Log.Warning($"SetAudioSourceAsync: MusicReader 的 numBands 为 {musicSpectrumReader.numBands}，已设置为默认值 8");
+                            musicSpectrumReader.numBands = 8;
+                        }
+                        
+                        // 确保频段相关数组已正确初始化
+                        if (musicSpectrumReader.groupedBands == null || musicSpectrumReader.groupedBands.Length != musicSpectrumReader.numBands ||
+                            musicSpectrumReader.bandGroupsDistribution == null || musicSpectrumReader.bandGroupsDistribution.Length != musicSpectrumReader.numBands)
+                        {
+                            Log.Warning("SetAudioSourceAsync: MusicReader 的数组未正确初始化，尝试重新初始化");
+                            
+                            try
+                            {
+                                // 使用反射调用私有方法
+                                var method = musicSpectrumReader.GetType().GetMethod("dinamicBandsDistribution", 
+                                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                                if (method != null)
+                                {
+                                    method.Invoke(musicSpectrumReader, null);
+                                    Log.Info("SetAudioSourceAsync: 已重新初始化 MusicReader 的频段分布");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Error($"SetAudioSourceAsync: 重新初始化频段分布失败 - {ex.Message}");
+                            }
+                        }
+                        
                         // 如果使用的是混音器组模式，可能需要刷新音频源列表
                         if (musicSpectrumReader.audio_input == AudioReactiveShader.MusicReader.AUDIO_INPUT.MixerGroup ||
                             musicSpectrumReader.audio_input == AudioReactiveShader.MusicReader.AUDIO_INPUT.MixerGroupWebGL)
