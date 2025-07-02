@@ -225,12 +225,15 @@ namespace GameLogic
         /// <summary>
         /// 获取指定锚点
         /// </summary>
-        public UI3DAnchorPoint GetAnchor(string anchorId)
+        public UI3DAnchorPoint GetOrFindAnchor(string anchorId)
         {
             if (string.IsNullOrEmpty(anchorId))
                 return null;
-                
-            _anchorPoints.TryGetValue(anchorId, out var anchor);
+            if (!_anchorPoints.TryGetValue(anchorId, out var anchor))
+            {
+                anchor = GameObject.Find(anchorId).GetComponent<UI3DAnchorPoint>();
+                _anchorPoints[anchorId] = anchor;
+            }
             return anchor;
         }
         
@@ -365,7 +368,7 @@ namespace GameLogic
         /// </summary>
         public async UniTask<T> ShowUI3DAtAnchor<T>(string anchorId, object[] userDatas = null) where T : UI3DWindow, new()
         {
-            UI3DAnchorPoint anchor = GetAnchor(anchorId);
+            UI3DAnchorPoint anchor = GetOrFindAnchor(anchorId);
             if (anchor == null)
             {
                 Log.Error($"UI3D anchor {anchorId} not found");
@@ -421,7 +424,7 @@ namespace GameLogic
         /// </summary>
         public T ShowUI3DAtAnchorSync<T>(string anchorId, object[] userDatas = null) where T : UI3DWindow, new()
         {
-            UI3DAnchorPoint anchor = GetAnchor(anchorId);
+            UI3DAnchorPoint anchor = GetOrFindAnchor(anchorId);
             if (anchor == null)
             {
                 Log.Error($"UI3D anchor {anchorId} not found");
