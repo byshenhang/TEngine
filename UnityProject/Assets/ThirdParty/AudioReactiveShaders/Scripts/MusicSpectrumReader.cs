@@ -14,10 +14,14 @@ namespace AudioReactiveShader
     /// 继承自MusicReader抽象基类，实现具体的音频数据获取和处理功能
     /// 支持多种音频输入源：AudioSource、AudioListener、MixerGroup等
     /// 包含WebGL平台的特殊处理逻辑
+    /// 集中管理所有音频数据解释器的更新
     /// </summary>
     public class MusicSpectrumReader : MusicReader
     {
         [SerializeField] AUDIO_INPUT audio_input;  // 当前选择的音频输入类型
+        
+        // 音频数据解释器集中管理
+        private List<BaseAudioDataInterpreter> audioDataInterpreters = new List<BaseAudioDataInterpreter>();
 
         #region editor
 #if UNITY_EDITOR
@@ -89,11 +93,11 @@ namespace AudioReactiveShader
         private void Awake()
         {
             rawSpectrumData = new float[128];
-            numBands = Mathf.Max(numBands, 8);
         }
         /// <summary>
         /// 组件启用时的初始化
         /// 根据音频输入类型进行相应的初始化设置
+        /// 自动检索并注册场景中的所有BaseAudioDataInterpreter
         /// </summary>
         void OnEnable()
         {
@@ -118,14 +122,31 @@ namespace AudioReactiveShader
 
             // 计算动态频段分布
             dinamicBandsDistribution();
+            
+            // 自动检索并注册场景中的所有BaseAudioDataInterpreter
+            AutoDiscoverAndRegisterInterpreters();
         }
        
 
         /// <summary>
         /// 每帧更新音频数据
         /// 根据不同的音频输入类型采用不同的数据获取方式
+        /// 然后统一更新所有注册的音频数据解释器
         /// </summary>
         void Update()
+        {
+            // 首先更新音频频谱数据
+            UpdateAudioSpectrumData();
+            
+            // 然后统一更新所有音频数据解释器
+            UpdateAllAudioDataInterpreters();
+        }
+        
+        /// <summary>
+        /// 更新音频频谱数据
+        /// 根据不同的音频输入类型采用不同的数据获取方式
+        /// </summary>
+        private void UpdateAudioSpectrumData()
         {
             // AudioSource模式：仅在音频播放时获取数据
             if (audio_input == AUDIO_INPUT.AudioSource)
@@ -173,6 +194,116 @@ namespace AudioReactiveShader
                     searchForPlayingAudiosources();
                 }
             }
+        }
+        
+        /// <summary>
+        /// 统一更新所有注册的音频数据解释器
+        /// 自动清理已销毁的解释器
+        /// </summary>
+        private void UpdateAllAudioDataInterpreters()
+        {
+            // 反向遍历以安全移除已销毁的解释器
+            for (int i = audioDataInterpreters.Count - 1; i >= 0; i--)
+            {
+                if (audioDataInterpreters[i] == null)
+                {
+                    // 移除已销毁的解释器
+                    audioDataInterpreters.RemoveAt(i);
+                }
+                else
+                {
+                    audioDataInterpreters[i].OnAudioDataUpdated();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// 注册音频数据解释器
+        /// 如果解释器尚未初始化，则先进行初始化
+        /// </summary>
+        /// <param name="interpreter">要注册的音频数据解释器</param>
+        public void RegisterAudioDataInterpreter(BaseAudioDataInterpreter interpreter)
+        {
+            if (interpreter != null && !audioDataInterpreters.Contains(interpreter))
+            {
+                // 如果解释器尚未初始化，则先初始化
+                if (!interpreter.IsInitialized())
+                {
+                    interpreter.Initialize(this);
+                }
+                
+                audioDataInterpreters.Add(interpreter);
+            }
+        }
+        
+        /// <summary>
+        /// 注销音频数据解释器
+        /// </summary>
+        /// <param name="interpreter">要注销的音频数据解释器</param>
+        public void UnregisterAudioDataInterpreter(BaseAudioDataInterpreter interpreter)
+        {
+            if (interpreter != null)
+            {
+                audioDataInterpreters.Remove(interpreter);
+            }
+        }
+        
+        /// <summary>
+        /// 自动发现并注册场景中的所有BaseAudioDataInterpreter
+        /// 查找场景中的所有解释器并初始化它们
+        /// </summary>
+        private void AutoDiscoverAndRegisterInterpreters()
+        {
+            // 查找场景中所有的BaseAudioDataInterpreter组件
+            BaseAudioDataInterpreter[] allInterpreters = FindObjectsOfType<BaseAudioDataInterpreter>();
+            
+            int registeredCount = 0;
+            foreach (BaseAudioDataInterpreter interpreter in allInterpreters)
+            {
+                if (interpreter != null)
+                {
+                    // 初始化解释器并注册
+                    interpreter.Initialize(this);
+                    RegisterAudioDataInterpreter(interpreter);
+                    registeredCount++;
+                }
+            }
+            
+            Debug.Log($"MusicSpectrumReader自动发现、初始化并注册了 {registeredCount} 个音频数据解释器");
+        }
+        
+        /// <summary>
+        /// 手动刷新场景中的音频数据解释器注册
+        /// 重新扫描场景并更新注册列表，同时初始化所有解释器
+        /// </summary>
+        [ContextMenu("刷新音频数据解释器注册")]
+        public void RefreshInterpreterRegistration()
+        {
+            // 清空当前注册列表
+            audioDataInterpreters.Clear();
+            
+            // 重新自动发现、初始化并注册
+            AutoDiscoverAndRegisterInterpreters();
+            
+            Debug.Log("已刷新音频数据解释器注册并重新初始化");
+        }
+        
+        /// <summary>
+        /// 获取当前注册的解释器数量
+        /// </summary>
+        /// <returns>注册的解释器数量</returns>
+        public int GetRegisteredInterpreterCount()
+        {
+            return audioDataInterpreters.Count;
+        }
+        
+        /// <summary>
+        /// 获取所有已注册的解释器列表（只读）
+        /// </summary>
+        /// <returns>已注册解释器的只读列表</returns>
+        public System.Collections.ObjectModel.ReadOnlyCollection<BaseAudioDataInterpreter> GetRegisteredInterpreters()
+        {
+            return audioDataInterpreters.AsReadOnly();
         }
 
         /// <summary>

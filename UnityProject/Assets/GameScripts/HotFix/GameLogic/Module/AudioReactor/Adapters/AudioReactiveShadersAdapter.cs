@@ -17,7 +17,7 @@ namespace GameLogic.AudioReactor.Adapters
     {
         #region 私有字段
         
-        private MusicReader _musicReader;
+        private MusicSpectrumReader _musicReader;
         private AudioSource _audioSource;
         private AudioReactorState _currentState = AudioReactorState.Uninitialized;
         private string _reactorId;
@@ -51,7 +51,7 @@ namespace GameLogic.AudioReactor.Adapters
         /// 构造函数
         /// </summary>
         /// <param name="musicReader">MusicReader 组件</param>
-        public AudioReactiveShadersAdapter(MusicReader musicReader)
+        public AudioReactiveShadersAdapter(MusicSpectrumReader musicReader)
         {
             _musicReader = musicReader ?? throw new ArgumentNullException(nameof(musicReader));
             _reactorId = $"AudioReactiveShaders_{musicReader.GetHashCode()}";
@@ -77,7 +77,7 @@ namespace GameLogic.AudioReactor.Adapters
             try
             {
                 // 查找所有 MusicReader 组件
-                var musicReaders = GameObject.FindObjectsOfType<MusicReader>();
+                var musicReaders = GameObject.FindObjectsOfType<MusicSpectrumReader>();
                 
                 foreach (var musicReader in musicReaders)
                 {
