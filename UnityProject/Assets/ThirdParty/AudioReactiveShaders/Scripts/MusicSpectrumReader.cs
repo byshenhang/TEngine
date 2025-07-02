@@ -1,6 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.Audio;
+using static AudioReactiveShader.MusicReader;
+
 
 
 #if UNITY_EDITOR
@@ -23,69 +25,6 @@ namespace AudioReactiveShader
         // 音频数据解释器集中管理
         private List<BaseAudioDataInterpreter> audioDataInterpreters = new List<BaseAudioDataInterpreter>();
 
-        #region editor
-#if UNITY_EDITOR
-        /// <summary>
-        /// 音频频谱读取器的自定义编辑器
-        /// 提供用户友好的Inspector界面，支持音频输入类型选择和参数配置
-        /// </summary>
-        [CustomEditor(typeof(MusicSpectrumReader))]
-        public class MusicReaderEditor : Editor
-        {
-            bool showHiddenVars;  // 是否显示隐藏变量
-
-            public override void OnInspectorGUI()
-            {
-                MusicSpectrumReader MSR = (MusicSpectrumReader)target;
-                Undo.RecordObject(MSR, "MusicSpectrumReader changes");
-                
-                // 根据showHiddenVars决定是否显示默认Inspector或自定义界面
-                if (showHiddenVars) 
-                    base.OnInspectorGUI();
-                else
-                {
-                    // 绘制自定义头部
-                    Color color = new Color(.1f, .1f, .2f);
-                    Rect headerArea = new Rect(0, 0, EditorGUIUtility.currentViewWidth, 35);
-                    GUILayout.BeginArea(headerArea);
-                    EditorGUILayout.Space(5);
-                    EditorGUI.DrawRect(headerArea, color);
-                    GUI.skin.label.fontSize = 15;
-                    GUI.skin.label.fontStyle = FontStyle.BoldAndItalic;
-                    GUILayout.Label("AUDIO REACTIVE SHADERS | music spectrum reader");
-                    GUILayout.EndArea();
-                    EditorGUILayout.Space(40);
-                }
-
-                // 音频输入类型选择
-                MSR.audio_input = (AUDIO_INPUT)EditorGUILayout.EnumPopup("Input selection", MSR.audio_input);
-                
-                // 如果选择了MixerGroup类型，显示混音器组选择界面
-                if (MSR.audio_input == AUDIO_INPUT.MixerGroup || MSR.audio_input == AUDIO_INPUT.MixerGroupWebGL)
-                {
-                    EditorGUILayout.LabelField("Choose your mixer group", EditorStyles.boldLabel);
-                    MSR.targetMixerGroup = (AudioMixerGroup)EditorGUILayout.ObjectField("Target Mixer Group", MSR.targetMixerGroup, typeof(AudioMixerGroup), false);
-                }
-                
-                EditorGUILayout.Space(5);
-                
-                // 非WebGL平台显示声道选择
-                if (MSR.audio_input != AUDIO_INPUT.AudioSourceWebGL && MSR.audio_input != AUDIO_INPUT.MixerGroupWebGL)
-                {
-                    EditorGUILayout.LabelField("0 to use the left channel or 1 to use the right channel", EditorStyles.boldLabel);
-                    MSR.channelSelection = (int)EditorGUILayout.Slider(MSR.channelSelection, 0, 1);
-                }
-
-                EditorGUILayout.Space(5);
-                showHiddenVars = EditorGUILayout.Toggle("show hidden vars", showHiddenVars);
-
-                // 标记对象为已修改
-                if (GUI.changed)
-                    EditorUtility.SetDirty(MSR);
-            }
-        }
-#endif
-        #endregion
         /// <summary>
         /// 初始化原始频谱数据数组
         /// 设置为128个元素，这是Unity音频系统的标准频谱数据大小
@@ -116,16 +55,12 @@ namespace AudioReactiveShader
                 refreshAudioSourcesOnMixerGroup();
             }
 
-            // 确保 numBands 不为零，避免除零异常
-            if (numBands <= 0)
+            // 初始化频段相关数组和分布
+            if (!EnsureArraysInitialized())
             {
-                numBands = 8; // 设置一个默认值
-                Debug.Log("numBands 被设置为默认值 8，因为原值为 " + _numBands);
+                Debug.LogError("OnEnable: 频段数组初始化失败");
+                return;
             }
-
-            // 初始化频段相关数组
-            groupedBands = new float[numBands];           // 分组后的频段数据
-            bandGroupsDistribution = new int[numBands];   // 频段分组分布
 
             // 计算动态频段分布
             DinamicBandsDistribution();
@@ -358,36 +293,40 @@ namespace AudioReactiveShader
         }
 
         /// <summary>
+        /// 检查原始频谱数据是否有效
+        /// </summary>
+        /// <returns>数据是否有效</returns>
+        private bool IsRawSpectrumDataValid()
+        {
+            if (rawSpectrumData == null)
+            {
+                Debug.LogError("MusicSpectrumReader: rawSpectrumData 为 null，无法处理频谱数据");
+                return false;
+            }
+            return true;
+        }
+        
+        /// <summary>
         /// 将原始频谱数据分组处理
         /// 根据频段分布将128个频谱数据点分组为指定数量的频段
         /// 每个频段内的数据取平均值作为该频段的强度
         /// </summary>
         void GroupSpectrumData()
         {
-            // 安全检查：确保 numBands 大于 0 且数组已正确初始化
-            if (numBands <= 0)
+            // 检查原始频谱数据是否有效
+            if (!IsRawSpectrumDataValid())
             {
-                Debug.LogWarning("GroupSpectrumData: numBands 为 0 或负数，已自动设置为默认值 8");
-                numBands = 8;
-            }
-            
-            // 确保 rawSpectrumData 数组已初始化
-            if (rawSpectrumData == null)
-            {
-                Debug.LogError("GroupSpectrumData: rawSpectrumData 为 null，无法处理频谱数据");
                 return;
             }
             
-            // 确保 groupedBands 和 bandGroupsDistribution 数组已正确初始化
-            if (groupedBands == null || groupedBands.Length != numBands ||
-                bandGroupsDistribution == null || bandGroupsDistribution.Length != numBands)
+            // 确保数组已正确初始化
+            if (!EnsureArraysInitialized())
             {
                 Debug.LogWarning("GroupSpectrumData: 数组未正确初始化，重新调用 DinamicBandsDistribution");
                 DinamicBandsDistribution();
                 
                 // 再次检查初始化是否成功
-                if (groupedBands == null || groupedBands.Length != numBands ||
-                    bandGroupsDistribution == null || bandGroupsDistribution.Length != numBands)
+                if (!EnsureArraysInitialized())
                 {
                     Debug.LogError("GroupSpectrumData: 重新初始化后数组仍然无效，终止处理");
                     return;
@@ -414,36 +353,7 @@ namespace AudioReactiveShader
                 }
 
                 // 累加当前频段内所有采样点的幅度值
-                for (int j = 0; j < size; j++)
-                {
-                    int dataIndex = startIndex + j;
-                    
-                    // 确保不会超出rawSpectrumData数组边界
-                    if (dataIndex >= rawSpectrumData.Length)
-                    {
-                        Debug.LogWarning($"GroupSpectrumData: 数据索引 {dataIndex} 超出 rawSpectrumData 数组边界 {rawSpectrumData.Length}，跳过剩余数据");
-                        break;
-                    }
-                    
-                    if (size <= 1) 
-                    {
-                        // 单个采样点直接赋值
-                        groupedBands[i] += rawSpectrumData[dataIndex];
-                    }
-                    else
-                    {
-                        // WebGL平台需要特殊的缩放处理
-                        if(audio_input == AUDIO_INPUT.AudioSourceWebGL || audio_input == AUDIO_INPUT.MixerGroupWebGL)
-                        {
-                            groupedBands[i] += .01f * rawSpectrumData[dataIndex] / size;
-                        }
-                        else
-                        {
-                            // 标准平台计算平均值
-                            groupedBands[i] += rawSpectrumData[dataIndex] / size;
-                        }
-                    }
-                }
+                ProcessBandSamples(i, startIndex, size);
 
                 // 移动到下一个频段的起始位置
                 startIndex += size;
@@ -457,33 +367,90 @@ namespace AudioReactiveShader
         }
 
         /// <summary>
+        /// 验证并确保numBands的有效性
+        /// </summary>
+        /// <returns>验证后的有效numBands值</returns>
+        private int EnsureValidNumBands()
+        {
+            int validBands = AudioValidationHelper.GetValidBandCount(numBands, 1, 64);
+            if (validBands != numBands)
+            {
+                Debug.Log($"MusicSpectrumReader: numBands 从 {numBands} 调整为 {validBands}");
+                numBands = validBands;
+            }
+            return numBands;
+        }
+        
+        /// <summary>
+        /// 确保频段相关数组已正确初始化
+        /// </summary>
+        /// <returns>初始化是否成功</returns>
+        private bool EnsureArraysInitialized()
+        {
+            int validNumBands = EnsureValidNumBands();
+            
+            if (!AudioValidationHelper.IsArrayValid(groupedBands, validNumBands, "groupedBands"))
+            {
+                groupedBands = new float[validNumBands];
+            }
+            if (!AudioValidationHelper.IsArrayValid(bandGroupsDistribution, validNumBands, "bandGroupsDistribution"))
+            {
+                bandGroupsDistribution = new int[validNumBands];
+            }
+            
+            return groupedBands != null && bandGroupsDistribution != null && 
+                   groupedBands.Length == validNumBands && bandGroupsDistribution.Length == validNumBands;
+        }
+
+        /// <summary>
+        /// 处理单个频段的采样点
+        /// </summary>
+        /// <param name="bandIndex">频段索引</param>
+        /// <param name="startIndex">起始采样点索引</param>
+        /// <param name="size">采样点数量</param>
+        private void ProcessBandSamples(int bandIndex, int startIndex, int size)
+        {
+            for (int j = 0; j < size; j++)
+            {
+                int dataIndex = startIndex + j;
+                
+                // 确保不会超出rawSpectrumData数组边界
+                if (!AudioValidationHelper.IsIndexInRange(dataIndex, rawSpectrumData, "rawSpectrumData"))
+                {
+                    break;
+                }
+                
+                if (size <= 1) 
+                {
+                    // 单个采样点直接赋值
+                    groupedBands[bandIndex] += rawSpectrumData[dataIndex];
+                }
+                else
+                {
+                    // WebGL平台需要特殊的缩放处理
+                    if(audio_input == AUDIO_INPUT.AudioSourceWebGL || audio_input == AUDIO_INPUT.MixerGroupWebGL)
+                    {
+                        groupedBands[bandIndex] += .01f * rawSpectrumData[dataIndex] / size;
+                    }
+                    else
+                    {
+                        // 标准平台计算平均值
+                        groupedBands[bandIndex] += rawSpectrumData[dataIndex] / size;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// 动态计算频段分布
         /// 使用渐进式算法将频谱数据分配到不同的频段中
         /// 确保所有64个频谱采样点都被合理分配到各个频段
         /// </summary>
         public void DinamicBandsDistribution()
         {
-            // 安全检查：确保 numBands 大于 0
-            if (numBands <= 0)
+            if (!EnsureArraysInitialized())
             {
-                numBands = 8; // 设置一个默认值
-                Debug.LogWarning("dinamicBandsDistribution: numBands 为 0，已设置为默认值 8");
-            }
-            
-            // 确保数组已正确初始化且长度匹配
-            if (groupedBands == null || groupedBands.Length != numBands)
-            {
-                groupedBands = new float[numBands];
-            }
-            if (bandGroupsDistribution == null || bandGroupsDistribution.Length != numBands)
-            {
-                bandGroupsDistribution = new int[numBands];
-            }
-            
-            // 再次检查numBands，防止在执行过程中被修改
-            if (numBands <= 0)
-            {
-                Debug.LogError("dinamicBandsDistribution: numBands 在执行过程中变为无效值，终止执行");
+                Debug.LogError("DinamicBandsDistribution: 数组初始化失败");
                 return;
             }
             
@@ -568,4 +535,70 @@ namespace AudioReactiveShader
             }
         }
     }
+
+
+
+    #region editor
+#if UNITY_EDITOR
+    /// <summary>
+    /// 音频频谱读取器的自定义编辑器
+    /// 提供用户友好的Inspector界面，支持音频输入类型选择和参数配置
+    /// </summary>
+    [CustomEditor(typeof(MusicSpectrumReader))]
+    public class MusicReaderEditor : Editor
+    {
+        bool showHiddenVars;  // 是否显示隐藏变量
+
+        public override void OnInspectorGUI()
+        {
+            MusicSpectrumReader MSR = (MusicSpectrumReader)target;
+            Undo.RecordObject(MSR, "MusicSpectrumReader changes");
+
+            // 根据showHiddenVars决定是否显示默认Inspector或自定义界面
+            if (showHiddenVars)
+                base.OnInspectorGUI();
+            else
+            {
+                // 绘制自定义头部
+                Color color = new Color(.1f, .1f, .2f);
+                Rect headerArea = new Rect(0, 0, EditorGUIUtility.currentViewWidth, 35);
+                GUILayout.BeginArea(headerArea);
+                EditorGUILayout.Space(5);
+                EditorGUI.DrawRect(headerArea, color);
+                GUI.skin.label.fontSize = 15;
+                GUI.skin.label.fontStyle = FontStyle.BoldAndItalic;
+                GUILayout.Label("AUDIO REACTIVE SHADERS | music spectrum reader");
+                GUILayout.EndArea();
+                EditorGUILayout.Space(40);
+            }
+
+            // 音频输入类型选择
+            MSR.audio_input = (AUDIO_INPUT)EditorGUILayout.EnumPopup("Input selection", MSR.audio_input);
+
+            // 如果选择了MixerGroup类型，显示混音器组选择界面
+            if (MSR.audio_input == AUDIO_INPUT.MixerGroup || MSR.audio_input == AUDIO_INPUT.MixerGroupWebGL)
+            {
+                EditorGUILayout.LabelField("Choose your mixer group", EditorStyles.boldLabel);
+                MSR.targetMixerGroup = (AudioMixerGroup)EditorGUILayout.ObjectField("Target Mixer Group", MSR.targetMixerGroup, typeof(AudioMixerGroup), false);
+            }
+
+            EditorGUILayout.Space(5);
+
+            // 非WebGL平台显示声道选择
+            if (MSR.audio_input != AUDIO_INPUT.AudioSourceWebGL && MSR.audio_input != AUDIO_INPUT.MixerGroupWebGL)
+            {
+                EditorGUILayout.LabelField("0 to use the left channel or 1 to use the right channel", EditorStyles.boldLabel);
+                MSR.channelSelection = (int)EditorGUILayout.Slider(MSR.channelSelection, 0, 1);
+            }
+
+            EditorGUILayout.Space(5);
+            showHiddenVars = EditorGUILayout.Toggle("show hidden vars", showHiddenVars);
+
+            // 标记对象为已修改
+            if (GUI.changed)
+                EditorUtility.SetDirty(MSR);
+        }
+    }
+#endif
+    #endregion
 }

@@ -17,77 +17,87 @@ namespace AudioReactiveShader
 
 
         /// <summary>
+        /// 验证并设置频段数量
+        /// </summary>
+        /// <returns>验证后的有效频段数量</returns>
+        private int ValidateBands()
+        {
+            if (!AudioValidationHelper.IsValidBandCount(bands, 1, 63))
+            {
+                Debug.LogError($"DinamicBandsAudioDataInterpreter: 无效的频段数量 {bands}");
+                return Mathf.Clamp(bands, 1, 63);
+            }
+            return bands;
+        }
+        
+        /// <summary>
+        /// 尝试重新初始化MusicSpectrum的频段分布
+        /// </summary>
+        /// <returns>初始化是否成功</returns>
+        private bool TryReinitializeSpectrum()
+        {
+            var musicSpectrumReader = MusicSpectrum as MusicSpectrumReader;
+            if (musicSpectrumReader == null) return false;
+            
+            try
+            {
+                musicSpectrumReader.DinamicBandsDistribution();
+                return MusicSpectrum.groupedBands != null && MusicSpectrum.groupedBands.Length == MusicSpectrum.numBands;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"DinamicBandsAudioDataInterpreter: 重新初始化失败 - {ex.Message}");
+                
+                // 备用方案：手动初始化数组
+                try
+                {
+                    MusicSpectrum.groupedBands = new float[MusicSpectrum.numBands];
+                    MusicSpectrum.bandGroupsDistribution = new int[MusicSpectrum.numBands];
+                    Debug.LogWarning("DinamicBandsAudioDataInterpreter: 使用备用方案手动初始化数组");
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+        }
+
+        /// <summary>
         /// 确保音频频谱读取器的频段数量满足当前设置的要求
         /// 如果读取器的频段数少于设置值，则调整为设置值
         /// </summary>
         protected override void ValidateFrequencyBands()
         {
-            // 确保 bands 值有效
-            bands = Mathf.Clamp(bands, 1, 63);
+            bands = ValidateBands();
             
-            if (MusicSpectrum != null)
-            {
-                // 确保 MusicSpectrum 的 numBands 有效
-                if (MusicSpectrum.numBands <= 0)
-                {
-                    Debug.LogWarning($"DinamicBandsAudioDataInterpreter: MusicSpectrum.numBands 无效值 {MusicSpectrum.numBands}，设置为默认值 {bands}");
-                    MusicSpectrum.numBands = bands;
-                }
-                // 如果 MusicSpectrum 的 numBands 小于当前设置的 bands，则调整它
-                else if (MusicSpectrum.numBands < bands)
-                {
-                    Debug.Log($"DinamicBandsAudioDataInterpreter: 调整 MusicSpectrum.numBands 从 {MusicSpectrum.numBands} 到 {bands}");
-                    MusicSpectrum.numBands = bands;
-                }
-                
-                // 确保 MusicSpectrum 的数组已正确初始化
-                if (MusicSpectrum.groupedBands == null || MusicSpectrum.groupedBands.Length != MusicSpectrum.numBands ||
-                    MusicSpectrum.bandGroupsDistribution == null || MusicSpectrum.bandGroupsDistribution.Length != MusicSpectrum.numBands)
-                {
-                    Debug.LogWarning("DinamicBandsAudioDataInterpreter: MusicSpectrum 的数组未正确初始化");
-                    
-                    // 尝试调用 MusicSpectrumReader 的 DinamicBandsDistribution 方法
-                    var musicSpectrumReader = MusicSpectrum as MusicSpectrumReader;
-                    if (musicSpectrumReader != null)
-                    {
-                        try
-                        {
-                            // 在调用前再次确保 numBands 有效
-                            if (MusicSpectrum.numBands <= 0)
-                            {
-                                MusicSpectrum.numBands = bands;
-                            }
-                            
-                            musicSpectrumReader.DinamicBandsDistribution();
-                            
-                            // 验证初始化是否成功
-                            if (MusicSpectrum.groupedBands == null || MusicSpectrum.groupedBands.Length != MusicSpectrum.numBands)
-                            {
-                                Debug.LogError("DinamicBandsAudioDataInterpreter: 频段分布初始化后数组仍然无效");
-                            }
-                        }
-                        catch (System.Exception ex)
-                        {
-                            Debug.LogError($"DinamicBandsAudioDataInterpreter: 重新初始化频段分布失败 - {ex.Message}\n堆栈跟踪: {ex.StackTrace}");
-                            
-                            // 作为最后的备用方案，手动初始化数组
-                            try
-                            {
-                                MusicSpectrum.groupedBands = new float[MusicSpectrum.numBands];
-                                MusicSpectrum.bandGroupsDistribution = new int[MusicSpectrum.numBands];
-                                Debug.LogWarning("DinamicBandsAudioDataInterpreter: 使用备用方案手动初始化数组");
-                            }
-                            catch (System.Exception fallbackEx)
-                            {
-                                Debug.LogError($"DinamicBandsAudioDataInterpreter: 备用初始化也失败 - {fallbackEx.Message}");
-                            }
-                        }
-                    }
-                }
-            }
-            else
+            if (MusicSpectrum == null)
             {
                 Debug.LogError("DinamicBandsAudioDataInterpreter: MusicSpectrum 为 null，无法验证频段");
+                return;
+            }
+            
+            // 确保 MusicSpectrum 的 numBands 有效并满足要求
+            if (MusicSpectrum.numBands <= 0)
+            {
+                Debug.LogWarning($"DinamicBandsAudioDataInterpreter: MusicSpectrum.numBands 无效，设置为 {bands}");
+                MusicSpectrum.numBands = bands;
+            }
+            else if (MusicSpectrum.numBands < bands)
+            {
+                Debug.Log($"DinamicBandsAudioDataInterpreter: 调整 numBands 从 {MusicSpectrum.numBands} 到 {bands}");
+                MusicSpectrum.numBands = bands;
+            }
+            
+            // 检查数组是否需要重新初始化
+            bool needsReinit = MusicSpectrum.groupedBands == null || 
+                              MusicSpectrum.groupedBands.Length != MusicSpectrum.numBands ||
+                              MusicSpectrum.bandGroupsDistribution == null || 
+                              MusicSpectrum.bandGroupsDistribution.Length != MusicSpectrum.numBands;
+            
+            if (needsReinit && !TryReinitializeSpectrum())
+            {
+                Debug.LogError("DinamicBandsAudioDataInterpreter: 频段分布初始化失败");
             }
         }
 
@@ -116,40 +126,52 @@ namespace AudioReactiveShader
 
 
         /// <summary>
+        /// 检查处理音频数据的前置条件
+        /// </summary>
+        /// <returns>是否满足处理条件</returns>
+        private bool CanProcessAudioData()
+        {
+            if (MusicSpectrum == null || !IsMaterialValid())
+            {
+                return false;
+            }
+            
+            if (!AudioValidationHelper.IsArrayValid(MusicSpectrum.groupedBands, MusicSpectrum.numBands, "groupedBands"))
+            {
+                Debug.LogWarning("ProcessAudioData: groupedBands 数据无效，尝试重新初始化");
+                ValidateFrequencyBands();
+                return AudioValidationHelper.IsArrayValid(MusicSpectrum.groupedBands, MusicSpectrum.numBands, "groupedBands");
+            }
+            
+            return true;
+        }
+        
+        /// <summary>
+        /// 确保平滑强度值数组已正确初始化
+        /// </summary>
+        private void EnsureSmoothedValuesInitialized()
+        {
+            if (!AudioValidationHelper.IsArrayValid(smoothedIntensisyValues, MusicSpectrum.numBands, "smoothedIntensisyValues"))
+            {
+                smoothedIntensisyValues = new float[MusicSpectrum.numBands];
+                Debug.Log($"DinamicBandsAudioDataInterpreter: 初始化 smoothedIntensisyValues 数组，大小: {MusicSpectrum.numBands}");
+            }
+        }
+
+        /// <summary>
         /// 处理音频数据并传递给着色器
         /// 处理平滑、响应调整
         /// </summary>
         protected override void ProcessAudioData()
         {
-            // 如果MusicSpectrum为null或材质无效，则不处理
-            if (MusicSpectrum == null || !IsMaterialValid()) 
+            if (!CanProcessAudioData())
             {
                 return;
             }
             
-            // 检查 groupedBands 是否为 null
-            if (MusicSpectrum.groupedBands == null)
-            {
-                Debug.LogWarning("ProcessAudioData: MusicSpectrum.groupedBands 为 null，尝试重新初始化");
-                
-                // 尝试调用 ValidateFrequencyBands 重新初始化
-                ValidateFrequencyBands();
-                
-                // 如果仍然为 null，则返回
-                if (MusicSpectrum.groupedBands == null)
-                {
-                    return;
-                }
-            }
-            
             try
             {
-                // 确保 smoothedIntensisyValues 数组已正确初始化
-                if (smoothedIntensisyValues == null || smoothedIntensisyValues.Length != MusicSpectrum.numBands)
-                {
-                    Debug.Log($"ProcessAudioData: 重新初始化 smoothedIntensisyValues 数组，大小为 {MusicSpectrum.numBands}");
-                    smoothedIntensisyValues = new float[MusicSpectrum.numBands];
-                }
+                EnsureSmoothedValuesInitialized();
                 
                 // 根据是否启用平滑处理来更新频段数据
                 if (smoothSpeed > 0)

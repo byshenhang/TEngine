@@ -72,7 +72,6 @@ namespace GameLogic.AudioReactor.Adapters
             {
                 Log.Warning("AudioReactiveShadersAdapter: MusicReader 的数组未正确初始化，尝试重新初始化");
                 
-                // 调用 MusicSpectrumReader 的 dinamicBandsDistribution 方法
                 var musicSpectrumReader = musicReader as MusicSpectrumReader;
                 if (musicSpectrumReader != null)
                 {

@@ -35,6 +35,26 @@ namespace AudioReactiveShader
         protected abstract void ValidateFrequencyBands();
         
         /// <summary>
+        /// 执行初始化步骤
+        /// </summary>
+        /// <returns>初始化是否成功</returns>
+        private bool PerformInitialization()
+        {
+            try
+            {
+                ValidateFrequencyBands();
+                InitializeComponents();
+                InitializeAudioData();
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"BaseAudioDataInterpreter: {gameObject.name} 初始化失败 - {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
         /// 初始化解释器
         /// 由MusicSpectrumReader调用，设置MusicSpectrum引用并初始化组件
         /// </summary>
@@ -51,18 +71,13 @@ namespace AudioReactiveShader
             
             MusicSpectrum = musicReader;
             
-            try
+            if (PerformInitialization())
             {
-                ValidateFrequencyBands();
-                InitializeComponents();
-                InitializeAudioData();
-                
                 isInitialized = true;
                 Debug.Log($"BaseAudioDataInterpreter: {gameObject.name} 初始化成功");
             }
-            catch (System.Exception ex)
+            else
             {
-                Debug.LogError($"BaseAudioDataInterpreter: {gameObject.name} 初始化失败 - {ex.Message}\n堆栈跟踪: {ex.StackTrace}");
                 isInitialized = false;
             }
         }
