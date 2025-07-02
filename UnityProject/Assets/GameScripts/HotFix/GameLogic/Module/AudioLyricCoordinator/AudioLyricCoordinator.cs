@@ -10,7 +10,6 @@ using TelePresent.AudioSyncPro;
 using LyricFX.Managers;
 using LyricFX.Utils;
 using GameLogic.AudioReactor;
-using Object = UnityEngine.Object;
 
 namespace GameLogic
 {
@@ -47,6 +46,8 @@ namespace GameLogic
         public event Action OnPlaybackStopped;
         public event Action<float, float[]> OnAudioDataReceived; // RMS值和频谱数据
         public event Action<string> OnLyricLineChanged; // 当前歌词行变化
+
+        private AudioSource GlobalAudio;
         
         protected override void OnInit()
         {
@@ -188,33 +189,17 @@ namespace GameLogic
             return result;
         }
         
-        /// <summary>
-        /// 自动初始化协调器（同步版本）
-        /// </summary>
-        /// <returns>是否初始化成功</returns>
-        public bool AutoInitialize()
-        {
-            try
-            {
-                var task = AutoInitializeAsync();
-                return task.GetAwaiter().GetResult();
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"AudioLyricCoordinator: 同步自动初始化失败: {ex.Message}");
-                return false;
-            }
-        }
         
         /// <summary>
         /// 自动初始化协调器（自动发现并启用音频反应器）
         /// </summary>
         /// <param name="audioSource">全局音频源（可选）</param>
         /// <returns>是否初始化成功</returns>
-        public async UniTask<bool> AutoInitializeAsync(AudioSource audioSource = null)
+        public async UniTask<bool> AutoInitializeAsync()
         {
             try
             {
+                GlobalAudio = new GameObject().AddComponent<AudioSource>();
                 if (_audioReactorManager == null)
                 {
                     Log.Error("AudioLyricCoordinator: AudioReactorManager未初始化");
@@ -230,10 +215,7 @@ namespace GameLogic
                 }
                 
                 // 设置全局音频源
-                if (audioSource != null)
-                {
-                    await SetGlobalAudioSourceAsync(audioSource);
-                }
+                await SetGlobalAudioSourceAsync(GlobalAudio);
                 
                 // 启用所有音频反应器
                 bool enableSuccess = await _audioReactorManager.EnableAllReactorsAsync();

@@ -40,21 +40,6 @@ namespace AudioReactiveShader
         /// </summary>
         void OnEnable()
         {
-            // AudioSource类型：获取当前GameObject上的AudioSource组件
-            if (audio_input == AUDIO_INPUT.AudioSource || audio_input == AUDIO_INPUT.AudioSourceWebGL)
-            {
-                audioSource = GetComponent<AudioSource>();
-                if (audioSource == null)
-                {
-                    Debug.LogWarning("未找到AudioSource组件。");
-                }
-            }
-            // MixerGroup类型：刷新混音器组中的音频源列表
-            else if(audio_input == AUDIO_INPUT.MixerGroup || audio_input == AUDIO_INPUT.MixerGroupWebGL)
-            {
-                refreshAudioSourcesOnMixerGroup();
-            }
-
             // 初始化频段相关数组和分布
             if (!EnsureArraysInitialized())
             {
@@ -62,9 +47,6 @@ namespace AudioReactiveShader
                 return;
             }
 
-            // 计算动态频段分布
-            DinamicBandsDistribution();
-            
             // 自动检索并注册场景中的所有BaseAudioDataInterpreter
             AutoDiscoverAndRegisterInterpreters();
         }
@@ -77,8 +59,12 @@ namespace AudioReactiveShader
         /// </summary>
         void Update()
         {
-            // 首先更新音频频谱数据
-            UpdateAudioSpectrumData();
+            if (audioSource)
+            {
+                // 首先更新音频频谱数据
+                UpdateAudioSpectrumData();
+            }
+ 
             
             // 然后统一更新所有音频数据解释器
             UpdateAllAudioDataInterpreters();
@@ -93,7 +79,7 @@ namespace AudioReactiveShader
             // AudioSource模式：仅在音频播放时获取数据
             if (audio_input == AUDIO_INPUT.AudioSource)
             {
-                if (audioSource.isPlaying)
+                //if (audioSource.isPlaying)
                 {
                     getAudiosourceData();
                 }
@@ -104,38 +90,7 @@ namespace AudioReactiveShader
                 AudioListener.GetSpectrumData(rawSpectrumData, channelSelection, FFTWindow.Rectangular);
                 GroupSpectrumData();
             }
-            // MixerGroup模式：优先使用当前音频源，否则搜索混音器组中正在播放的音频源
-            else if (audio_input == AUDIO_INPUT.MixerGroup)
-            {
-                if (audioSource != null && audioSource.isPlaying)
-                {
-                    getAudiosourceData();
-                }
-                else
-                {
-                    searchForPlayingAudiosources();
-                }
-            }
-            // WebGL平台的AudioSource模式：使用自定义FFT处理
-            else if (audio_input == AUDIO_INPUT.AudioSourceWebGL)
-            {
-                if (audioSource.isPlaying)
-                {
-                    GetAudioClipSpectrumData();
-                }
-            }
-            // WebGL平台的MixerGroup模式：结合MixerGroup和WebGL处理
-            else if (audio_input == AUDIO_INPUT.MixerGroupWebGL)
-            {
-                if (audioSource != null && audioSource.isPlaying)
-                {
-                    GetAudioClipSpectrumData();
-                }
-                else
-                {
-                    searchForPlayingAudiosources();
-                }
-            }
+          
         }
         
         /// <summary>
@@ -427,16 +382,8 @@ namespace AudioReactiveShader
                 }
                 else
                 {
-                    // WebGL平台需要特殊的缩放处理
-                    if(audio_input == AUDIO_INPUT.AudioSourceWebGL || audio_input == AUDIO_INPUT.MixerGroupWebGL)
-                    {
-                        groupedBands[bandIndex] += .01f * rawSpectrumData[dataIndex] / size;
-                    }
-                    else
-                    {
                         // 标准平台计算平均值
                         groupedBands[bandIndex] += rawSpectrumData[dataIndex] / size;
-                    }
                 }
             }
         }
@@ -487,53 +434,7 @@ namespace AudioReactiveShader
                 }
             }
         }
-        /// <summary>
-        /// 刷新混音器组中的音频源列表
-        /// 重新搜索并更新当前目标混音器组中的所有音频源
-        /// </summary>
-        public void refreshAudioSourcesOnMixerGroup()
-        {
-            audioSourcesInGroup = new List<AudioSource>();
-            FindAudioSourcesOnMixerGroup(targetMixerGroup);
-            searchForPlayingAudiosources();
-        }
-        
-        /// <summary>
-        /// 查找指定混音器组中的所有音频源
-        /// 遍历场景中的所有AudioSource组件，筛选出输出到指定混音器组的音频源
-        /// </summary>
-        /// <param name="mixerGroup">目标混音器组</param>
-        void FindAudioSourcesOnMixerGroup(AudioMixerGroup mixerGroup)
-        {
-            AudioSource[] allAudioSources = FindObjectsOfType<AudioSource>();
-
-            // 遍历场景中的所有音频源
-            foreach (AudioSource audioSource in allAudioSources)
-            {
-                // 检查音频源的输出混音器组是否匹配
-                if (audioSource.outputAudioMixerGroup == mixerGroup)
-                {
-                    audioSourcesInGroup.Add(audioSource);
-                }
-            }
-        }
-        
-        /// <summary>
-        /// 搜索正在播放的音频源
-        /// 在混音器组的音频源列表中查找第一个正在播放的音频源
-        /// 并将其设置为当前的音频数据源
-        /// </summary>
-        void searchForPlayingAudiosources()
-        {
-            foreach (AudioSource AS in audioSourcesInGroup)
-            {
-                if (AS.isPlaying)
-                {
-                    audioSource = AS;  // 设置为当前音频源
-                    return;  // 找到第一个播放中的音频源后退出
-                }
-            }
-        }
+      
     }
 
 
@@ -554,42 +455,15 @@ namespace AudioReactiveShader
             MusicSpectrumReader MSR = (MusicSpectrumReader)target;
             Undo.RecordObject(MSR, "MusicSpectrumReader changes");
 
-            // 根据showHiddenVars决定是否显示默认Inspector或自定义界面
-            if (showHiddenVars)
-                base.OnInspectorGUI();
-            else
-            {
-                // 绘制自定义头部
-                Color color = new Color(.1f, .1f, .2f);
-                Rect headerArea = new Rect(0, 0, EditorGUIUtility.currentViewWidth, 35);
-                GUILayout.BeginArea(headerArea);
-                EditorGUILayout.Space(5);
-                EditorGUI.DrawRect(headerArea, color);
-                GUI.skin.label.fontSize = 15;
-                GUI.skin.label.fontStyle = FontStyle.BoldAndItalic;
-                GUILayout.Label("AUDIO REACTIVE SHADERS | music spectrum reader");
-                GUILayout.EndArea();
-                EditorGUILayout.Space(40);
-            }
-
             // 音频输入类型选择
             MSR.audio_input = (AUDIO_INPUT)EditorGUILayout.EnumPopup("Input selection", MSR.audio_input);
 
-            // 如果选择了MixerGroup类型，显示混音器组选择界面
-            if (MSR.audio_input == AUDIO_INPUT.MixerGroup || MSR.audio_input == AUDIO_INPUT.MixerGroupWebGL)
-            {
-                EditorGUILayout.LabelField("Choose your mixer group", EditorStyles.boldLabel);
-                MSR.targetMixerGroup = (AudioMixerGroup)EditorGUILayout.ObjectField("Target Mixer Group", MSR.targetMixerGroup, typeof(AudioMixerGroup), false);
-            }
 
             EditorGUILayout.Space(5);
 
             // 非WebGL平台显示声道选择
-            if (MSR.audio_input != AUDIO_INPUT.AudioSourceWebGL && MSR.audio_input != AUDIO_INPUT.MixerGroupWebGL)
-            {
                 EditorGUILayout.LabelField("0 to use the left channel or 1 to use the right channel", EditorStyles.boldLabel);
                 MSR.channelSelection = (int)EditorGUILayout.Slider(MSR.channelSelection, 0, 1);
-            }
 
             EditorGUILayout.Space(5);
             showHiddenVars = EditorGUILayout.Toggle("show hidden vars", showHiddenVars);

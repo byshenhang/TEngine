@@ -21,9 +21,6 @@ namespace AudioReactiveShader
         {
             AudioSource,        // 从AudioSource组件获取音频数据
             AudioListener,      // 从AudioListener获取全局音频数据
-            MixerGroup,         // 从AudioMixerGroup获取混音器组音频数据
-            AudioSourceWebGL,   // WebGL平台下的AudioSource模式
-            MixerGroupWebGL,    // WebGL平台下的MixerGroup模式
         }
         
         /// <summary>
@@ -156,6 +153,9 @@ namespace AudioReactiveShader
                 }
             }
         }
+    
+    
+    
     }
 
 }
