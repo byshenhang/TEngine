@@ -140,12 +140,6 @@ namespace GameLogic
                 // 6. 订阅事件（可选）
                 coordinator.OnPlaybackStarted += () => Debug.Log("[事件] 同步播放已开始");
                 coordinator.OnPlaybackStopped += () => Debug.Log("[事件] 同步播放已停止");
-                coordinator.OnAudioDataReceived += (rms, spectrum) => {
-                    if (rms > 0.1f) // 只在音量较大时输出
-                    {
-                        Debug.Log($"[音频数据] RMS: {rms:F3}, 频谱长度: {spectrum?.Length ?? 0}");
-                    }
-                };
                 coordinator.OnLyricLineChanged += (lyricLine) => Debug.Log($"当前歌词: {lyricLine}");
                 
                 // 7. 准备音频和歌词资源

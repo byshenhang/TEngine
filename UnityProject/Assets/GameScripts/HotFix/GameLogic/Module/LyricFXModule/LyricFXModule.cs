@@ -477,8 +477,13 @@ namespace GameLogic
                 return false;
             }
         }
-        
-       
-    
+
+        public void Pause()
+        {
+        }
+
+        public void Resume()
+        {
+        }
     }
 }

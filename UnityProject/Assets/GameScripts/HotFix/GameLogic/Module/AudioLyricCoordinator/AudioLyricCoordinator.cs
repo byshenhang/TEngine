@@ -23,12 +23,14 @@ namespace GameLogic
         // 协调状态
         private bool _isInitialized = false;
         private bool _isPlaying = false;
+        private bool _isPaused = false;
         private bool _enableDebugger = false;
         
         // 当前播放信息
         private string _currentAudioName = "";
         private string _currentLyricContent = "";
         private float _syncOffset = 0f;
+        private float _pausedTime = 0f;
         
         // 音频源管理
         private AudioSource _globalAudioSource;
@@ -82,7 +84,36 @@ namespace GameLogic
         
         public void OnUpdate()
         {
-          
+            // 监控音频播放状态
+            MonitorAudioPlayback();
+        }
+        
+        /// <summary>
+        /// 监控音频播放状态
+        /// </summary>
+        private void MonitorAudioPlayback()
+        {
+            if (_isPlaying && !_isPaused && _globalAudioSource != null)
+            {
+                // 检查音频是否已经播放完成或异常停止
+                if (!_globalAudioSource.isPlaying)
+                {
+                    // 检查是否是正常播放完成（播放时间接近音频长度）
+                    float currentTime = _globalAudioSource.time;
+                    float totalTime = _globalAudioSource.clip?.length ?? 0f;
+                    
+                    if (totalTime > 0 && currentTime >= totalTime - 0.1f)
+                    {
+                        // 正常播放完成
+                        HandleAudioCompleted();
+                    }
+                    else
+                    {
+                        // 异常停止
+                        HandleAudioStopped();
+                    }
+                }
+            }
         }
         
         /// <summary>
@@ -541,6 +572,8 @@ namespace GameLogic
                 _lyricFX?.StopAll();
                 
                 _isPlaying = false;
+                _isPaused = false;
+                _pausedTime = 0f;
                 OnPlaybackStopped?.Invoke();
                 
                 if (_enableDebugger)
@@ -563,6 +596,8 @@ namespace GameLogic
                 _lyricFX?.StopAll();
                 
                 _isPlaying = false;
+                _isPaused = false;
+                _pausedTime = 0f;
                 OnPlaybackStopped?.Invoke();
                 
                 if (_enableDebugger)
@@ -695,14 +730,16 @@ namespace GameLogic
         /// </summary>
         public void Pause()
         {
-            if (_isPlaying)
+            if (_isPlaying && !_isPaused)
             {
-                _globalAudioSource?.Stop();
-                // 歌词系统暂停需要根据LyricFX的API来实现
+                _pausedTime = _globalAudioSource?.time ?? 0f;
+                _globalAudioSource?.Pause();
+                _lyricFX?.Pause(); // 需要LyricFX支持暂停功能
+                _isPaused = true;
                 
                 if (_enableDebugger)
                 {
-                    Log.Info("AudioLyricCoordinator: 播放已暂停");
+                    Log.Info($"AudioLyricCoordinator: 播放已暂停，位置: {_pausedTime:F2}秒");
                 }
             }
         }
@@ -712,14 +749,15 @@ namespace GameLogic
         /// </summary>
         public void Resume()
         {
-            if (_isPlaying)
+            if (_isPlaying && _isPaused)
             {
-                _globalAudioSource?.Play();
-                // 歌词系统恢复需要根据LyricFX的API来实现
+                _globalAudioSource?.UnPause();
+                _lyricFX?.Resume(); // 需要LyricFX支持恢复功能
+                _isPaused = false;
                 
                 if (_enableDebugger)
                 {
-                    Log.Info("AudioLyricCoordinator: 播放已恢复");
+                    Log.Info($"AudioLyricCoordinator: 播放已恢复，位置: {_pausedTime:F2}秒");
                 }
             }
         }
@@ -762,7 +800,7 @@ namespace GameLogic
         {
             if (_enableDebugger)
             {
-                Log.Info("AudioLyricCoordinator: 音频停止播放事件");
+                Log.Info("AudioLyricCoordinator: 音频异常停止事件");
             }
             
             // 当音频停止时，也停止歌词
@@ -770,6 +808,29 @@ namespace GameLogic
             {
                 _lyricFX?.StopAll();
                 _isPlaying = false;
+                _isPaused = false;
+                _pausedTime = 0f;
+                OnPlaybackStopped?.Invoke();
+            }
+        }
+        
+        /// <summary>
+        /// 处理音频播放完成事件
+        /// </summary>
+        private void HandleAudioCompleted()
+        {
+            if (_enableDebugger)
+            {
+                Log.Info("AudioLyricCoordinator: 音频播放完成事件");
+            }
+            
+            // 当音频播放完成时，停止歌词并触发完成事件
+            if (_isPlaying)
+            {
+                _lyricFX?.StopAll();
+                _isPlaying = false;
+                _isPaused = false;
+                _pausedTime = 0f;
                 OnPlaybackStopped?.Invoke();
             }
         }
@@ -780,7 +841,34 @@ namespace GameLogic
         /// <returns>是否正在播放</returns>
         public bool IsPlaying()
         {
-            return _isPlaying;
+            return _isPlaying && !_isPaused;
+        }
+        
+        /// <summary>
+        /// 获取当前暂停状态
+        /// </summary>
+        /// <returns>是否已暂停</returns>
+        public bool IsPaused()
+        {
+            return _isPaused;
+        }
+        
+        /// <summary>
+        /// 获取当前播放时间
+        /// </summary>
+        /// <returns>当前播放时间（秒）</returns>
+        public float GetCurrentTime()
+        {
+            return _globalAudioSource?.time ?? 0f;
+        }
+        
+        /// <summary>
+        /// 获取音频总时长
+        /// </summary>
+        /// <returns>音频总时长（秒）</returns>
+        public float GetTotalTime()
+        {
+            return _globalAudioSource?.clip?.length ?? 0f;
         }
         
         /// <summary>
@@ -818,6 +906,7 @@ namespace GameLogic
                 _globalAudioSource?.Stop();
                 _lyricFX?.StopAll();
                 _isPlaying = false;
+                _isPaused = false;
                 OnPlaybackStopped?.Invoke();
             }
             
@@ -825,6 +914,7 @@ namespace GameLogic
             _currentAudioName = "";
             _currentLyricContent = "";
             _syncOffset = 0f;
+            _pausedTime = 0f;
             
             // 取消所有异步操作
             if (_cts != null)
