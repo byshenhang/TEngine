@@ -47,7 +47,7 @@ namespace TelePresent.AudioSyncPro
                         else
                         {
                             Debug.LogError(
-                                "Invalid SampleSize value. Must be a positive integer or -1 for 'Disable Spectrum Data'.");
+                                "无效的SampleSize值。必须是正整数或-1以表示“禁用频谱数据”。'.");
                         }
                     }
                 }

@@ -1,14 +1,10 @@
 using System;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using TEngine;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
-using TelePresent.AudioSyncPro;
-using LyricFX.Managers;
-using LyricFX.Utils;
 using GameLogic.AudioReactor;
 
 namespace GameLogic
@@ -199,7 +195,7 @@ namespace GameLogic
         {
             try
             {
-                GlobalAudio = new GameObject().AddComponent<AudioSource>();
+                GlobalAudio = GameObject.Find("SyncAudioSource").GetComponent<AudioSource>();
                 if (_audioReactorManager == null)
                 {
                     Log.Error("AudioLyricCoordinator: AudioReactorManager未初始化");

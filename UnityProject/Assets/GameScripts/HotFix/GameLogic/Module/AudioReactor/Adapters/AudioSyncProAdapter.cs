@@ -280,16 +280,10 @@ namespace GameLogic.AudioReactor.Adapters
                 // 如果适配器已启用，立即应用音频源设置
                 if (_isEnabled && _audioSyncModule != null)
                 {
-                    // 使用反射安全地设置音频源
-                    try
-                    {
-                        var setAudioSourceMethod = _audioSyncModule.GetType().GetMethod("SetAudioSource");
-                        setAudioSourceMethod?.Invoke(_audioSyncModule, new object[] { audioSource });
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Warning($"AudioSyncProAdapter: 设置音频源失败: {ex.Message}");
-                    }
+                    //foreach (var item in adapters)
+                    //{
+
+                    //}
                 }
                 
                 Log.Info($"AudioSyncProAdapter: 音频源已设置 - {_displayName}");
