@@ -20,7 +20,6 @@ namespace GameLogic.AudioReactor.Adapters
         private const string REACTOR_TYPE = "AudioSyncPro";
         
         // Audio Sync Pro 相关组件
-        //private AudioSyncModule _audioSyncModule;
         private AudioSource _currentAudioSource;
         
         // 适配器状态

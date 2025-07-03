@@ -17,7 +17,6 @@ namespace GameLogic
     public class AudioLyricCoordinator : Singleton<AudioLyricCoordinator>, IUpdate
     {
         // 模块引用
-        //private AudioSyncModule GlobalAudio;
         private LyricFXModule _lyricFX;
         private AudioReactorManager _audioReactorManager;
         
@@ -40,10 +39,7 @@ namespace GameLogic
         // 事件
         public event Action OnPlaybackStarted;
         public event Action OnPlaybackStopped;
-        public event Action<float, float[]> OnAudioDataReceived; // RMS值和频谱数据
         public event Action<string> OnLyricLineChanged; // 当前歌词行变化
-
-        private AudioSource GlobalAudio;
         
         protected override void OnInit()
         {
@@ -53,9 +49,6 @@ namespace GameLogic
             // 获取模块实例
             _lyricFX = LyricFXModule.Instance;
             _audioReactorManager = AudioReactorManager.Instance;
-            
-            // 订阅音频反应器管理器事件
-            SubscribeToAudioReactorManagerEvents();
             
             Log.Info("AudioLyricCoordinator initialized with AudioReactorManager");
         }
@@ -71,9 +64,6 @@ namespace GameLogic
             
             // 停止所有播放
             StopAll();
-            
-            // 清理事件订阅
-            UnsubscribeFromAudioReactorManagerEvents();
             
             // 清理资源
             if (_cts != null)
@@ -188,7 +178,7 @@ namespace GameLogic
         {
             try
             {
-                GlobalAudio = GameObject.Find("SyncAudioSource").GetComponent<AudioSource>();
+                _globalAudioSource = GameObject.Find("SyncAudioSource").GetComponent<AudioSource>();
                 if (_audioReactorManager == null)
                 {
                     Log.Error("AudioLyricCoordinator: AudioReactorManager未初始化");
@@ -204,7 +194,7 @@ namespace GameLogic
                 }
                 
                 // 设置全局音频源
-                await SetGlobalAudioSourceAsync(GlobalAudio);
+                await SetGlobalAudioSourceAsync(_globalAudioSource);
                 
                 // 启用所有音频反应器
                 bool enableSuccess = await _audioReactorManager.EnableAllReactorsAsync();
@@ -344,10 +334,6 @@ namespace GameLogic
             return success;
         }
         
-
-        
-
-        
         /// <summary>
         /// 内部初始化方法
         /// </summary>
@@ -380,29 +366,6 @@ namespace GameLogic
             {
                 Log.Error($"AudioLyricCoordinator: 初始化失败: {ex}");
                 return false;
-            }
-        }
-        
-        /// <summary>
-        /// 订阅音频反应器管理器事件
-        /// </summary>
-        private void SubscribeToAudioReactorManagerEvents()
-        {
-            if (_audioReactorManager != null)
-            {
-                // 这里可以订阅AudioReactorManager的相关事件
-                // 例如：反应器状态变化、音频数据更新等
-            }
-        }
-        
-        /// <summary>
-        /// 取消订阅音频反应器管理器事件
-        /// </summary>
-        private void UnsubscribeFromAudioReactorManagerEvents()
-        {
-            if (_audioReactorManager != null)
-            {
-                // 这里取消订阅AudioReactorManager的相关事件
             }
         }
         
@@ -534,8 +497,8 @@ namespace GameLogic
                 {
                     await UniTask.Delay(TimeSpan.FromSeconds(startDelay), cancellationToken: _cts.Token);
                 }
-                GlobalAudio.clip = audioClip;
-                GlobalAudio.Play();
+                _globalAudioSource.clip = audioClip;
+                _globalAudioSource.Play();
                 return true;
             }
             catch (Exception ex)
@@ -574,7 +537,7 @@ namespace GameLogic
         {
             if (_isPlaying)
             {
-                GlobalAudio?.Stop();
+                _globalAudioSource?.Stop();
                 _lyricFX?.StopAll();
                 
                 _isPlaying = false;
@@ -596,7 +559,7 @@ namespace GameLogic
         {
             if (_isPlaying)
             {
-                GlobalAudio?.Stop();
+                _globalAudioSource?.Stop();
                 _lyricFX?.StopAll();
                 
                 _isPlaying = false;
@@ -734,7 +697,7 @@ namespace GameLogic
         {
             if (_isPlaying)
             {
-                GlobalAudio?.Stop();
+                _globalAudioSource?.Stop();
                 // 歌词系统暂停需要根据LyricFX的API来实现
                 
                 if (_enableDebugger)
@@ -751,7 +714,7 @@ namespace GameLogic
         {
             if (_isPlaying)
             {
-                GlobalAudio?.Play();
+                _globalAudioSource?.Play();
                 // 歌词系统恢复需要根据LyricFX的API来实现
                 
                 if (_enableDebugger)
@@ -769,7 +732,7 @@ namespace GameLogic
         //{
         //    if (_isPlaying)
         //    {
-        //        GlobalAudio?.cur;
+        //        _globalAudioSource?.cur;
         //        // 歌词系统时间设置需要根据LyricFX的API来实现
                 
         //        if (_enableDebugger)
@@ -808,25 +771,6 @@ namespace GameLogic
                 _lyricFX?.StopAll();
                 _isPlaying = false;
                 OnPlaybackStopped?.Invoke();
-            }
-        }
-        
-        /// <summary>
-        /// 处理音频数据更新事件
-        /// </summary>
-        /// <param name="rms">RMS值</param>
-        /// <param name="spectrum">频谱数据</param>
-        private void HandleAudioDataUpdated(float rms, float[] spectrum)
-        {
-            // 将音频数据传递给外部监听者
-            OnAudioDataReceived?.Invoke(rms, spectrum);
-            
-            // 可以在这里根据音频数据动态调整歌词效果
-            // 例如：根据音量大小调整歌词缩放、颜色等
-            if (rms > 0.1f) // 音量阈值
-            {
-                // 实现音频响应的歌词效果
-                // 这里可以调用歌词系统的动态效果API
             }
         }
         
@@ -871,7 +815,7 @@ namespace GameLogic
             // 停止当前播放
             if (_isPlaying)
             {
-                GlobalAudio?.Stop();
+                _globalAudioSource?.Stop();
                 _lyricFX?.StopAll();
                 _isPlaying = false;
                 OnPlaybackStopped?.Invoke();
