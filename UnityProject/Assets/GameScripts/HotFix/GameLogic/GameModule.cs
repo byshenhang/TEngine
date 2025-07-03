@@ -120,9 +120,9 @@ public class GameModule
     /// <summary>
     /// 获取音频同步模块。
     /// </summary>
-    public static AudioSyncModule AUDIO_SYNC => _audioSync ??= AudioSyncModule.Instance;
+    //public static AudioSyncModule AUDIO_SYNC => _audioSync ??= AudioSyncModule.Instance;
 
-    private static AudioSyncModule _audioSync;
+    //private static AudioSyncModule _audioSync;
     
     /// <summary>
     /// 获取音频歌词协调器模块。
@@ -182,7 +182,6 @@ public class GameModule
         _xri = null;
 
         _lyric = null;
-        _audioSync = null;
         _audioLyricCoordinator = null;
 
         // 战斗模块作为Singleton由GameApp.Release处理

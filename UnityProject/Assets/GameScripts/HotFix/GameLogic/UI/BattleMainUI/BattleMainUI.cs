@@ -161,7 +161,6 @@ namespace GameLogic
                 Debug.Log("开始音频歌词同步播放");
                 
                 Debug.Log($"当前播放状态: {(coordinator.IsPlaying() ? "播放中" : "已停止")}");
-                Debug.Log($"音频长度: {coordinator.GetAudioLength():F2}秒");
             }
             catch (System.Exception ex)
             {

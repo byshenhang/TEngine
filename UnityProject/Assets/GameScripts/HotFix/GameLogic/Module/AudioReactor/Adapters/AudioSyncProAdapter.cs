@@ -4,8 +4,6 @@ using System.Linq;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 using TEngine;
-using System.Reflection;
-using Object = UnityEngine.Object;
 
 namespace GameLogic.AudioReactor.Adapters
 {
@@ -22,7 +20,7 @@ namespace GameLogic.AudioReactor.Adapters
         private const string REACTOR_TYPE = "AudioSyncPro";
         
         // Audio Sync Pro 相关组件
-        private AudioSyncModule _audioSyncModule;
+        //private AudioSyncModule _audioSyncModule;
         private AudioSource _currentAudioSource;
         
         // 适配器状态
@@ -54,13 +52,11 @@ namespace GameLogic.AudioReactor.Adapters
         /// </summary>
         /// <param name="audioSyncModule">Audio Sync Pro 模块实例</param>
         /// <param name="customName">自定义显示名称</param>
-        public AudioSyncProAdapter(AudioSyncModule audioSyncModule, string customName = null)
+        public AudioSyncProAdapter(string customName = null)
         {
-            _audioSyncModule = audioSyncModule ?? throw new ArgumentNullException(nameof(audioSyncModule));
-            
             // 生成唯一标识
-            _reactorId = $"AudioSyncPro_{audioSyncModule.GetHashCode()}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
-            _displayName = customName ?? $"Audio Sync Pro ({audioSyncModule.GetType().Name})";
+            _reactorId = $"AudioSyncPro__{Guid.NewGuid().ToString("N").Substring(0, 8)}";
+            _displayName = customName ?? $"Audio Sync Pro ";
             
             Log.Info($"AudioSyncProAdapter: 适配器已创建 - {_displayName}");
         }
@@ -76,34 +72,34 @@ namespace GameLogic.AudioReactor.Adapters
             try
             {
                 // 获取AudioSyncModule单例实例
-                var audioSyncModule = AudioSyncModule.Instance;
+                //var audioSyncModule = AudioSyncModule.Instance;
                 
-                if (audioSyncModule != null)
-                {
-                    // 尝试在场景中查找AudioReactor和AudioSourcePlus组件
-                    var audioReactor = Object.FindObjectOfType<TelePresent.AudioSyncPro.AudioReactor>();
-                    var audioSourcePlus = Object.FindObjectOfType<TelePresent.AudioSyncPro.AudioSourcePlus>();
+                //if (audioSyncModule != null)
+                //{
+                //    // 尝试在场景中查找AudioReactor和AudioSourcePlus组件
+                //    var audioReactor = Object.FindObjectOfType<TelePresent.AudioSyncPro.AudioReactor>();
+                //    var audioSourcePlus = Object.FindObjectOfType<TelePresent.AudioSyncPro.AudioSourcePlus>();
                     
-                    // 如果找到了必要的组件，初始化AudioSyncModule
-                    if (audioReactor != null)
-                    {
-                        bool initSuccess = audioSyncModule.Initialize(audioReactor, audioSourcePlus);
-                        if (initSuccess)
-                        {
-                            var adapter = new AudioSyncProAdapter(audioSyncModule);
-                            adapters.Add(adapter);
-                            Log.Info($"AudioSyncProAdapter: 成功初始化AudioSyncModule并创建适配器");
-                        }
-                        else
-                        {
-                            Log.Warning($"AudioSyncProAdapter: AudioSyncModule初始化失败");
-                        }
-                    }
-                    else
-                    {
-                        Log.Warning($"AudioSyncProAdapter: 场景中未找到AudioReactor组件");
-                    }
-                }
+                //    // 如果找到了必要的组件，初始化AudioSyncModule
+                //    if (audioReactor != null)
+                //    {
+                //        bool initSuccess = audioSyncModule.Initialize(audioReactor, audioSourcePlus);
+                //        if (initSuccess)
+                //        {
+                //            var adapter = new AudioSyncProAdapter(audioSyncModule);
+                //            adapters.Add(adapter);
+                //            Log.Info($"AudioSyncProAdapter: 成功初始化AudioSyncModule并创建适配器");
+                //        }
+                //        else
+                //        {
+                //            Log.Warning($"AudioSyncProAdapter: AudioSyncModule初始化失败");
+                //        }
+                //    }
+                //    else
+                //    {
+                //        Log.Warning($"AudioSyncProAdapter: 场景中未找到AudioReactor组件");
+                //    }
+                //}
                 
                 Log.Info($"AudioSyncProAdapter: 在场景中发现 {adapters.Count} 个 Audio Sync Pro 组件");
             }
@@ -130,12 +126,6 @@ namespace GameLogic.AudioReactor.Adapters
                 }
                 
                 ChangeState(AudioReactorState.Initializing);
-                
-                // 验证 Audio Sync Pro 模块
-                if (_audioSyncModule == null)
-                {
-                    throw new InvalidOperationException("AudioSyncModule 引用为空");
-                }
                 
                 // 如果当前有音频源，设置音频源
                 if (_currentAudioSource != null)
@@ -185,23 +175,23 @@ namespace GameLogic.AudioReactor.Adapters
                 ChangeState(AudioReactorState.Enabling);
                 
                 // 启用 Audio Sync Pro 模块
-                if (_audioSyncModule != null)
-                {
-                    // 如果有音频源，确保模块使用正确的音频源
-                    if (_currentAudioSource != null)
-                    {
-                        // 使用反射安全地设置音频源
-                        try
-                        {
-                            var setAudioSourceMethod = _audioSyncModule.GetType().GetMethod("SetAudioSource");
-                            setAudioSourceMethod?.Invoke(_audioSyncModule, new object[] { _currentAudioSource });
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Warning($"AudioSyncProAdapter: 设置音频源失败: {ex.Message}");
-                        }
-                    }
-                }
+                //if (_audioSyncModule != null)
+                //{
+                //    // 如果有音频源，确保模块使用正确的音频源
+                //    if (_currentAudioSource != null)
+                //    {
+                //        // 使用反射安全地设置音频源
+                //        try
+                //        {
+                //            var setAudioSourceMethod = _audioSyncModule.GetType().GetMethod("SetAudioSource");
+                //            setAudioSourceMethod?.Invoke(_audioSyncModule, new object[] { _currentAudioSource });
+                //        }
+                //        catch (Exception ex)
+                //        {
+                //            Log.Warning($"AudioSyncProAdapter: 设置音频源失败: {ex.Message}");
+                //        }
+                //    }
+                //}
                 
                 _isEnabled = true;
                 ChangeState(AudioReactorState.Enabled);
@@ -236,19 +226,19 @@ namespace GameLogic.AudioReactor.Adapters
                 ChangeState(AudioReactorState.Disabling);
                 
                 // 禁用 Audio Sync Pro 模块
-                if (_audioSyncModule != null)
-                {
-                    // 使用反射安全地调用停止方法
-                    try
-                    {
-                        var stopMethod = _audioSyncModule.GetType().GetMethod("Stop");
-                        stopMethod?.Invoke(_audioSyncModule, null);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Warning($"AudioSyncProAdapter: 停止模块失败: {ex.Message}");
-                    }
-                }
+                //if (_audioSyncModule != null)
+                //{
+                //    // 使用反射安全地调用停止方法
+                //    try
+                //    {
+                //        var stopMethod = _audioSyncModule.GetType().GetMethod("Stop");
+                //        stopMethod?.Invoke(_audioSyncModule, null);
+                //    }
+                //    catch (Exception ex)
+                //    {
+                //        Log.Warning($"AudioSyncProAdapter: 停止模块失败: {ex.Message}");
+                //    }
+                //}
                 
                 _isEnabled = false;
                 ChangeState(AudioReactorState.Disabled);
@@ -277,14 +267,6 @@ namespace GameLogic.AudioReactor.Adapters
             {
                 _currentAudioSource = audioSource;
                 
-                // 如果适配器已启用，立即应用音频源设置
-                if (_isEnabled && _audioSyncModule != null)
-                {
-                    //foreach (var item in adapters)
-                    //{
-
-                    //}
-                }
                 
                 Log.Info($"AudioSyncProAdapter: 音频源已设置 - {_displayName}");
                 return true;
@@ -298,113 +280,8 @@ namespace GameLogic.AudioReactor.Adapters
             }
         }
         
-        
-        /// </summary>
-        /// <param name="key">参数键</param>
-        /// <param name="value">参数值</param>
-        /// <returns>设置任务</returns>
-        public async UniTask<bool> SetParameterAsync(string key, object value)
-        {
-            try
-            {
-                _parameters[key] = value;
-                // 根据参数键应用到 AudioSyncModule
-                await ApplyParameterToModule(key, value);
-                
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"AudioSyncProAdapter: 设置参数失败 - {key}: {ex.Message}");
-                return false;
-            }
-        }
-        
-        /// <summary>
-        /// 异步获取参数
-        /// </summary>
-        /// <param name="parameterName">参数名</param>
-        /// <returns>参数值</returns>
-        public async UniTask<T> GetParameterAsync<T>(string parameterName)
-        {
-            if (_parameters.TryGetValue(parameterName, out var value) && value is T typedValue)
-            {
-                return typedValue;
-            }
-            
-            return default(T);
-        }
-        
-        /// <summary>
-        /// 获取所有可用参数名称
-        /// </summary>
-        /// <returns>参数名称列表</returns>
-        public async UniTask<List<string>> GetAvailableParametersAsync()
-        {
-            return new List<string>(_parameters.Keys);
-        }
-        
-        /// <summary>
-        /// 获取反应器详细信息
-        /// </summary>
-        /// <returns>详细信息字典</returns>
-        public async UniTask<Dictionary<string, object>> GetInfoAsync()
-        {
-            var info = new Dictionary<string, object>
-            {
-                ["ReactorId"] = ReactorId,
-                ["DisplayName"] = DisplayName,
-                ["ReactorType"] = ReactorType,
-                ["IsEnabled"] = IsEnabled,
-                ["IsInitialized"] = IsInitialized,
-                ["CurrentState"] = CurrentState.ToString(),
-                ["HasAudioSource"] = CurrentAudioSource != null,
-                ["AudioSourceName"] = CurrentAudioSource?.name ?? "None",
-                ["ModuleType"] = _audioSyncModule?.GetType().Name ?? "None",
-                ["ParameterCount"] = _parameters.Count
-            };
-            
-            return info;
-        }
-        
-        /// <summary>
-        /// 检查是否支持特定功能
-        /// </summary>
-        /// <param name="featureName">功能名称</param>
-        /// <returns>是否支持</returns>
-        public bool SupportsFeature(string featureName)
-        {
-            switch (featureName.ToLower())
-            {
-                case "spectrum_analysis":
-                case "frequency_bands":
-                case "rms_analysis":
-                case "dynamic_bands":
-                    return true;
-                    
-                case "beat_detection":
-                    return false; // 根据 AudioSyncModule 的实际功能调整
-                    
-                default:
-                    return false;
-            }
-        }
-        
-        /// <summary>
-        /// 获取参数
-        /// </summary>
-        /// <param name="key">参数键</param>
-        /// <returns>参数值</returns>
-        public T GetParameter<T>(string key)
-        {
-            if (_parameters.TryGetValue(key, out var value) && value is T typedValue)
-            {
-                return typedValue;
-            }
-            
-            return default(T);
-        }
-        
+   
+   
         /// <summary>
         /// 异步释放资源
         /// </summary>
@@ -421,7 +298,6 @@ namespace GameLogic.AudioReactor.Adapters
                 
                 // 清理资源
                 _currentAudioSource = null;
-                _audioSyncModule = null;
                 _parameters.Clear();
                 
                 _isInitialized = false;
@@ -459,101 +335,7 @@ namespace GameLogic.AudioReactor.Adapters
             _parameters["threshold"] = 0.01f;
         }
         
-        /// <summary>
-        /// 应用参数到模块
-        /// </summary>
-        /// <param name="key">参数键</param>
-        /// <param name="value">参数值</param>
-        /// <returns>应用任务</returns>
-        private async UniTask ApplyParameterToModule(string key, object value)
-        {
-            if (_audioSyncModule == null) return;
-            
-            try
-            {
-                // 使用反射安全地设置参数到 AudioSyncModule
-                switch (key.ToLower())
-                {
-                    case "sensitivity":
-                        SetModuleProperty("Sensitivity", value);
-                        break;
-                    
-                    case "smoothing":
-                        SetModuleProperty("Smoothing", value);
-                        break;
-                    
-                    case "gain":
-                        SetModuleProperty("Gain", value);
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"AudioSyncProAdapter: 应用参数失败 - {key}: {ex.Message}");
-            }
-        }
+       
         
-        /// <summary>
-        /// 获取RMS值
-        /// </summary>
-        /// <returns>RMS值</returns>
-        private float GetRMSValue()
-        {
-            return GetModuleProperty<float>("RMS");
-        }
-      
-        /// <summary>
-        /// 安全地获取模块属性值
-        /// </summary>
-        /// <typeparam name="T">属性类型</typeparam>
-        /// <param name="propertyName">属性名称</param>
-        /// <returns>属性值</returns>
-        private T GetModuleProperty<T>(string propertyName)
-        {
-            try
-            {
-                if (_audioSyncModule == null) return default(T);
-                
-                var property = _audioSyncModule.GetType().GetProperty(propertyName);
-                if (property != null && property.CanRead)
-                {
-                    var value = property.GetValue(_audioSyncModule);
-                    if (value is T typedValue)
-                    {
-                        return typedValue;
-                    }
-                }
-                
-                return default(T);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning($"AudioSyncProAdapter: 获取属性 {propertyName} 失败: {ex.Message}");
-                return default(T);
-            }
-        }
-        
-        /// <summary>
-        /// 安全地设置模块属性值
-        /// </summary>
-        /// <param name="propertyName">属性名称</param>
-        /// <param name="value">属性值</param>
-        private void SetModuleProperty(string propertyName, object value)
-        {
-            try
-            {
-                if (_audioSyncModule == null) return;
-                
-                var property = _audioSyncModule.GetType().GetProperty(propertyName);
-                if (property != null && property.CanWrite)
-                {
-                    property.SetValue(_audioSyncModule, value);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warning($"AudioSyncProAdapter: 设置属性 {propertyName} 失败: {ex.Message}");
-            }
-        }
     }
 }

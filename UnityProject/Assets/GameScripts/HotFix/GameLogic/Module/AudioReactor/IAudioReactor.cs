@@ -128,40 +128,6 @@ namespace GameLogic.AudioReactor
         UniTask ReleaseAsync();
         
         #endregion
-        
-        #region 参数配置
-        
-        /// <summary>
-        /// 设置参数
-        /// </summary>
-        /// <param name="parameterName">参数名</param>
-        /// <param name="value">参数值</param>
-        /// <returns>设置是否成功</returns>
-        UniTask<bool> SetParameterAsync(string parameterName, object value);
-        
-        /// <summary>
-        /// 获取参数
-        /// </summary>
-        /// <param name="parameterName">参数名</param>
-        /// <returns>参数值</returns>
-        UniTask<T> GetParameterAsync<T>(string parameterName);
-        
-        /// <summary>
-        /// 获取所有可用参数名称
-        /// </summary>
-        /// <returns>参数名称列表</returns>
-        UniTask<List<string>> GetAvailableParametersAsync();
-        
-        #endregion
-        
-        #region 信息查询
-        
-        /// <summary>
-        /// 获取反应器详细信息
-        /// </summary>
-        /// <returns>详细信息字典</returns>
-        UniTask<Dictionary<string, object>> GetInfoAsync();
-        
-        #endregion
+    
     }
 }
