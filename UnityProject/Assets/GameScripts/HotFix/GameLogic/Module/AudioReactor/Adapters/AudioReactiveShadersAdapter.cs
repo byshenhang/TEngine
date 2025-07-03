@@ -105,6 +105,14 @@ namespace GameLogic.AudioReactor.Adapters
             {
                 // 查找所有 MusicReader 组件
                 var musicReaders = GameObject.FindObjectsOfType<MusicSpectrumReader>();
+                
+                // 检查是否找到组件
+                if (musicReaders.Length == 0)
+                {
+                    Log.Warning("AudioReactiveShadersAdapter: 场景中未找到 MusicSpectrumReader 组件");
+                    return adapters;
+                }
+                
                 if (musicReaders.Length > 1)
                 {
                     Log.Warning($"AudioReactiveShadersAdapter: 场景中已存在多个 MusicReader 组件，将使用第一个");
@@ -159,7 +167,7 @@ namespace GameLogic.AudioReactor.Adapters
                 await UniTask.NextFrame();
 
                 _isInitialized = true;
-                SetState(AudioReactorState.Initialized);
+                SetState(AudioReactorState.Disabled);
 
                 Log.Info($"AudioReactiveShadersAdapter: 初始化成功 - {DisplayName}");
                 return true;
@@ -261,6 +269,13 @@ namespace GameLogic.AudioReactor.Adapters
         {
             try
             {
+                // 参数验证
+                if (audioSource == null)
+                {
+                    Log.Warning("AudioReactiveShadersAdapter: 传入的音频源为空");
+                    return false;
+                }
+                
                 _audioSource = audioSource;
 
                 // 如果 MusicReader 支持设置音频源，在这里设置
@@ -321,6 +336,10 @@ namespace GameLogic.AudioReactor.Adapters
             try
             {
                 SetState(AudioReactorState.Releasing);
+
+                // 取消事件订阅，防止内存泄漏
+                OnStateChanged = null;
+                OnError = null;
 
                 // MusicReader 不需要禁用操作
                 // 进行资源清理
