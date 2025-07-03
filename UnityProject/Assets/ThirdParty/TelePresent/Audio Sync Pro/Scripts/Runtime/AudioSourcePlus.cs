@@ -135,6 +135,11 @@ namespace TelePresent.AudioSyncPro
         }
 #endif
 
+        public void SetAudioSource(AudioSource source)
+        {
+            audioSource = source;
+        }
+
         private void EnsureAudioSource()
         {
             //if (audioSource == null)

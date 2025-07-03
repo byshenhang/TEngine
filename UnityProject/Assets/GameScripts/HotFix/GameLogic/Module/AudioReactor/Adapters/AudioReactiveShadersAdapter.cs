@@ -105,15 +105,13 @@ namespace GameLogic.AudioReactor.Adapters
             {
                 // 查找所有 MusicReader 组件
                 var musicReaders = GameObject.FindObjectsOfType<MusicSpectrumReader>();
-
-                foreach (var musicReader in musicReaders)
+                if (musicReaders.Length > 1)
                 {
-                    if (musicReader != null && musicReader.gameObject.activeInHierarchy)
-                    {
-                        var adapter = new AudioReactiveShadersAdapter(musicReader);
-                        adapters.Add(adapter);
-                    }
+                    Log.Warning($"AudioReactiveShadersAdapter: 场景中已存在多个 MusicReader 组件，将使用第一个");
                 }
+                
+                var adapter = new AudioReactiveShadersAdapter(musicReaders.First());
+                adapters.Add(adapter);
 
                 Log.Info($"AudioReactiveShadersAdapter: 发现 {adapters.Count} 个 AudioReactiveShaders 组件");
             }

@@ -4,6 +4,9 @@ using System.Linq;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 using TEngine;
+using TelePresent.AudioSyncPro;
+using Object = UnityEngine.Object;
+using AudioReactiveShader;
 
 namespace GameLogic.AudioReactor.Adapters
 {
@@ -14,6 +17,7 @@ namespace GameLogic.AudioReactor.Adapters
     /// </summary>
     public class AudioSyncProAdapter : IAudioReactor
     {
+
         // 适配器标识
         private readonly string _reactorId;
         private readonly string _displayName;
@@ -45,17 +49,19 @@ namespace GameLogic.AudioReactor.Adapters
         public AudioReactorState CurrentState => _currentState;
         public bool IsInitialized => _isInitialized;
         public AudioSource CurrentAudioSource => _currentAudioSource;
-        
+        public AudioSourcePlus sourcePlus;
+
         /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="audioSyncModule">Audio Sync Pro 模块实例</param>
         /// <param name="customName">自定义显示名称</param>
-        public AudioSyncProAdapter(string customName = null)
+        public AudioSyncProAdapter(AudioSourcePlus audioSourcePlus)
         {
+            this.sourcePlus = audioSourcePlus;
             // 生成唯一标识
             _reactorId = $"AudioSyncPro__{Guid.NewGuid().ToString("N").Substring(0, 8)}";
-            _displayName = customName ?? $"Audio Sync Pro ";
+            _displayName = $"Audio Sync Pro ";
             
             Log.Info($"AudioSyncProAdapter: 适配器已创建 - {_displayName}");
         }
@@ -70,36 +76,27 @@ namespace GameLogic.AudioReactor.Adapters
             
             try
             {
-                // 获取AudioSyncModule单例实例
-                //var audioSyncModule = AudioSyncModule.Instance;
-                
-                //if (audioSyncModule != null)
-                //{
-                //    // 尝试在场景中查找AudioReactor和AudioSourcePlus组件
-                //    var audioReactor = Object.FindObjectOfType<TelePresent.AudioSyncPro.AudioReactor>();
-                //    var audioSourcePlus = Object.FindObjectOfType<TelePresent.AudioSyncPro.AudioSourcePlus>();
-                    
-                //    // 如果找到了必要的组件，初始化AudioSyncModule
-                //    if (audioReactor != null)
-                //    {
-                //        bool initSuccess = audioSyncModule.Initialize(audioReactor, audioSourcePlus);
-                //        if (initSuccess)
-                //        {
-                //            var adapter = new AudioSyncProAdapter(audioSyncModule);
-                //            adapters.Add(adapter);
-                //            Log.Info($"AudioSyncProAdapter: 成功初始化AudioSyncModule并创建适配器");
-                //        }
-                //        else
-                //        {
-                //            Log.Warning($"AudioSyncProAdapter: AudioSyncModule初始化失败");
-                //        }
-                //    }
-                //    else
-                //    {
-                //        Log.Warning($"AudioSyncProAdapter: 场景中未找到AudioReactor组件");
-                //    }
-                //}
-                
+                // 尝试在场景中查找AudioReactor和AudioSourcePlus组件
+                var audioReactor = Object.FindObjectsOfType<TelePresent.AudioSyncPro.AudioReactor>();
+                var audioSourcePlus = Object.FindObjectsOfType<AudioSourcePlus>();
+
+                if (audioSourcePlus.Length > 1)
+                {
+                    Debug.LogError($"AudioSyncProAdapter: 在场景中找到多个AudioSourcePlus组件");
+                }
+
+                // 如果找到了必要的组件，初始化AudioSyncModule
+                if (audioReactor != null)
+                {
+                    var adapter = new AudioSyncProAdapter(audioSourcePlus.First());
+                    adapters.Add(adapter);
+                   
+                }
+                else
+                {
+                    Log.Warning($"AudioSyncProAdapter: 场景中未找到AudioReactor组件");
+                }
+
                 Log.Info($"AudioSyncProAdapter: 在场景中发现 {adapters.Count} 个 Audio Sync Pro 组件");
             }
             catch (Exception ex)
@@ -172,26 +169,7 @@ namespace GameLogic.AudioReactor.Adapters
                 }
                 
                 ChangeState(AudioReactorState.Enabling);
-                
-                // 启用 Audio Sync Pro 模块
-                //if (_audioSyncModule != null)
-                //{
-                //    // 如果有音频源，确保模块使用正确的音频源
-                //    if (_currentAudioSource != null)
-                //    {
-                //        // 使用反射安全地设置音频源
-                //        try
-                //        {
-                //            var setAudioSourceMethod = _audioSyncModule.GetType().GetMethod("SetAudioSource");
-                //            setAudioSourceMethod?.Invoke(_audioSyncModule, new object[] { _currentAudioSource });
-                //        }
-                //        catch (Exception ex)
-                //        {
-                //            Log.Warning($"AudioSyncProAdapter: 设置音频源失败: {ex.Message}");
-                //        }
-                //    }
-                //}
-                
+             
                 _isEnabled = true;
                 ChangeState(AudioReactorState.Enabled);
                 
@@ -224,21 +202,6 @@ namespace GameLogic.AudioReactor.Adapters
                 
                 ChangeState(AudioReactorState.Disabling);
                 
-                // 禁用 Audio Sync Pro 模块
-                //if (_audioSyncModule != null)
-                //{
-                //    // 使用反射安全地调用停止方法
-                //    try
-                //    {
-                //        var stopMethod = _audioSyncModule.GetType().GetMethod("Stop");
-                //        stopMethod?.Invoke(_audioSyncModule, null);
-                //    }
-                //    catch (Exception ex)
-                //    {
-                //        Log.Warning($"AudioSyncProAdapter: 停止模块失败: {ex.Message}");
-                //    }
-                //}
-                
                 _isEnabled = false;
                 ChangeState(AudioReactorState.Disabled);
                 
@@ -265,7 +228,7 @@ namespace GameLogic.AudioReactor.Adapters
             try
             {
                 _currentAudioSource = audioSource;
-                
+                sourcePlus.SetAudioSource(audioSource);
                 
                 Log.Info($"AudioSyncProAdapter: 音频源已设置 - {_displayName}");
                 return true;

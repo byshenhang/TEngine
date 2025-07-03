@@ -587,7 +587,7 @@ namespace GameLogic
         
         /// <summary>
         /// 停止所有播放
-        /// </summary>
+        /// </summaryf
         public void StopAll()
         {
             if (_isPlaying)
