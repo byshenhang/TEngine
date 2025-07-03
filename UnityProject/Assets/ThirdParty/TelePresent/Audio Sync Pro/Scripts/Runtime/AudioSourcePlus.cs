@@ -1,12 +1,3 @@
-/*******************************************************
-Product - Audio Sync Pro
-  Publisher - TelePresent Games
-              http://TelePresentGames.dk
-  Author    - Martin Hansen
-  Created   - 2024
-  (c) 2024 Martin Hansen. All rights reserved.
-/*******************************************************/
-
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -24,7 +15,6 @@ namespace TelePresent.AudioSyncPro
     [ExecuteInEditMode]
     public class AudioSourcePlus : MonoBehaviour
     {
-        [HideInInspector]
         public AudioSource audioSource;
         public event Action OnAudioStopped;
         public event Action OnAudioStarted;
@@ -147,14 +137,14 @@ namespace TelePresent.AudioSyncPro
 
         private void EnsureAudioSource()
         {
-            if (audioSource == null)
-            {
-                audioSource = gameObject.GetComponent<AudioSource>();
-                if (audioSource == null)
-                {
-                    audioSource = gameObject.AddComponent<AudioSource>();
-                }
-            }
+            //if (audioSource == null)
+            //{
+            //    audioSource = gameObject.GetComponent<AudioSource>();
+            //    if (audioSource == null)
+            //    {
+            //        audioSource = gameObject.AddComponent<AudioSource>();
+            //    }
+            //}
             ToggleAudioSourceVisibility(showAudioSource);
             if (audioCurves.Count == 0)
             {
@@ -165,16 +155,21 @@ namespace TelePresent.AudioSyncPro
             }
         }
 
+        /// <summary>
+        /// 设置音频组件可见激活性
+        /// </summary>
+        /// <param name="visibility"></param>
         public void ToggleAudioSourceVisibility(bool visibility)
         {
-            if (visibility)
-            {
-                audioSource.hideFlags = HideFlags.None;
-            }
-            else
-            {
-                audioSource.hideFlags = HideFlags.HideInInspector;
-            }
+            audioSource.hideFlags = HideFlags.None;
+            // if (visibility)
+            // {
+            //     audioSource.hideFlags = HideFlags.None;
+            // }
+            // else
+            // {
+            //     audioSource.hideFlags = HideFlags.HideInInspector;
+            // }
         }
 
         private void Update()

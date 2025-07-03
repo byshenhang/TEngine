@@ -164,12 +164,13 @@ namespace TelePresent.AudioSyncPro
 
         public override void OnInspectorGUI()
         {
-            if (audioSourcePlus?.audioSource == null)
-            {
-                EditorGUILayout.HelpBox("AudioSourcePlus or its AudioSource is not assigned.", MessageType.Error);
-                return;
-            }
-
+            //if (audioSourcePlus?.audioSource == null)
+            //{
+            //    EditorGUILayout.HelpBox("AudioSourcePlus or its AudioSource is not assigned.", MessageType.Error);
+            //    return;
+            //}
+            audioSourcePlus.audioSource = (AudioSource)EditorGUILayout.ObjectField(audioSourcePlus.audioSource, typeof(AudioSource));
+            audioSource = audioSourcePlus.audioSource;
             ASP_AudioSourceEditorDisplayer.DrawAudioSourceProperties(audioSourcePlus);
             DrawFoldout(ref showPlaybackSettings, "Playback Settings", _ => ASP_AudioSourceEditorDisplayer.DrawPlaybackSettings(audioSource));
             DrawFoldout(ref showSoundSettings, "Sound Settings", _ => ASP_AudioSourceEditorDisplayer.DrawSoundSettings(audioSourcePlus));
@@ -188,14 +189,14 @@ namespace TelePresent.AudioSyncPro
                 DrawToggleCurveModeButton();
             });
 
-            if (audioSource.clip != null)
+            if (audioSource && audioSource.clip != null)
             {
                 DrawWaveformTimeline();
             }
 
             HandleInput(audioSourcePlus);
 
-            if (audioSource.clip != null)
+            if (audioSource && audioSource.clip != null)
             {
                 previousPlayheadTime = audioSource.time;
             }
