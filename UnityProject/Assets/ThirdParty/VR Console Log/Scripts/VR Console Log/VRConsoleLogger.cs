@@ -1,4 +1,4 @@
-    using System;
+using System;
     using System.Collections;
     using UnityEngine;
     using UnityEngine.Events;
@@ -178,6 +178,11 @@
                 }
             }
 
+            /// <summary>
+            /// 处理新的日志消息，包括对象池管理和UI显示
+            /// Handles new log messages, including object pool management and UI display
+            /// </summary>
+            /// <param name="logData">要处理的日志数据 / The log data to process</param>
             private void HandleNewLog(LogData logData)
             {
                 if (_logPool._activeMessageCount >= maxMessageCount)
@@ -197,12 +202,35 @@
                 logMessage.SetDisplayData(fontSize, GetColor(logData.Type), GetBackgroundColor(_visibleCounter));
                 logMessage.UpdateMessage(timeType, logStackTrace);
                 
-                logMessage.gameObject.SetActive(isVisible);  // Set visibility once all conditions checked
+                // 延迟设置可见性以避免UI重建循环问题
+                // Delay visibility setting to avoid UI rebuild loop issues
+                StartCoroutine(SetLogMessageVisibilityCoroutine(logMessage, isVisible));
 
                 if (isVisible)
                     _visibleCounter++;
                 
                 IncrementCount(logData.Type);
+            }
+            
+            /// <summary>
+            /// 协程：安全地设置日志消息的可见性，避免UI重建循环冲突
+            /// Coroutine: Safely sets log message visibility to avoid UI rebuild loop conflicts
+            /// </summary>
+            /// <param name="logMessage">要设置可见性的日志消息 / The log message to set visibility for</param>
+            /// <param name="isVisible">是否可见 / Whether the message should be visible</param>
+            /// <returns>协程枚举器 / Coroutine enumerator</returns>
+            private IEnumerator SetLogMessageVisibilityCoroutine(LogMessage logMessage, bool isVisible)
+            {
+                // 等待到帧结束，确保不在Canvas重建循环中
+                // Wait until end of frame to ensure we're not in a Canvas rebuild loop
+                yield return new WaitForEndOfFrame();
+                
+                // 检查对象是否仍然有效
+                // Check if the object is still valid
+                if (logMessage != null && logMessage.gameObject != null)
+                {
+                    logMessage.gameObject.SetActive(isVisible);
+                }
             }
 
             public void Clear()
@@ -329,16 +357,44 @@
                 }
             }
             
+            /// <summary>
+            /// 更新日志消息的可见性，根据类型过滤显示
+            /// Updates log message visibility based on type filtering
+            /// </summary>
             private void UpdateLogVisibility()
             {
+                StartCoroutine(UpdateLogVisibilityCoroutine());
+            }
+            
+            /// <summary>
+            /// 协程：安全地更新日志可见性，避免UI重建循环冲突
+            /// Coroutine: Safely updates log visibility to avoid UI rebuild loop conflicts
+            /// </summary>
+            /// <returns>协程枚举器 / Coroutine enumerator</returns>
+            private IEnumerator UpdateLogVisibilityCoroutine()
+            {
+                // 等待到帧结束，确保不在Canvas重建循环中
+                // Wait until end of frame to ensure we're not in a Canvas rebuild loop
+                yield return new WaitForEndOfFrame();
+                
                 _visibleCounter = 0;
                 var visibleCount = 0;
                 foreach (Transform child in logMessageParent)
                 {
+                    if (child == null) continue;
+                    
                     child.TryGetComponent(out LogMessage logMessage);
+                    if (logMessage == null) continue;
+                    
                     var childLogType = logMessage.LogType;
                     var isVisible = IsTypeVisible(childLogType) && logMessage.isActive;
-                    child.gameObject.SetActive(isVisible);
+                    
+                    // 安全地设置可见性
+                    // Safely set visibility
+                    if (child.gameObject != null)
+                    {
+                        child.gameObject.SetActive(isVisible);
+                    }
 
                     if (!isVisible) continue;
 
