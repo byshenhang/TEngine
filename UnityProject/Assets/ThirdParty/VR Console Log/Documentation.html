@@ -1,0 +1,64 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome file</title>
+  <link rel="stylesheet" href="https://stackedit.io/style.css" />
+</head>
+
+<body class="stackedit">
+  <div class="stackedit__html"><h1 id="vr-console-log-system-documentation">VR Console Log System Documentation</h1>
+<h2 id="introduction">Introduction</h2>
+<p>The VR Console Log System enhances debugging in virtual reality environments by enabling developers to view Unity console logs directly within their VR headset. This system eliminates the need to remove the headset to check logs on a desktop, streamlining the debugging process and enhancing efficiency by displaying errors and logs in real time within the VR environment.</p>
+<h2 id="integration-tips">Integration Tips</h2>
+<p>To integrate the VR Console Log System into your VR project, simply drag and drop the provided prefab into your scene. The system offers adjustable settings for screen size, text size, and color preferences to accommodate various development needs.</p>
+<p>The Meta Quest scenes utilize the Meta XR All-In-One SDK v64.0 and the Meta XR Interaction SDK OVR Samples v64.0.</p>
+<p>The XR Toolkit scenes are built using the XR Interaction Toolkit 2.5.4 and the toolkit’s example scene.</p>
+<h2 id="additional-resources">Additional Resources</h2>
+<p>For detailed setup instructions and customization tips, please refer to our comprehensive tutorial video available listed on the store page.</p>
+<h2 id="components-overview">Components Overview</h2>
+<h3 id="logmanager">LogManager</h3>
+<p><strong>Purpose:</strong> Acts as the central repository for all log data, capturing Unity console logs and storing them. LogManager broadcasts updates when new logs are recorded, ensuring all connected components receive the latest log information.</p>
+<h3 id="vrconsolelogger">VRConsoleLogger</h3>
+<p><strong>Purpose:</strong> Displays log messages within the VR environment. It interfaces directly with LogManager to receive and display logs dynamically. The logger manages a pool of <code>LogMessage</code> prefabs for efficient display and supports interactions such as log filtering and scrolling. By default, toggling the logger simply hides it, but it can also be completely disabled and later re-enabled. When reactivated, the logger rebuilds the display using the most recent log entries up to the specified maximum message count. This feature is designed to manage performance by limiting the number of complex UI elements active at any time. Additionally, all inspector variables provide live feedback during adjustments outside of gameplay, facilitated by a custom editor script.</p>
+<h3 id="buttonsequencedetector">ButtonSequenceDetector</h3>
+<p><strong>Purpose:</strong> Allows for a covert method of activating the VRConsoleLogger through a sequence of button presses known only to the developer. This feature provides secure and discreet access to log information, ensuring that debugging tools remain hidden from users or testers.</p>
+<p><strong>Description:</strong> The <code>ButtonSequenceDetector</code> script is designed to be flexible, accommodating projects that utilize either Unity’s traditional input system or the newer Input System package. By default, the script is set up to use Unity’s old input system using <code>KeyCode</code>.  To use the new input system version, the script must be modified by commenting out the old input region and uncommenting the new input region. This is done to prevent errors from people not using the new input system.</p>
+<h3 id="logmessage">LogMessage</h3>
+<p><strong>Purpose:</strong> Manages the individual display of log entries. Each log type (error, warning, info) is formatted for easy identification and interaction, facilitating quicker debugging directly within the VR interface.</p>
+<h3 id="movetoobject">MoveToObject</h3>
+<p><strong>Purpose:</strong> Dynamically adjusts the position of the VRConsoleLogger within the VR environment, optimizing visibility and accessibility based on the user’s current interaction context.</p>
+<h3 id="vrconsoleloggerbuttons">VRConsoleLoggerButtons</h3>
+<p><strong>Purpose:</strong> Provides UI elements that enable developers to filter and control the display of log messages. This component enhances the debugging interface by allowing for real-time adjustments to what is displayed.</p>
+<h3 id="vrconsolelogtoggle">VRConsoleLogToggle</h3>
+<p><strong>Purpose:</strong> Manages individual toggle controls for each log type, providing an intuitive interface for developers to quickly adjust log visibility according to their current needs.</p>
+<h3 id="dynamiccomponenttoggle">DynamicComponentToggle</h3>
+<p><strong>Purpose:</strong> The <code>DynamicComponentToggle</code> is a flexible utility class designed to manage the enabled state of multiple component types across a hierarchy of GameObjects in a Unity scene. This class provides an efficient means to dynamically enable or disable groups of components based on their type without needing a reference to a specific API. This only works by dragging scripts from within the scene.</p>
+<p>Let’s expand the <strong>Prefab Overview</strong> section to include more detailed information about each type of prefab and its functionalities within the VR Console Log System, specifically detailing the setup for both Meta Quest and XR Toolkit example scenes:</p>
+<hr>
+<h2 id="prefab-overview">Prefab Overview</h2>
+<p>The VR Console Log System comes with a set of default prefabs located in the “Prefabs” folder, which are essential for the implementation within the main example scenes. These prefabs are designed for intuitive integration and dynamic interaction within VR environments, ensuring a seamless debugging experience.</p>
+<h3 id="key-prefab-types">Key Prefab Types:</h3>
+<ul>
+<li><strong>Basic Logger:</strong> A straightforward log display that can be placed statically anywhere within the scene. It is designed to respond to user interactions, allowing developers to interact with log data seamlessly.</li>
+<li><strong>Movable Logger:</strong> This logger can be initially placed on any surface, like a wall, and is designed to be movable. It can be grabbed and repositioned by the player, providing flexibility in how and where log data is viewed.</li>
+<li><strong>Advanced Logger:</strong> An advanced logger that automatically positions itself in front of the player when toggled on. This logger also features grab-and-move capabilities, allowing for personalized placement within the user’s field of view. The meta version also includes scaling and rotating.</li>
+<li><strong>Wrist Logger:</strong> This logger is designed to appear on the player’s left wrist and can be toggled on or off. It provides convenient access to log data without interfering with the primary gameplay or VR interaction.</li>
+</ul>
+<h3 id="example-scenes">Example Scenes</h3>
+<h4 id="meta-quest-example-scenes">Meta Quest Example Scenes</h4>
+<p>The Meta Quest scenes utilize the Meta XR All-In-One SDK v64.0 and the Meta XR Interaction SDK OVR Samples v64.0. These scenes demonstrate various interactive setups using the prefabs:</p>
+<ul>
+<li>Each scene showcases different configurations such as wall-mounted loggers that can be moved, loggers that appear in front of the player, and wrist-mounted displays, illustrating the versatility and adaptability of the system within Meta’s VR environment.</li>
+</ul>
+<h4 id="xr-toolkit-example-scenes">XR Toolkit Example Scenes</h4>
+<p>The XR Toolkit scenes are built using the XR Interaction Toolkit 2.5.4 and incorporate the player prefab from the toolkit’s example scene to demonstrate compatibility with Unity’s native XR tools. This setup highlights:</p>
+<ul>
+<li>How the VR Console Log System can be integrated and utilized within environments set up using Unity’s XR Interaction Toolkit, providing clear examples of logger interaction using standard XR toolkit components.</li>
+</ul>
+</div>
+</body>
+
+</html>
