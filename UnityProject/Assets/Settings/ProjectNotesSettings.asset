@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 926306c537b96574ca711625ba3d3fec, type: 3}
+  m_Name: ProjectNotesSettings
+  m_EditorClassIdentifier: 
+  _versionTimestamp: 638877610408630151
+  _notes:
+  - guid: 8f4aa9f7-75ce-434b-9901-f347dede0af6
+    timestamp: 638877610408630151
+    category: Sample
+    author: ZQY
+    isDraft: 0
+    priority: 2147483647
+    title: "Sample Note / \u793A\u4F8B\u4FE1\u606F"
+    content: "This is a <b>sample note.</b>\r\n\u8FD9\u662F\u4E00\u4E2A<b>\u793A\u4F8B\u4FE1\u606F\u3002</b>\r\n\r\nYou
+      can input some information here and then upload this asset to a version control
+      system to share the information within your team.\r\n\u53EF\u4EE5\u5728\u8FD9\u91CC\u8F93\u5165\u4E00\u4E9B\u4FE1\u606F\uFF0C\u7136\u540E\u5C06\u6B64\u8D44\u4EA7\u4E0A\u4F20\u5230\u7248\u672C\u63A7\u5236\u7CFB\u7EDF\uFF0C\u6765\u5728\u56E2\u961F\u4E2D\u5206\u4EAB\u4FE1\u606F\u3002\r\n\r\nThe
+      information content supports <color=green>rich text</color>, see reference:\r\n\u4FE1\u606F\u5185\u5BB9\u652F\u6301<color=green>\u5BCC\u6587\u672C</color>\uFF0C\u53C2\u8003\uFF1A\r\n\r\n   
+      <a href=\"https://docs.unity3d.com/Manual/UIE-supported-tags.html\">Supported
+      rich text tags</a>"
+    contentHistory:
+    - timestamp: 638523554912390682
+      content: "This is a <color=blue>historical version</color> sample.\r\n\u8FD9\u662F\u4E00\u4E2A<color=blue>\u5386\u53F2\u7248\u672C</color>\u793A\u4F8B\u3002"
