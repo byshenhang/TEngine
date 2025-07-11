@@ -61,18 +61,23 @@ public partial class GameApp
                false,                            // 不挂起加载
                100,                              // 优先级
                true                     // 加载后回收垃圾
-               ,OnLoadSuccess
+               ,OnLoadSuccessAsync
            );
+
+        //UniTask.Delay(1000).ContinueWith(() => {
+        //    GameModule.UI3D.ShowUI3D<BattleMainUI>(new Vector3(-0.1f, 0.573f, -67), Quaternion.identity).Forget();
+        //});
 
         Log.Info($"场景切换完成: {scene.name}");
     }
 
-    private static void OnLoadSuccess(float obj)
+    private static  void OnLoadSuccessAsync(float obj)
     {
-        UniTask.Delay(1000).ContinueWith(() =>
-        {
-            GameModule.UI3D.ShowUI3DAtAnchor<BattleMainUI>("MainUI", null);
-        }).Forget();
+        //UniTask.Delay(1000).ContinueWith(() =>
+        //{
+        //GameModule.UI3D.ShowUI3D<BattleMainUI>(new Vector3(-0.1f, 0.573f, -67), Quaternion.identity).Forget();
+      //GameModule.UI3D.ShowUI3DAtAnchor<BattleMainUI>("MainUI", null).Forget();
+        //}).Forget();
     }
 
     private static void Release()
