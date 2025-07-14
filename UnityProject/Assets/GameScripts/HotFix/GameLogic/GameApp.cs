@@ -56,7 +56,7 @@ public partial class GameApp
     {
         // 延迟一帧确保锚点已注册
         var scene = await GameModule.Scene.LoadSceneAsync(
-               "main",                           // 场景定位地址
+               "Demo01",                           // 场景定位地址
                LoadSceneMode.Single,             // 单场景模式（替换当前场景）
                false,                            // 不挂起加载
                100,                              // 优先级
