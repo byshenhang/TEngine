@@ -216,6 +216,10 @@ namespace GameLogic
                     return false;
                 }
                 
+                // 设置全局音频源
+                await SetGlobalAudioSourceAsync(_globalAudioSource);
+
+
                 // 自动发现并注册音频反应器
                 int discoveredCount = await DiscoverAudioReactorsAsync();
                 if (discoveredCount == 0)
@@ -223,10 +227,7 @@ namespace GameLogic
                     Log.Error("AudioLyricCoordinator: 未发现任何音频反应器组件");
                     return false;
                 }
-                
-                // 设置全局音频源
-                await SetGlobalAudioSourceAsync(_globalAudioSource);
-                
+
                 // 启用所有音频反应器
                 bool enableSuccess = await _audioReactorManager.EnableAllReactorsAsync();
                 if (!enableSuccess)

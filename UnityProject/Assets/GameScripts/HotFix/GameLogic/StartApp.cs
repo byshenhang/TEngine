@@ -87,11 +87,6 @@ namespace GameLogic
 
                 // 显示所有发现的AudioReactor信息
                 var discoveredReactors = coordinator.GetDiscoveredAudioReactors();
-                //Debug.Log($"发现了 {discoveredReactors.Count} 个AudioReactor:");
-                //foreach (var kvp in discoveredReactors)
-                //{
-                //    Debug.Log($"  - {kvp.Value} (ID: {kvp.Key})");
-                //}
 
                 // 6. 订阅事件（可选）
                 coordinator.OnPlaybackStarted += () => Debug.Log("[事件] 同步播放已开始");
@@ -107,7 +102,7 @@ namespace GameLogic
                 }
 
                 // 8. 开始同步播放
-                coordinator.PlaySynchronized();
+                coordinator.PlaySynchronized(new Vector3(90, 4, 105));
                 Debug.Log("开始音频歌词同步播放");
 
                 Debug.Log($"当前播放状态: {(coordinator.IsPlaying() ? "播放中" : "已停止")}");
