@@ -30,7 +30,7 @@ namespace LyricFX.Implementations.Effect
         public float ShakeDuration { get; set; } = 1.5f;     // 抖动持续时间
         public float HoldDuration { get; set; } = 0.8f;      // 保持时间
         public float FadeOutDuration { get; set; } = 0.5f;   // 淡出持续时间
-        public float ShakeIntensity { get; set; } = 0.8f;      // 抖动强度
+        public float ShakeIntensity { get; set; } = 0.1f;      // 抖动强度
         public float ShakeFrequency { get; set; } = 10f;     // 抖动频率
         public float CharTimeOffset { get; set; } = 0.01f;   // 字符间抖动时间偏移
         private bool isShaking = false;

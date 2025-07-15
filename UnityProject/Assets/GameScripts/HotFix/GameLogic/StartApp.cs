@@ -46,8 +46,10 @@ namespace GameLogic
                 }
 
                 // 2. 准备音频和歌词资源
-                var audioClip = GameModule.Resource.LoadAsset<AudioClip>("XUNZHANG_AUDIO");
-                var lrcText = GameModule.Resource.LoadAsset<TextAsset>("XUNZHANG").text;
+                //var audioClip = GameModule.Resource.LoadAsset<AudioClip>("XUNZHANG_AUDIO");
+                var audioClip = GameModule.Resource.LoadAsset<AudioClip>("KIDDO - My 100_AUDIO");
+                //var lrcText = GameModule.Resource.LoadAsset<TextAsset>("XUNZHANG").text;
+                var lrcText = GameModule.Resource.LoadAsset<TextAsset>("My 100 - KIDDO LRC").text;
                 text.text += "-加载音频";
 
                 if (audioClip == null)
@@ -102,7 +104,8 @@ namespace GameLogic
                 }
 
                 // 8. 开始同步播放
-                coordinator.PlaySynchronized(new Vector3(90, 4, 105));
+                string effectID = "shake_character";
+                coordinator.PlaySynchronized(new Vector3(90, 4, 105), effectID);
                 Debug.Log("开始音频歌词同步播放");
 
                 Debug.Log($"当前播放状态: {(coordinator.IsPlaying() ? "播放中" : "已停止")}");
