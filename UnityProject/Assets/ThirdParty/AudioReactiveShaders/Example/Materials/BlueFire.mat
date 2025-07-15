@@ -89,9 +89,9 @@ Material:
     - _ZWriteControl: 0
     - _lineWidth: 1
     m_Colors:
-    - _BorderColor: {r: 0, g: 2.3575516, b: 16, a: 0}
+    - _BorderColor: {r: 42.722507, g: 0, b: 0, a: 0.7607843}
     - _BottomColor: {r: 0.21810351, g: 0, b: 5.6568537, a: 0}
-    - _CenterColor: {r: 0, g: 0.75956106, b: 1, a: 0}
+    - _CenterColor: {r: 1, g: 0.1812256, b: 0, a: 0.5529412}
     - _CircleOffset: {r: 0, g: 0, b: 0, a: 0}
     - _Offset: {r: -0.38, g: -0.1, b: 0, a: 0}
     - _Subdivisions: {r: 2, g: 5, b: 0, a: 0}
