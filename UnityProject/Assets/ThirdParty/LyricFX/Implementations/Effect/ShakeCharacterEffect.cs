@@ -61,26 +61,21 @@ namespace LyricFX.Implementations.Effect
         }
         
         /// <summary>
-        /// 初始化每个字符的抖动偏移
+        /// 初始化抖动偏移方向
         /// </summary>
         private void InitializeCharacterOffsets()
         {
-            if (textComponent == null) return;
-            
             characterOffsets.Clear();
             
             // 为每个字符生成随机的抖动偏移方向
-            for (int i = 0; i < textComponent.text.Length; i++)
-            {
-                float angleRad = UnityEngine.Random.Range(0, Mathf.PI * 2);
-                Vector3 direction = new Vector3(
-                    Mathf.Cos(angleRad),
-                    Mathf.Sin(angleRad),
-                    0
-                ).normalized;
-                
-                characterOffsets[i] = direction;
-            }
+            float angleRad = UnityEngine.Random.Range(0, Mathf.PI * 2);
+            Vector3 direction = new Vector3(
+                Mathf.Cos(angleRad),
+                Mathf.Sin(angleRad),
+                0
+            ).normalized;
+            
+            characterOffsets[0] = direction;
         }
         
         /// <summary>
@@ -102,10 +97,14 @@ namespace LyricFX.Implementations.Effect
             
             try
             {
+                // 等待一帧确保布局已完全应用
+                await UniTask.Yield(cancellationToken);
+                
+                // 保存原始位置
+                originalPosition = targetObject.transform.localPosition;
+                
                 // 设置初始状态
-                textComponent.enableVertexGradient = true;
                 Color originalColor = textComponent.color;
-                textComponent.ForceMeshUpdate();
                 
                 // 开始抖动动画
                 isShaking = true;
@@ -113,7 +112,7 @@ namespace LyricFX.Implementations.Effect
                 // 使用配置的总时间
                 float totalDuration = ShakeDuration + HoldDuration + FadeOutDuration;
                 
-                // 初始化各字符的抖动偏移
+                // 初始化抖动偏移方向
                 InitializeCharacterOffsets();
                 
                 // 启动持续抖动效果（不会自动停止）
@@ -163,55 +162,26 @@ namespace LyricFX.Implementations.Effect
         /// </summary>
         private async UniTask ApplyShakeEffectContinuous(CancellationToken cancellationToken)
         {
-            if (textComponent == null) return;
+            if (targetObject == null) return;
             
             try
             {
                 float elapsed = 0f;
                 isShaking = true; // 确保抖动状态持续有效
                 
-                while (!cancellationToken.IsCancellationRequested && textComponent != null)
+                while (!cancellationToken.IsCancellationRequested && targetObject != null)
                 {
-                    // 更新网格以便修改顶点
-                    textComponent.ForceMeshUpdate();
+                    // 计算抖动偏移
+                    float characterTime = elapsed;
                     
-                    // 获取文本信息
-                    var textInfo = textComponent.textInfo;
-                    
-                    // 应用抖动效果到每个字符
-                    for (int i = 0; i < textInfo.characterCount; i++)
+                    // 生成抖动偏移
+                    if (characterOffsets.TryGetValue(0, out Vector3 direction))
                     {
-                        // 跳过不可见字符
-                        if (!textInfo.characterInfo[i].isVisible) continue;
+                        float shakeAmount = Mathf.Sin(characterTime * ShakeFrequency) * ShakeIntensity;
+                        Vector3 offset = direction * shakeAmount;
                         
-                        // 获取字符顶点信息
-                        int materialIndex = textInfo.characterInfo[i].materialReferenceIndex;
-                        int vertexIndex = textInfo.characterInfo[i].vertexIndex;
-                        
-                        // 基于字符索引计算时间偏移
-                        float timeOffset = i * CharTimeOffset;
-                        float characterTime = elapsed + timeOffset;
-                        
-                        // 生成抖动偏移
-                        if (characterOffsets.TryGetValue(i, out Vector3 direction))
-                        {
-                            float shakeAmount = Mathf.Sin(characterTime * ShakeFrequency) * ShakeIntensity;
-                            Vector3 offset = direction * shakeAmount;
-                            
-                            // 应用抖动到字符顶点
-                            Vector3[] vertices = textInfo.meshInfo[materialIndex].vertices;
-                            for (int j = 0; j < 4; j++)
-                            {
-                                vertices[vertexIndex + j] += offset;
-                            }
-                        }
-                    }
-                    
-                    // 应用所有修改到网格
-                    for (int i = 0; i < textInfo.meshInfo.Length; i++)
-                    {
-                        textInfo.meshInfo[i].mesh.vertices = textInfo.meshInfo[i].vertices;
-                        textComponent.UpdateGeometry(textInfo.meshInfo[i].mesh, i);
+                        // 基于原始位置应用抖动偏移到Transform
+                        targetObject.transform.localPosition = originalPosition + offset;
                     }
                     
                     elapsed += Time.deltaTime;
@@ -233,7 +203,7 @@ namespace LyricFX.Implementations.Effect
         /// </summary>
         private async UniTask ApplyShakeEffect(float duration, CancellationToken cancellationToken)
         {
-            if (textComponent == null) return;
+            if (targetObject == null) return;
             
             try
             {
@@ -243,46 +213,17 @@ namespace LyricFX.Implementations.Effect
                 {
                     if (cancellationToken.IsCancellationRequested) break;
                     
-                    // 更新网格以便修改顶点
-                    textComponent.ForceMeshUpdate();
+                    // 计算抖动偏移
+                    float characterTime = elapsed;
                     
-                    // 获取文本信息
-                    var textInfo = textComponent.textInfo;
-                    
-                    // 应用抖动效果到每个字符
-                    for (int i = 0; i < textInfo.characterCount; i++)
+                    // 生成抖动偏移
+                    if (characterOffsets.TryGetValue(0, out Vector3 direction))
                     {
-                        // 跳过不可见字符
-                        if (!textInfo.characterInfo[i].isVisible) continue;
+                        float shakeAmount = Mathf.Sin(characterTime * ShakeFrequency) * ShakeIntensity;
+                        Vector3 offset = direction * shakeAmount;
                         
-                        // 获取字符顶点信息
-                        int materialIndex = textInfo.characterInfo[i].materialReferenceIndex;
-                        int vertexIndex = textInfo.characterInfo[i].vertexIndex;
-                        
-                        // 基于字符索引计算时间偏移
-                        float timeOffset = i * CharTimeOffset;
-                        float characterTime = elapsed + timeOffset;
-                        
-                        // 生成抖动偏移
-                        if (characterOffsets.TryGetValue(i, out Vector3 direction))
-                        {
-                            float shakeAmount = Mathf.Sin(characterTime * ShakeFrequency) * ShakeIntensity;
-                            Vector3 offset = direction * shakeAmount;
-                            
-                            // 应用抖动到字符顶点
-                            Vector3[] vertices = textInfo.meshInfo[materialIndex].vertices;
-                            for (int j = 0; j < 4; j++)
-                            {
-                                vertices[vertexIndex + j] += offset;
-                            }
-                        }
-                    }
-                    
-                    // 应用所有修改到网格
-                    for (int i = 0; i < textInfo.meshInfo.Length; i++)
-                    {
-                        textInfo.meshInfo[i].mesh.vertices = textInfo.meshInfo[i].vertices;
-                        textComponent.UpdateGeometry(textInfo.meshInfo[i].mesh, i);
+                        // 基于原始位置应用抖动偏移到Transform
+                        targetObject.transform.localPosition = originalPosition + offset;
                     }
                     
                     // 更新进度
@@ -326,13 +267,11 @@ namespace LyricFX.Implementations.Effect
             if (textComponent != null)
             {
                 textComponent.color = new Color(textComponent.color.r, textComponent.color.g, textComponent.color.b, 1f);
-                if (targetObject != null)
-                {
-                    targetObject.transform.localPosition = originalPosition;
-                }
-                
-                // 强制刷新网格以清除所有效果
-                textComponent.ForceMeshUpdate();
+            }
+            
+            if (targetObject != null)
+            {
+                targetObject.transform.localPosition = originalPosition;
             }
             
             isShaking = false;
@@ -352,9 +291,15 @@ namespace LyricFX.Implementations.Effect
             if (textComponent != null)
             {
                 textComponent.color = new Color(textComponent.color.r, textComponent.color.g, textComponent.color.b, 0f);
-                targetObject.transform.localPosition = originalPosition;
-                textComponent.ForceMeshUpdate();
             }
+            
+            if (targetObject != null)
+            {
+                targetObject.transform.localPosition = originalPosition;
+            }
+            
+            // 清理数据
+            characterOffsets.Clear();
             
             isShaking = false;
             IsCompleted = false;
