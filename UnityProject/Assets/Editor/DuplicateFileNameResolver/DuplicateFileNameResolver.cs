@@ -69,7 +69,9 @@ public class DuplicateFileNameResolver : EditorWindow
             return;
         }
 
-        string[] files = Directory.GetFiles(selectedPath, "*.*", SearchOption.AllDirectories);
+        string[] files = Directory.GetFiles(selectedPath, "*.*", SearchOption.AllDirectories)
+                                  .Where(f => !f.EndsWith(".meta"))
+                                  .ToArray();
         Dictionary<string, List<string>> nameMap = new();
 
         foreach (string file in files)
@@ -92,23 +94,33 @@ public class DuplicateFileNameResolver : EditorWindow
             var paths = kvp.Value;
 
             HashSet<string> usedNames = new();
-            foreach (string originalPath in paths)
+            foreach (string absolutePath in paths)
             {
-                string dir = Path.GetDirectoryName(originalPath);
-                string ext = Path.GetExtension(originalPath).ToLower().TrimStart('.');
+                string unityOldPath = ToUnityPath(absolutePath);
+                string dir = Path.GetDirectoryName(unityOldPath); // <- 相对路径中的目录
+                string ext = Path.GetExtension(unityOldPath).ToLower().TrimStart('.');
                 string baseName = $"{name}_{ext}";
                 string newName = baseName;
                 int counter = 1;
 
-                while (usedNames.Contains(newName) || File.Exists(Path.Combine(dir, newName + "." + ext)))
+                while (usedNames.Contains(newName) || AssetExists(Path.Combine(dir, newName + "." + ext)))
                 {
                     newName = $"{baseName}_{counter.ToString("00")}";
                     counter++;
                 }
 
-                string newPath = Path.Combine(dir, newName + "." + ext);
-                File.Move(originalPath, newPath);
-                Debug.Log($"已重命名: {Path.GetFileName(originalPath)} → {Path.GetFileName(newPath)}");
+                string unityNewPath = Path.Combine(dir, newName + "." + ext).Replace("\\", "/");
+                string error = AssetDatabase.MoveAsset(unityOldPath, unityNewPath);
+
+                if (!string.IsNullOrEmpty(error))
+                {
+                    Debug.LogError($"重命名失败: {unityOldPath} → {unityNewPath}, 错误: {error}");
+                }
+                else
+                {
+                    Debug.Log($"已重命名: {unityOldPath} → {unityNewPath}");
+                }
+
                 usedNames.Add(newName);
             }
         }
@@ -116,5 +128,16 @@ public class DuplicateFileNameResolver : EditorWindow
         AssetDatabase.Refresh();
         duplicateGroups.Clear();
         EditorUtility.DisplayDialog("完成", "重命名完成！", "确定");
+    }
+
+    private bool AssetExists(string assetPath)
+    {
+        return AssetDatabase.LoadAssetAtPath<Object>(assetPath) != null;
+    }
+
+    private string ToUnityPath(string fullPath)
+    {
+        string projectRoot = Application.dataPath.Substring(0, Application.dataPath.Length - "Assets".Length);
+        return fullPath.Replace(projectRoot, "").Replace("\\", "/");
     }
 }
