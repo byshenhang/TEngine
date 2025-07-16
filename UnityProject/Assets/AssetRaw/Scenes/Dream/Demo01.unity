@@ -5122,13 +5122,47 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5811739858383557504, guid: d6669bac6020913489556f4945a1a09d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 864883948}
   m_SourcePrefab: {fileID: 100100000, guid: d6669bac6020913489556f4945a1a09d, type: 3}
 --- !u!4 &864883945 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5271109518476302218, guid: d6669bac6020913489556f4945a1a09d, type: 3}
   m_PrefabInstance: {fileID: 864883944}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &864883946 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5811739858383557504, guid: d6669bac6020913489556f4945a1a09d, type: 3}
+  m_PrefabInstance: {fileID: 864883944}
+  m_PrefabAsset: {fileID: 0}
+--- !u!198 &864883947 stripped
+ParticleSystem:
+  m_CorrespondingSourceObject: {fileID: 7179262705592278226, guid: d6669bac6020913489556f4945a1a09d, type: 3}
+  m_PrefabInstance: {fileID: 864883944}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &864883948
+MonoBehaviour:
+  m_ObjectHideFlags: 2
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 864883946}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8e3233691d8cd848896e84c6d993742, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  name: Emit Particles On Volume!
+  info: This Component controls the particle emission rate based on Audio Volume.
+  targetParticleSystems:
+  - {fileID: 864883947}
+  volumeMultiplier: 0.4
+  smoothness: 0.25
+  sensitivity: 1
+  volumeRange: {x: 0, y: 0.3, z: 0.7}
+  isActive: 1
 --- !u!1 &865646335
 GameObject:
   m_ObjectHideFlags: 0
@@ -6505,13 +6539,47 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5811739858383557504, guid: d6669bac6020913489556f4945a1a09d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1107923267}
   m_SourcePrefab: {fileID: 100100000, guid: d6669bac6020913489556f4945a1a09d, type: 3}
 --- !u!4 &1107923264 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5271109518476302218, guid: d6669bac6020913489556f4945a1a09d, type: 3}
   m_PrefabInstance: {fileID: 1107923263}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1107923265 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5811739858383557504, guid: d6669bac6020913489556f4945a1a09d, type: 3}
+  m_PrefabInstance: {fileID: 1107923263}
+  m_PrefabAsset: {fileID: 0}
+--- !u!198 &1107923266 stripped
+ParticleSystem:
+  m_CorrespondingSourceObject: {fileID: 7179262705592278226, guid: d6669bac6020913489556f4945a1a09d, type: 3}
+  m_PrefabInstance: {fileID: 1107923263}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1107923267
+MonoBehaviour:
+  m_ObjectHideFlags: 2
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1107923265}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8e3233691d8cd848896e84c6d993742, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  name: Emit Particles On Volume!
+  info: This Component controls the particle emission rate based on Audio Volume.
+  targetParticleSystems:
+  - {fileID: 1107923266}
+  volumeMultiplier: 0.5
+  smoothness: 0.25
+  sensitivity: 1
+  volumeRange: {x: 0, y: 0.3, z: 0.7}
+  isActive: 1
 --- !u!1 &1114944025
 GameObject:
   m_ObjectHideFlags: 0
@@ -7397,13 +7465,47 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5811739858383557504, guid: d6669bac6020913489556f4945a1a09d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1166746899}
   m_SourcePrefab: {fileID: 100100000, guid: d6669bac6020913489556f4945a1a09d, type: 3}
 --- !u!4 &1166746896 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5271109518476302218, guid: d6669bac6020913489556f4945a1a09d, type: 3}
   m_PrefabInstance: {fileID: 1166746895}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1166746897 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5811739858383557504, guid: d6669bac6020913489556f4945a1a09d, type: 3}
+  m_PrefabInstance: {fileID: 1166746895}
+  m_PrefabAsset: {fileID: 0}
+--- !u!198 &1166746898 stripped
+ParticleSystem:
+  m_CorrespondingSourceObject: {fileID: 7179262705592278226, guid: d6669bac6020913489556f4945a1a09d, type: 3}
+  m_PrefabInstance: {fileID: 1166746895}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1166746899
+MonoBehaviour:
+  m_ObjectHideFlags: 2
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1166746897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8e3233691d8cd848896e84c6d993742, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  name: Emit Particles On Volume!
+  info: This Component controls the particle emission rate based on Audio Volume.
+  targetParticleSystems:
+  - {fileID: 1166746898}
+  volumeMultiplier: 0.5
+  smoothness: 0.25
+  sensitivity: 1
+  volumeRange: {x: 0, y: 0.3, z: 0.7}
+  isActive: 1
 --- !u!1 &1196644344
 GameObject:
   m_ObjectHideFlags: 0
@@ -14506,7 +14608,7 @@ MonoBehaviour:
   rmsValue: 0.35432133
   markers: []
   playheadPosition: 0
-  canUpdate: 0
+  canUpdate: 1
   audioCurves:
   - serializedVersion: 2
     m_Curve:
