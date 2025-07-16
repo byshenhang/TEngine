@@ -7,6 +7,17 @@ using TMPro;
 namespace LyricFX.Factory
 {
     /// <summary>
+    /// 字符对象状态枚举
+    /// </summary>
+    public enum CharacterState
+    {
+        Available,      // 可用状态
+        InUse,         // 使用中
+        PendingRecycle, // 待回收
+        Recycling      // 回收中
+    }
+
+    /// <summary>
     /// 字符工厂 - 负责创建和回收字符游戏对象
     /// </summary>
     public class CharacterFactory 
@@ -21,6 +32,10 @@ namespace LyricFX.Factory
         
         // 已使用的字符对象
         private HashSet<GameObject> activeCharacters = new HashSet<GameObject>();
+        
+        // 字符对象状态管理
+        private Dictionary<GameObject, CharacterState> characterStates = new Dictionary<GameObject, CharacterState>();
+        private readonly object stateLock = new object();
         
         // 性能优化配置
         private bool enableAsyncRecycling = true;
@@ -61,20 +76,25 @@ namespace LyricFX.Factory
         {
             GameObject character;
             
-            if (characterPool.Count > 0)
-            {
-                character = characterPool.Pop();
-            }
-            else
-            {
-                character = CreateCharacterObject();
-                // 记录性能监控
-                LyricFX.Utils.PerformanceMonitor.Instance.RecordCharacterCreation();
-                Debug.Log($"[字符工厂] 池空，新建对象，当前活动对象：{activeCharacters.Count}");
-            }
-            
-            character.SetActive(true);
-            activeCharacters.Add(character);
+            lock (stateLock)
+             {
+                 if (characterPool.Count > 0)
+                 {
+                     character = characterPool.Pop();
+                 }
+                 else
+                 {
+                     character = CreateCharacterObject();
+                     // 记录性能监控
+                     LyricFX.Utils.PerformanceMonitor.Instance.RecordCharacterCreation();
+                     Debug.Log($"[字符工厂] 池空，新建对象，当前活动对象：{activeCharacters.Count}");
+                 }
+                 
+                 // 确保对象状态正确设置
+                 character.SetActive(true);
+                 activeCharacters.Add(character);
+                 characterStates[character] = CharacterState.InUse;
+             }
             
             return character;
         }
@@ -84,10 +104,22 @@ namespace LyricFX.Factory
         /// </summary>
         public void ReleaseCharacter(GameObject character)
         {
-            if (character == null || !activeCharacters.Contains(character))
+            if (character == null)
                 return;
                 
-            activeCharacters.Remove(character);
+            lock (stateLock)
+            {
+                // 检查对象状态，避免重复回收
+                if (!characterStates.ContainsKey(character) || 
+                    characterStates[character] != CharacterState.InUse)
+                {
+                    Debug.LogWarning($"[字符工厂] 尝试回收非活动状态的对象: {characterStates.GetValueOrDefault(character, CharacterState.Available)}");
+                    return;
+                }
+                
+                activeCharacters.Remove(character);
+                characterStates[character] = CharacterState.PendingRecycle;
+            }
             
             if (enableAsyncRecycling)
             {
@@ -107,23 +139,40 @@ namespace LyricFX.Factory
         /// </summary>
         private void RecycleCharacterImmediate(GameObject character)
         {
+            lock (stateLock)
+            {
+                // 检查对象状态
+                if (!characterStates.ContainsKey(character) || 
+                    characterStates[character] == CharacterState.Recycling)
+                {
+                    return; // 已经在回收中或不存在
+                }
+                
+                characterStates[character] = CharacterState.Recycling;
+            }
+            
             // 重置字符对象状态
             ResetCharacter(character);
             
-            // 如果池已满，直接销毁
-            if (characterPool.Count >= maxPoolSize)
+            lock (stateLock)
             {
-               GameObject.Destroy(character);
-                Debug.Log($"[字符工厂] 池已满，销毁对象，当前池容量：{characterPool.Count}");
-            }
-            else
-            {
-                // 否则放回池中
-                character.SetActive(false);
-                character.transform.SetParent(poolContainer);
-                characterPool.Push(character);
-                // 记录性能监控
-                LyricFX.Utils.PerformanceMonitor.Instance.RecordCharacterRecycle();
+                // 如果池已满，直接销毁
+                if (characterPool.Count >= maxPoolSize)
+                {
+                    characterStates.Remove(character);
+                    GameObject.Destroy(character);
+                    Debug.Log($"[字符工厂] 池已满，销毁对象，当前池容量：{characterPool.Count}");
+                }
+                else
+                {
+                    // 否则放回池中
+                    character.SetActive(false);
+                    character.transform.SetParent(poolContainer);
+                    characterPool.Push(character);
+                    characterStates[character] = CharacterState.Available;
+                    // 记录性能监控
+                    LyricFX.Utils.PerformanceMonitor.Instance.RecordCharacterRecycle();
+                }
             }
         }
         
@@ -140,9 +189,27 @@ namespace LyricFX.Factory
             
             while (pendingRecycleQueue.Count > 0 && processCount < maxProcessPerFrame)
             {
-                var character = pendingRecycleQueue.Dequeue();
-                RecycleCharacterImmediate(character);
-                processCount++;
+                GameObject character = null;
+                
+                lock (stateLock)
+                {
+                    if (pendingRecycleQueue.Count > 0)
+                    {
+                        character = pendingRecycleQueue.Dequeue();
+                        // 验证对象状态
+                        if (!characterStates.ContainsKey(character) || 
+                            characterStates[character] != CharacterState.PendingRecycle)
+                        {
+                            character = null; // 跳过无效对象
+                        }
+                    }
+                }
+                
+                if (character != null)
+                {
+                    RecycleCharacterImmediate(character);
+                    processCount++;
+                }
             }
             
             // 如果还有待处理的对象，让出一帧后继续处理
@@ -231,26 +298,40 @@ namespace LyricFX.Factory
         {
             int targetSize = Mathf.Min((int)(estimatedCharCount * multiplier), maxPoolSize);
             
-            if (characterPool.Count >= targetSize)
+            int currentPoolSize;
+            lock (stateLock)
             {
-                Debug.Log($"[字符工厂] 对象池已足够，当前: {characterPool.Count}, 目标: {targetSize}");
+                currentPoolSize = characterPool.Count;
+            }
+            
+            if (currentPoolSize >= targetSize)
+            {
+                Debug.Log($"[字符工厂] 对象池已足够，当前: {currentPoolSize}, 目标: {targetSize}");
                 return;
             }
             
-            int createCount = targetSize - characterPool.Count;
+            int createCount = targetSize - currentPoolSize;
             Debug.Log($"[字符工厂] 开始预热对象池，需创建 {createCount} 个对象");
             
             for (int i = 0; i < createCount; i++)
             {
                 var character = CreateCharacterObject();
-                characterPool.Push(character);
+                
+                lock (stateLock)
+                {
+                    characterPool.Push(character);
+                    characterStates[character] = CharacterState.Available;
+                }
                 
                 // 每创建5个对象让出一帧，避免卡顿
                 if (i % 5 == 0)
                     await UniTask.Yield();
             }
             
-            Debug.Log($"[字符工厂] 对象池预热完成，当前容量: {characterPool.Count}");
+            lock (stateLock)
+            {
+                Debug.Log($"[字符工厂] 对象池预热完成，当前容量: {characterPool.Count}");
+            }
         }
         
         /// <summary>
@@ -264,12 +345,101 @@ namespace LyricFX.Factory
         }
         
         /// <summary>
+        /// 强制清理所有对象（紧急情况使用）
+        /// </summary>
+        public void ForceCleanupAll()
+        {
+            lock (stateLock)
+            {
+                Debug.LogWarning("[字符工厂] 执行强制清理所有对象");
+                
+                // 清理所有状态记录的对象
+                var allObjects = new List<GameObject>(characterStates.Keys);
+                foreach (var obj in allObjects)
+                {
+                    if (obj != null)
+                    {
+                        GameObject.Destroy(obj);
+                    }
+                }
+                
+                // 清空所有集合
+                characterPool.Clear();
+                activeCharacters.Clear();
+                pendingRecycleQueue.Clear();
+                characterStates.Clear();
+                
+                Debug.Log("[字符工厂] 强制清理完成");
+            }
+        }
+        
+        /// <summary>
         /// 获取对象池状态信息
         /// </summary>
         /// <returns>状态信息字符串</returns>
         public string GetPoolStatus()
         {
-            return $"池容量: {characterPool.Count}/{maxPoolSize}, 活动对象: {activeCharacters.Count}, 待回收: {pendingRecycleQueue.Count}";
+            lock (stateLock)
+            {
+                var availableCount = 0;
+                var inUseCount = 0;
+                var pendingCount = 0;
+                var recyclingCount = 0;
+                
+                foreach (var state in characterStates.Values)
+                {
+                    switch (state)
+                    {
+                        case CharacterState.Available: availableCount++; break;
+                        case CharacterState.InUse: inUseCount++; break;
+                        case CharacterState.PendingRecycle: pendingCount++; break;
+                        case CharacterState.Recycling: recyclingCount++; break;
+                    }
+                }
+                
+                return $"池容量: {characterPool.Count}/{maxPoolSize}, 活动: {activeCharacters.Count}, " +
+                       $"状态统计 - 可用: {availableCount}, 使用中: {inUseCount}, 待回收: {pendingCount}, 回收中: {recyclingCount}";
+            }
+        }
+        
+        /// <summary>
+        /// 验证对象状态一致性（调试用）
+        /// </summary>
+        /// <returns>是否一致</returns>
+        public bool ValidateStateConsistency()
+        {
+            lock (stateLock)
+            {
+                var issues = new List<string>();
+                
+                // 检查活动对象状态
+                foreach (var activeChar in activeCharacters)
+                {
+                    if (!characterStates.ContainsKey(activeChar) || 
+                        characterStates[activeChar] != CharacterState.InUse)
+                    {
+                        issues.Add($"活动对象状态不一致: {activeChar.name}");
+                    }
+                }
+                
+                // 检查池中对象状态
+                foreach (var poolChar in characterPool)
+                {
+                    if (!characterStates.ContainsKey(poolChar) || 
+                        characterStates[poolChar] != CharacterState.Available)
+                    {
+                        issues.Add($"池对象状态不一致: {poolChar.name}");
+                    }
+                }
+                
+                if (issues.Count > 0)
+                {
+                    Debug.LogWarning($"[字符工厂] 状态一致性检查发现问题:\n{string.Join("\n", issues)}");
+                    return false;
+                }
+                
+                return true;
+            }
         }
         
         /// <summary>
@@ -277,18 +447,33 @@ namespace LyricFX.Factory
         /// </summary>
         public void ClearPool()
         {
-            // 先处理待回收队列
-            while (pendingRecycleQueue.Count > 0)
+            lock (stateLock)
             {
-                var character = pendingRecycleQueue.Dequeue();
-                GameObject.Destroy(character);
-            }
-            
-            // 清空对象池
-            while (characterPool.Count > 0)
-            {
-                var obj = characterPool.Pop();
-                GameObject.Destroy(obj);
+                // 先处理待回收队列
+                while (pendingRecycleQueue.Count > 0)
+                {
+                    var character = pendingRecycleQueue.Dequeue();
+                    characterStates.Remove(character);
+                    GameObject.Destroy(character);
+                }
+                
+                // 清空对象池
+                while (characterPool.Count > 0)
+                {
+                    var obj = characterPool.Pop();
+                    characterStates.Remove(obj);
+                    GameObject.Destroy(obj);
+                }
+                
+                // 清空活动对象（如果有的话）
+                foreach (var activeChar in activeCharacters)
+                {
+                    characterStates.Remove(activeChar);
+                    GameObject.Destroy(activeChar);
+                }
+                
+                activeCharacters.Clear();
+                characterStates.Clear();
             }
             
             Debug.Log("[字符工厂] 对象池已清空");
