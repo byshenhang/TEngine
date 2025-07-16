@@ -195,6 +195,51 @@ namespace GameLogic
         }
         
         /// <summary>
+        /// 设置性能优化配置
+        /// </summary>
+        /// <param name="enableAsyncRecycling">是否启用异步回收</param>
+        public void SetPerformanceConfig(bool enableAsyncRecycling = true)
+        {
+            try
+            {
+                if (_lyricManager?.CharacterFactory != null)
+                {
+                    _lyricManager.CharacterFactory.SetPerformanceConfig(enableAsyncRecycling);
+                    Log.Info($"LyricFXModule: 性能配置已更新 - 异步回收: {enableAsyncRecycling}");
+                }
+                else
+                {
+                    Log.Warning("LyricFXModule: LyricManager或CharacterFactory未初始化，无法设置性能配置");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"LyricFXModule: 设置性能配置时发生错误: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// 获取对象池状态信息
+        /// </summary>
+        /// <returns>状态信息字符串</returns>
+        public string GetPoolStatus()
+        {
+            try
+            {
+                if (_lyricManager?.CharacterFactory != null)
+                {
+                    return _lyricManager.CharacterFactory.GetPoolStatus();
+                }
+                return "LyricManager或CharacterFactory未初始化";
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"LyricFXModule: 获取对象池状态时发生错误: {ex.Message}");
+                return $"获取状态失败: {ex.Message}";
+            }
+        }
+        
+        /// <summary>
         /// 创建单行歌词
         /// </summary>
         /// <param name="lyric">歌词文本</param>

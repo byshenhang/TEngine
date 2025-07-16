@@ -118,6 +118,11 @@ public class GameModule
     private static LyricFXModule _lyric;
     
     /// <summary>
+    /// 获取歌词特效模块。
+    /// </summary>
+    public static LyricFXModule LYRIC_FX => _lyric ??= LyricFXModule.Instance;
+    
+    /// <summary>
     /// 获取音频同步模块。
     /// </summary>
     //public static AudioSyncModule AUDIO_SYNC => _audioSync ??= AudioSyncModule.Instance;
@@ -186,6 +191,7 @@ public class GameModule
 
         // 战斗模块作为Singleton由GameApp.Release处理
         _combat = null;
+        _lyric = null;
         //_subtitle = null;
         //_xrInteraction = null;
     }

@@ -8408,22 +8408,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 2613977570457546598, guid: 790206166370cca4a89c6723c12e6a8a, type: 3}
-      propertyPath: lateLatching
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2613977570457546598, guid: 790206166370cca4a89c6723c12e6a8a, type: 3}
-      propertyPath: foveationLevel
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2613977570457546598, guid: 790206166370cca4a89c6723c12e6a8a, type: 3}
-      propertyPath: enableSuperResolution
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2613977570457546598, guid: 790206166370cca4a89c6723c12e6a8a, type: 3}
-      propertyPath: foveatedRenderingMode
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 3210055425196228764, guid: 790206166370cca4a89c6723c12e6a8a, type: 3}
       propertyPath: m_LocalPosition.x
       value: 88.46
@@ -8467,34 +8451,6 @@ PrefabInstance:
     - target: {fileID: 4543640010745148513, guid: 790206166370cca4a89c6723c12e6a8a, type: 3}
       propertyPath: m_Name
       value: XR Origin (XR Rig)
-      objectReference: {fileID: 0}
-    - target: {fileID: 6471039547034151198, guid: 790206166370cca4a89c6723c12e6a8a, type: 3}
-      propertyPath: m_OcclusionCulling
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 9213408317002973870, guid: 790206166370cca4a89c6723c12e6a8a, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9213408317002973870, guid: 790206166370cca4a89c6723c12e6a8a, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9213408317002973870, guid: 790206166370cca4a89c6723c12e6a8a, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9213408317002973870, guid: 790206166370cca4a89c6723c12e6a8a, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9213408317002973870, guid: 790206166370cca4a89c6723c12e6a8a, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9213408317002973870, guid: 790206166370cca4a89c6723c12e6a8a, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

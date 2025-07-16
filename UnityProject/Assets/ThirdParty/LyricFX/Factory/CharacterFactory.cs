@@ -21,6 +21,10 @@ namespace LyricFX.Factory
         
         // 已使用的字符对象
         private HashSet<GameObject> activeCharacters = new HashSet<GameObject>();
+        
+        // 性能优化配置
+        private bool enableAsyncRecycling = true;
+        private Queue<GameObject> pendingRecycleQueue = new Queue<GameObject>();
 
         /// <summary>
         /// 初始化字符工厂
@@ -64,6 +68,8 @@ namespace LyricFX.Factory
             else
             {
                 character = CreateCharacterObject();
+                // 记录性能监控
+                LyricFX.Utils.PerformanceMonitor.Instance.RecordCharacterCreation();
                 Debug.Log($"[字符工厂] 池空，新建对象，当前活动对象：{activeCharacters.Count}");
             }
             
@@ -81,6 +87,26 @@ namespace LyricFX.Factory
             if (character == null || !activeCharacters.Contains(character))
                 return;
                 
+            activeCharacters.Remove(character);
+            
+            if (enableAsyncRecycling)
+            {
+                // 异步回收，避免卡顿
+                pendingRecycleQueue.Enqueue(character);
+                _ = ProcessPendingRecycleAsync();
+            }
+            else
+            {
+                // 同步回收（保留原有逻辑）
+                RecycleCharacterImmediate(character);
+            }
+        }
+        
+        /// <summary>
+        /// 立即回收字符对象（同步版本）
+        /// </summary>
+        private void RecycleCharacterImmediate(GameObject character)
+        {
             // 重置字符对象状态
             ResetCharacter(character);
             
@@ -96,9 +122,35 @@ namespace LyricFX.Factory
                 character.SetActive(false);
                 character.transform.SetParent(poolContainer);
                 characterPool.Push(character);
+                // 记录性能监控
+                LyricFX.Utils.PerformanceMonitor.Instance.RecordCharacterRecycle();
+            }
+        }
+        
+        /// <summary>
+        /// 异步处理待回收的字符对象
+        /// </summary>
+        private async UniTask ProcessPendingRecycleAsync()
+        {
+            // 避免重复处理
+            if (pendingRecycleQueue.Count == 0) return;
+            
+            var processCount = 0;
+            const int maxProcessPerFrame = 3; // 每帧最多处理3个对象
+            
+            while (pendingRecycleQueue.Count > 0 && processCount < maxProcessPerFrame)
+            {
+                var character = pendingRecycleQueue.Dequeue();
+                RecycleCharacterImmediate(character);
+                processCount++;
             }
             
-            activeCharacters.Remove(character);
+            // 如果还有待处理的对象，让出一帧后继续处理
+            if (pendingRecycleQueue.Count > 0)
+            {
+                await UniTask.Yield();
+                _ = ProcessPendingRecycleAsync();
+            }
         }
         
         /// <summary>
@@ -171,10 +223,68 @@ namespace LyricFX.Factory
         }
         
         /// <summary>
+        /// 根据歌词长度预热对象池
+        /// </summary>
+        /// <param name="estimatedCharCount">预估字符数量</param>
+        /// <param name="multiplier">预热倍数</param>
+        public async UniTask WarmupPool(int estimatedCharCount, float multiplier = 1.5f)
+        {
+            int targetSize = Mathf.Min((int)(estimatedCharCount * multiplier), maxPoolSize);
+            
+            if (characterPool.Count >= targetSize)
+            {
+                Debug.Log($"[字符工厂] 对象池已足够，当前: {characterPool.Count}, 目标: {targetSize}");
+                return;
+            }
+            
+            int createCount = targetSize - characterPool.Count;
+            Debug.Log($"[字符工厂] 开始预热对象池，需创建 {createCount} 个对象");
+            
+            for (int i = 0; i < createCount; i++)
+            {
+                var character = CreateCharacterObject();
+                characterPool.Push(character);
+                
+                // 每创建5个对象让出一帧，避免卡顿
+                if (i % 5 == 0)
+                    await UniTask.Yield();
+            }
+            
+            Debug.Log($"[字符工厂] 对象池预热完成，当前容量: {characterPool.Count}");
+        }
+        
+        /// <summary>
+        /// 设置性能优化配置
+        /// </summary>
+        /// <param name="enableAsync">是否启用异步回收</param>
+        public void SetPerformanceConfig(bool enableAsync)
+        {
+            enableAsyncRecycling = enableAsync;
+            Debug.Log($"[字符工厂] 异步回收设置为: {enableAsyncRecycling}");
+        }
+        
+        /// <summary>
+        /// 获取对象池状态信息
+        /// </summary>
+        /// <returns>状态信息字符串</returns>
+        public string GetPoolStatus()
+        {
+            return $"池容量: {characterPool.Count}/{maxPoolSize}, 活动对象: {activeCharacters.Count}, 待回收: {pendingRecycleQueue.Count}";
+        }
+        
+        /// <summary>
         /// 清空对象池
         /// </summary>
         public void ClearPool()
         {
+            // 先处理待回收队列
+            while (pendingRecycleQueue.Count > 0)
+            {
+                var character = pendingRecycleQueue.Dequeue();
+                GameObject.Destroy(character);
+            }
+            
+            // 清空对象池
             while (characterPool.Count > 0)
             {
                 var obj = characterPool.Pop();

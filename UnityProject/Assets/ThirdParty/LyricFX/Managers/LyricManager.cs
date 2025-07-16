@@ -27,6 +27,11 @@ namespace LyricFX.Managers
         private LrcParser lrcParser;
         // 歌词同步偏移(秒)：正值延迟歌词，负值提前歌词
         private float syncOffset = 0.0f;
+        
+        /// <summary>
+        /// 获取字符工厂实例
+        /// </summary>
+        public CharacterFactory CharacterFactory => characterFactory;
 
         private Transform lyricsContainer;
         private GameObject characterPrefab;
@@ -122,6 +127,9 @@ namespace LyricFX.Managers
         /// </summary>
         public async UniTask<int> CreateLyricLine(string text, string layoutId, string effectId, Vector3 position, ILayoutConfig config = null)
         {
+            // 记录性能监控
+            LyricFX.Utils.PerformanceMonitor.Instance.RecordLineCreation();
+            
             // 创建行容器
             GameObject lineContainer = new GameObject($"LyricLine_{lineIdCounter}");
             lineContainer.AddComponent<RectTransform>();
@@ -241,6 +249,9 @@ namespace LyricFX.Managers
         /// </summary>
         public async UniTask PlayLyricLine(int lineId, IEffectConfig config = null, ICoordinatorConfig coordinatorConfig = null)
         {
+            // 记录性能监控
+            LyricFX.Utils.PerformanceMonitor.Instance.RecordEffectExecution();
+            
             if (!activeLines.TryGetValue(lineId, out var line))
             {
                 Debug.LogError($"[歌词管理器] 未找到行: {lineId}");
@@ -485,11 +496,21 @@ namespace LyricFX.Managers
                 {
                     LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint("LRC解析完成");
                     LyricFX.Utils.LyricFXDebugger.Instance.RecordStageDuration("开始解析LRC", "LRC解析完成", "LRC解析耗时");
-                    LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint("LRC序列准备播放");
+                    LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint("开始预热对象池");
                 }
 
                 // 创建新的全局取消令牌
                 globalCts = new CancellationTokenSource();
+
+                // 预热对象池
+                await WarmupCharacterPool(lyrics, globalCts.Token);
+
+                if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug)
+                {
+                    LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint("对象池预热完成");
+                    LyricFX.Utils.LyricFXDebugger.Instance.RecordStageDuration("开始预热对象池", "对象池预热完成", "对象池预热耗时");
+                    LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint("LRC序列准备播放");
+                }
 
                 // 播放歌词序列
                 await PlayLyricSequence(lyrics, layoutId, effectId, position, globalCts.Token);
@@ -506,6 +527,43 @@ namespace LyricFX.Managers
                 {
                     LyricFX.Utils.LyricFXDebugger.Instance.RecordError("播放LRC失败", ex);
                 }
+            }
+        }
+
+        /// <summary>
+        /// 预热字符对象池
+        /// </summary>
+        private async UniTask WarmupCharacterPool(List<LrcLine> lyrics, CancellationToken cancellationToken)
+        {
+            try
+            {
+                // 记录性能监控
+                LyricFX.Utils.PerformanceMonitor.Instance.RecordPoolWarmup();
+                
+                // 计算最大字符数和总字符数
+                int maxCharCount = 0;
+                int totalCharCount = 0;
+                
+                foreach (var line in lyrics)
+                {
+                    int charCount = line.Text?.Length ?? 0;
+                    maxCharCount = Mathf.Max(maxCharCount, charCount);
+                    totalCharCount += charCount;
+                }
+                
+                // 预估需要的字符数量（考虑同时显示的行数和缓冲）
+                int estimatedCharCount = Mathf.Max(maxCharCount * 3, totalCharCount / lyrics.Count * 5);
+                
+                Debug.Log($"[歌词管理器] 开始预热对象池，预估字符数: {estimatedCharCount}, 最大单行字符数: {maxCharCount}");
+                
+                // 预热对象池
+                await characterFactory.WarmupPool(estimatedCharCount, 1.2f);
+                
+                Debug.Log($"[歌词管理器] 对象池预热完成: {characterFactory.GetPoolStatus()}");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[歌词管理器] 对象池预热失败: {ex.Message}");
             }
         }
 
@@ -564,8 +622,8 @@ namespace LyricFX.Managers
                     LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint($"行播放: {debugInfo}");
                 }
 
-                // 清理之前的行
-                ClearPreviousLines();
+                // 异步清理之前的行，避免卡顿
+                _ = ClearPreviousLinesAsync();
 
                 if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug)
                 {
@@ -770,6 +828,9 @@ namespace LyricFX.Managers
         /// </summary>
         private void CleanupLine(int lineId)
         {
+            // 记录性能监控
+            LyricFX.Utils.PerformanceMonitor.Instance.RecordLineCleanup();
+            
             if (activeLines.TryGetValue(lineId, out var line))
             {
                 // 清理协调器
@@ -825,13 +886,70 @@ namespace LyricFX.Managers
         }
 
         /// <summary>
-        /// 清理之前的所有行
+        /// 清理之前的所有行（同步版本，保留用于紧急清理）
         /// </summary>
         private void ClearPreviousLines()
         {
             foreach (var lineId in new List<int>(activeLines.Keys))
             {
                 CleanupLine(lineId);
+            }
+        }
+
+        /// <summary>
+        /// 异步清理之前的所有行，分批处理避免卡顿
+        /// </summary>
+        private async UniTask ClearPreviousLinesAsync()
+        {
+            var linesToClear = new List<int>(activeLines.Keys);
+            
+            if (linesToClear.Count == 0) return;
+            
+            if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug)
+            {
+                LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint($"开始异步清理 {linesToClear.Count} 行歌词");
+            }
+            
+            // 分批清理，每批处理2-3行，避免一次性清理造成卡顿
+            for (int i = 0; i < linesToClear.Count; i += 2)
+            {
+                var batchEnd = Mathf.Min(i + 2, linesToClear.Count);
+                
+                for (int j = i; j < batchEnd; j++)
+                {
+                    CleanupLine(linesToClear[j]);
+                }
+                
+                // 每清理一批就让出一帧，保持流畅性
+                await UniTask.Yield();
+            }
+            
+            if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug)
+            {
+                LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint("异步清理完成");
+            }
+        }
+
+        /// <summary>
+        /// 延迟清理特定行，用于性能优化
+        /// </summary>
+        /// <param name="lineId">要清理的行ID</param>
+        /// <param name="delay">延迟时间（秒）</param>
+        private async UniTask DelayedCleanupLine(int lineId, float delay = 0.3f)
+        {
+            try
+            {
+                await UniTask.Delay(TimeSpan.FromSeconds(delay));
+                CleanupLine(lineId);
+                
+                if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug)
+                {
+                    LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint($"延迟清理行 {lineId} 完成");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[歌词管理器] 延迟清理行失败: {ex.Message}");
             }
         }
 

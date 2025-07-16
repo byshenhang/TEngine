@@ -15,10 +15,10 @@ namespace GameLogic
         {
             button = GetComponentInChildren<Button>();
             text = GetComponentInChildren<Text>();
-            text.text += "-×¢²á°ó¶¨";
+            text.text += "-æ³¨å†Œç»‘å®š";
             button.onClick.AddListener( () =>
             {
-                text.text += "-´¥·¢µã»÷"; 
+                text.text += "-è§¦å‘ç‚¹å‡»"; 
                 PlayAsync().Forget();
             });
         }
@@ -28,92 +28,104 @@ namespace GameLogic
         {
             text.text += "-PlayAsync";
             GameObject prefabInstance = GameModule.Resource.LoadGameObject("DefaultText");
-            text.text += "-¼ÓÔØ¶ÔÏó";
+            text.text += "-åŠ è½½å¯¹è±¡";
             var root = GameObject.Find("InstanceRoot");
             var pool = GameObject.Find("InstancePool");
 
             try
             {
-                Debug.Log("¿ªÊ¼Ê¹ÓÃAudioLyricCoordinator½øĞĞÒôÆµ¸è´ÊÍ¬²½²¥·Å");
-                text.text += "-¿ªÊ¼Ê¹ÓÃAudioLyric";
-                // 1. »ñÈ¡Ğ­µ÷Æ÷ÊµÀı
+                Debug.Log("å¼€å§‹ä½¿ç”¨AudioLyricCoordinatorè¿›è¡ŒéŸ³é¢‘æ­Œè¯åŒæ­¥æ’­æ”¾");
+                text.text += "-å¼€å§‹ä½¿ç”¨AudioLyric";
+                // 1. è·å–åè°ƒå™¨å®ä¾‹
                 var coordinator = GameModule.AUDIO_LYRIC;
                 if (coordinator == null)
                 {
-                    text.text += "-AudioLyricÊµÀı»ñÈ¡Ê§°Ü";
-                    Debug.LogError("AudioLyricCoordinatorÊµÀı»ñÈ¡Ê§°Ü");
+                    text.text += "-AudioLyricå®ä¾‹è·å–å¤±è´¥";
+                    Debug.LogError("AudioLyricCoordinatorå®ä¾‹è·å–å¤±è´¥");
                     return;
                 }
 
-                // 2. ×¼±¸ÒôÆµºÍ¸è´Ê×ÊÔ´
+                // 2. å‡†å¤‡éŸ³é¢‘å’Œæ­Œè¯èµ„æº
                 //var audioClip = GameModule.Resource.LoadAsset<AudioClip>("XUNZHANG_AUDIO");
                 var audioClip = GameModule.Resource.LoadAsset<AudioClip>("KIDDO - My 100_AUDIO");
                 //var lrcText = GameModule.Resource.LoadAsset<TextAsset>("XUNZHANG").text;
                 var lrcText = GameModule.Resource.LoadAsset<TextAsset>("My 100 - KIDDO LRC").text;
-                text.text += "-¼ÓÔØÒôÆµ";
+                text.text += "-åŠ è½½éŸ³é¢‘";
 
                 if (audioClip == null)
                 {
-                    text.text += "-ÒôÆµ×ÊÔ´¼ÓÔØÊ§°Ü";
-                    Debug.LogError("ÒôÆµ×ÊÔ´¼ÓÔØÊ§°Ü: Ñ«ÕÂ - Â¹êÏ");
+                    text.text += "-éŸ³é¢‘èµ„æºåŠ è½½å¤±è´¥";
+                    Debug.LogError("éŸ³é¢‘èµ„æºåŠ è½½å¤±è´¥: å‹‹ç«  - é¹¿æ™—");
                     return;
                 }
 
                 if (string.IsNullOrEmpty(lrcText))
                 {
-                    text.text += "-¸è´Ê×ÊÔ´¼ÓÔØÊ§°Ü";
-                    Debug.LogError("¸è´Ê×ÊÔ´¼ÓÔØÊ§°Ü: XUNZHANG");
+                    text.text += "-æ­Œè¯èµ„æºåŠ è½½å¤±è´¥";
+                    Debug.LogError("æ­Œè¯èµ„æºåŠ è½½å¤±è´¥: XUNZHANG");
                     return;
                 }
 
-                // 3. ÆôÓÃµ÷ÊÔÄ£Ê½
+                // 3. å¯ç”¨è°ƒè¯•æ¨¡å¼
                 coordinator.EnableDebugger(false);
-                // 4. ÉèÖÃÍ¬²½Æ«ÒÆ£¨¿ÉÑ¡£©
+                // 4. è®¾ç½®åŒæ­¥åç§»ï¼ˆå¯é€‰ï¼‰
                 coordinator.SetLyric(root.transform, prefabInstance, pool.transform);
-                coordinator.SetSyncOffset(0.1f); // ¸è´ÊÌáÇ°0.1ÃëÏÔÊ¾
+                coordinator.SetSyncOffset(0.1f); // æ­Œè¯æå‰0.1ç§’æ˜¾ç¤º
 
-                // 5. ×Ô¶¯·¢ÏÖºÍ³õÊ¼»¯Ğ­µ÷Æ÷
-                Debug.Log("×Ô¶¯·¢ÏÖAudioReactor²¢³õÊ¼»¯...");
+                // 5. é…ç½®æ€§èƒ½ä¼˜åŒ–
+                Debug.Log("é…ç½®æ­Œè¯ç³»ç»Ÿæ€§èƒ½ä¼˜åŒ–...");
+                GameModule.LYRIC_FX.SetPerformanceConfig(true); // å¯ç”¨å¼‚æ­¥å›æ”¶
+                
+                // å¯ç”¨æ€§èƒ½ç›‘æ§
+                LyricFX.Utils.PerformanceMonitor.Instance.SetMonitoringEnabled(true);
+                Debug.Log($"å¯¹è±¡æ± çŠ¶æ€: {GameModule.LYRIC_FX.GetPoolStatus()}");
+                Debug.Log($"æ€§èƒ½ç›‘æ§çŠ¶æ€: {LyricFX.Utils.PerformanceMonitor.Instance.GetCurrentStats()}");
+                
+                // 6. è‡ªåŠ¨å‘ç°å’Œåˆå§‹åŒ–åè°ƒå™¨
+                Debug.Log("è‡ªåŠ¨å‘ç°AudioReactorå¹¶åˆå§‹åŒ–...");
                 bool initSuccess = await coordinator.AutoInitializeAsync();
 
                 if (!initSuccess)
                 {
-                    text.text += "-AudioLyricCoordinator×Ô¶¯³õÊ¼»¯Ê§°Ü";
-                    Debug.LogError("AudioLyricCoordinator×Ô¶¯³õÊ¼»¯Ê§°Ü£¬ÇëÈ·±£³¡¾°ÖĞ´æÔÚAudioReactor×é¼ş");
+                    text.text += "-AudioLyricCoordinatorè‡ªåŠ¨åˆå§‹åŒ–å¤±è´¥";
+                    Debug.LogError("AudioLyricCoordinatorè‡ªåŠ¨åˆå§‹åŒ–å¤±è´¥ï¼Œè¯·ç¡®ä¿åœºæ™¯ä¸­å­˜åœ¨AudioReactorç»„ä»¶");
                     return;
                 }
 
-                // ÏÔÊ¾µ±Ç°Ê¹ÓÃµÄAudioReactor
+                // æ˜¾ç¤ºå½“å‰ä½¿ç”¨çš„AudioReactor
                 var currentReactor = coordinator.GetCurrentAudioReactor();
-                Debug.Log($"³õÊ¼»¯³É¹¦£¬Ê¹ÓÃAudioReactor: {currentReactor.name} (ID: {currentReactor.id})");
+                Debug.Log($"åˆå§‹åŒ–æˆåŠŸï¼Œä½¿ç”¨AudioReactor: {currentReactor.name} (ID: {currentReactor.id})");
 
-                // ÏÔÊ¾ËùÓĞ·¢ÏÖµÄAudioReactorĞÅÏ¢
+                // æ˜¾ç¤ºæ‰€æœ‰å‘ç°çš„AudioReactorä¿¡æ¯
                 var discoveredReactors = coordinator.GetDiscoveredAudioReactors();
 
-                // 6. ¶©ÔÄÊÂ¼ş£¨¿ÉÑ¡£©
-                coordinator.OnPlaybackStarted += () => Debug.Log("[ÊÂ¼ş] Í¬²½²¥·ÅÒÑ¿ªÊ¼");
-                coordinator.OnPlaybackStopped += () => Debug.Log("[ÊÂ¼ş] Í¬²½²¥·ÅÒÑÍ£Ö¹");
-                coordinator.OnLyricLineChanged += (lyricLine) => Debug.Log($"µ±Ç°¸è´Ê: {lyricLine}");
+                // 7. è®¢é˜…äº‹ä»¶ï¼ˆå¯é€‰ï¼‰
+                coordinator.OnPlaybackStarted += () => Debug.Log("[äº‹ä»¶] åŒæ­¥æ’­æ”¾å·²å¼€å§‹");
+                coordinator.OnPlaybackStopped += () => Debug.Log("[äº‹ä»¶] åŒæ­¥æ’­æ”¾å·²åœæ­¢");
+                coordinator.OnLyricLineChanged += (lyricLine) => Debug.Log($"å½“å‰æ­Œè¯: {lyricLine}");
 
-                // 7. ×¼±¸ÒôÆµºÍ¸è´Ê×ÊÔ´
+                // 8. å‡†å¤‡éŸ³é¢‘å’Œæ­Œè¯èµ„æº
                 bool prepareSuccess = await coordinator.PrepareAudioAndLyrics(audioClip, lrcText);
                 if (!prepareSuccess)
                 {
-                    Debug.LogError("×¼±¸ÒôÆµºÍ¸è´Ê×ÊÔ´Ê§°Ü");
+                    Debug.LogError("å‡†å¤‡éŸ³é¢‘å’Œæ­Œè¯èµ„æºå¤±è´¥");
                     return;
                 }
 
-                // 8. ¿ªÊ¼Í¬²½²¥·Å
+                // 9. å¼€å§‹åŒæ­¥æ’­æ”¾
                 string effectID = "shake_character";
                 coordinator.PlaySynchronized(new Vector3(90, 4, 105), effectID);
-                Debug.Log("¿ªÊ¼ÒôÆµ¸è´ÊÍ¬²½²¥·Å");
+                Debug.Log("å¼€å§‹éŸ³é¢‘æ­Œè¯åŒæ­¥æ’­æ”¾");
+                
+                // æ˜¾ç¤ºä¼˜åŒ–åçš„å¯¹è±¡æ± çŠ¶æ€
+                Debug.Log($"æ’­æ”¾å¼€å§‹åå¯¹è±¡æ± çŠ¶æ€: {GameModule.LYRIC_FX.GetPoolStatus()}");
 
-                Debug.Log($"µ±Ç°²¥·Å×´Ì¬: {(coordinator.IsPlaying() ? "²¥·ÅÖĞ" : "ÒÑÍ£Ö¹")}");
+                Debug.Log($"å½“å‰æ’­æ”¾çŠ¶æ€: {(coordinator.IsPlaying() ? "æ’­æ”¾ä¸­" : "å·²åœæ­¢")}");
             }
             catch (System.Exception ex)
             {
                 text.text += "\n" + ex.ToString();
-                Debug.LogError($"AudioLyricCoordinatorÍ¬²½²¥·Å¹ı³ÌÖĞ·¢Éú´íÎó: {ex}");
+                Debug.LogError($"AudioLyricCoordinatoråŒæ­¥æ’­æ”¾è¿‡ç¨‹ä¸­å‘ç”Ÿé”™è¯¯: {ex}");
             }
         }
       
