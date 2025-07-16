@@ -114,7 +114,7 @@ namespace GameLogic
 
                 // 9. 开始同步播放
                 string effectID = "shake_character";
-                coordinator.PlaySynchronized(new Vector3(90, 4, 105), effectID);
+                coordinator.PlaySynchronized(new Vector3(90, 4, 105), effectID, "multi_line");
                 Debug.Log("开始音频歌词同步播放");
                 
                 // 显示优化后的对象池状态

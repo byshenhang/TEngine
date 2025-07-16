@@ -85,6 +85,9 @@ namespace LyricFX.Registry
             // 手动注册 DefaultLinearLayout
             CreateDefaultLayoutProvider();
             
+            // 注册多行布局
+            CreateMultiLineLayoutProvider();
+            
             // 在这里可以手动添加其他布局提供器
             // 例如：
             // RegisterCustomLayout<SomeOtherLayout>();
@@ -111,6 +114,17 @@ namespace LyricFX.Registry
             RegisterLayoutProvider(defaultLayout);
             
             Debug.Log("[布局注册表] 创建默认线性布局");
+        }
+        
+        /// <summary>
+        /// 创建多行布局提供器
+        /// </summary>
+        private static void CreateMultiLineLayoutProvider()
+        {
+            var multiLineLayout = new MultiLineLayout();
+            RegisterLayoutProvider(multiLineLayout);
+            
+            Debug.Log("[布局注册表] 创建多行布局");
         }
     }
 }
