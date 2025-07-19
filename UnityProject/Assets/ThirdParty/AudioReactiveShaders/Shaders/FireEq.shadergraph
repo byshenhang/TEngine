@@ -305,9 +305,6 @@
         },
         {
             "m_Id": "a0afa2e1c5c0437582f8edc9abf5e115"
-        },
-        {
-            "m_Id": "dc6f206873ec44b5a240cb5d4e1429c2"
         }
     ],
     "m_GroupDatas": [
@@ -1584,9 +1581,6 @@
             },
             {
                 "m_Id": "e472228159ee4c3cabbc2d7a467de52d"
-            },
-            {
-                "m_Id": "dc6f206873ec44b5a240cb5d4e1429c2"
             }
         ]
     },
@@ -2478,12 +2472,6 @@
 }
 
 {
-    "m_SGVersion": 2,
-    "m_Type": "UnityEditor.Rendering.Universal.ShaderGraph.UniversalUnlitSubTarget",
-    "m_ObjectId": "1b4ffa8a92eb4d50aa954dd56aa8f0f5"
-}
-
-{
     "m_SGVersion": 0,
     "m_Type": "UnityEditor.ShaderGraph.TilingAndOffsetNode",
     "m_ObjectId": "1bb70ec2258f4c6f898d4b1ddb56721a",
@@ -3085,6 +3073,12 @@
         "e32": 0.0,
         "e33": 1.0
     }
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.Rendering.Universal.ShaderGraph.UniversalSpriteUnlitSubTarget",
+    "m_ObjectId": "2e3d100cda0b4c22b13a5734ebb42d57"
 }
 
 {
@@ -7732,21 +7726,6 @@
 
 {
     "m_SGVersion": 0,
-    "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
-    "m_ObjectId": "a1c5940f150c49be80f49360638cd9a2",
-    "m_Id": 0,
-    "m_DisplayName": "Alpha Clip Threshold",
-    "m_SlotType": 0,
-    "m_Hidden": false,
-    "m_ShaderOutputName": "AlphaClipThreshold",
-    "m_StageCapability": 2,
-    "m_Value": 0.5,
-    "m_DefaultValue": 0.5,
-    "m_Labels": []
-}
-
-{
-    "m_SGVersion": 0,
     "m_Type": "UnityEditor.ShaderGraph.DynamicVectorMaterialSlot",
     "m_ObjectId": "a1de9ebacb5c47b4af0b8cc36d2a538a",
     "m_Id": 0,
@@ -9682,40 +9661,6 @@
 
 {
     "m_SGVersion": 0,
-    "m_Type": "UnityEditor.ShaderGraph.BlockNode",
-    "m_ObjectId": "dc6f206873ec44b5a240cb5d4e1429c2",
-    "m_Group": {
-        "m_Id": ""
-    },
-    "m_Name": "SurfaceDescription.AlphaClipThreshold",
-    "m_DrawState": {
-        "m_Expanded": true,
-        "m_Position": {
-            "serializedVersion": "2",
-            "x": 0.0,
-            "y": 0.0,
-            "width": 0.0,
-            "height": 0.0
-        }
-    },
-    "m_Slots": [
-        {
-            "m_Id": "a1c5940f150c49be80f49360638cd9a2"
-        }
-    ],
-    "synonyms": [],
-    "m_Precision": 0,
-    "m_PreviewExpanded": true,
-    "m_DismissedVersion": 0,
-    "m_PreviewMode": 0,
-    "m_CustomColors": {
-        "m_SerializableColors": []
-    },
-    "m_SerializedDescriptor": "SurfaceDescription.AlphaClipThreshold"
-}
-
-{
-    "m_SGVersion": 0,
     "m_Type": "UnityEditor.ShaderGraph.ClampNode",
     "m_ObjectId": "dcf2126643a24196bfcbe385b01c8447",
     "m_Group": {
@@ -10061,7 +10006,7 @@
     "hlslDeclarationOverride": 0,
     "m_Hidden": false,
     "m_Value": {
-        "m_SerializedTexture": "{\"texture\":{\"instanceID\":0}}",
+        "m_SerializedTexture": "",
         "m_Guid": ""
     },
     "isMainTexture": false,
@@ -10076,8 +10021,8 @@
     "m_ObjectId": "e816c620be72448bb9b916a80877f865",
     "m_Title": "Lows",
     "m_Position": {
-        "x": 10.0,
-        "y": 10.0
+        "x": -1038.0,
+        "y": -965.0
     }
 }
 
@@ -10282,8 +10227,8 @@
     "m_ObjectId": "eb6d1dd72808495f863c65518ff81008",
     "m_Title": "Highs",
     "m_Position": {
-        "x": -1326.66650390625,
-        "y": 114.66650390625
+        "x": -1326.0,
+        "y": 114.0
     }
 }
 
@@ -10773,8 +10718,8 @@
     "m_ObjectId": "fa6414c3465d479aa01fc79d28b8e2f3",
     "m_Title": "Mids",
     "m_Position": {
-        "x": 10.0,
-        "y": 10.0
+        "x": -1070.0,
+        "y": -2091.0
     }
 }
 
@@ -10823,13 +10768,13 @@
     "m_ObjectId": "fbe1e91db3ee48a6be313ce958270238",
     "m_Datas": [],
     "m_ActiveSubTarget": {
-        "m_Id": "1b4ffa8a92eb4d50aa954dd56aa8f0f5"
+        "m_Id": "2e3d100cda0b4c22b13a5734ebb42d57"
     },
     "m_AllowMaterialOverride": true,
     "m_SurfaceType": 1,
     "m_ZTestMode": 4,
     "m_ZWriteControl": 0,
-    "m_AlphaMode": 0,
+    "m_AlphaMode": 2,
     "m_RenderFace": 2,
     "m_AlphaClip": false,
     "m_CastShadows": true,
