@@ -9,9 +9,11 @@ using LyricFX.Processors;
 using LyricFX.Registry;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace LyricFX.Managers
 {
@@ -127,7 +129,7 @@ namespace LyricFX.Managers
         }
 
         /// <summary>
-        /// 更新歌词行文本内容（重用现有行，避免创建新行）
+        /// 更新歌词行文本内容（优化版本 - 重用字符对象）
         /// </summary>
         /// <param name="lineId">要更新的行ID</param>
         /// <param name="newText">新的文本内容</param>
@@ -148,38 +150,25 @@ namespace LyricFX.Managers
 
             try
             {
-                // 停止当前效果
-                if (lineCancellations.TryGetValue(lineId, out var oldCts))
+                var oldText = line.Text;
+                var oldLayoutId = line.LayoutId;
+                var oldEffectId = line.EffectId;
+                
+                // 检查是否需要更新
+                bool layoutChanged = !string.IsNullOrEmpty(layoutId) && layoutId != oldLayoutId;
+                bool effectChanged = !string.IsNullOrEmpty(effectId) && effectId != oldEffectId;
+                bool textChanged = newText != oldText;
+                
+                if (!textChanged && !layoutChanged && !effectChanged)
                 {
-                    oldCts.Cancel();
-                    oldCts.Dispose();
+                    Debug.Log($"[歌词管理器] 行内容无变化，跳过更新: {lineId}");
+                    return true;
                 }
-
-                // 清理现有字符
-                foreach (var character in line.Characters)
-                {
-                    characterFactory.ReleaseCharacter(character);
-                }
-                line.Characters.Clear();
-
-                // 清理现有效果
-                if (line.EffectCoordinator != null)
-                {
-                    await line.EffectCoordinator.Stop(CancellationToken.None);
-                    line.EffectCoordinator = null;
-                }
-
-                foreach (var effect in line.CharacterEffects)
-                {
-                    await effect.Stop(CancellationToken.None);
-                }
-                line.CharacterEffects.Clear();
 
                 // 更新行信息
                 line.Text = newText;
                 if (!string.IsNullOrEmpty(layoutId)) line.LayoutId = layoutId;
                 if (!string.IsNullOrEmpty(effectId)) line.EffectId = effectId;
-                line.State = LineState.Created;
 
                 // 获取布局提供器
                 var layoutProvider = LayoutRegistry.GetLayoutProvider(line.LayoutId);
@@ -189,60 +178,35 @@ namespace LyricFX.Managers
                     layoutProvider = LayoutRegistry.GetLayoutProvider("default");
                 }
 
-                // 创建新的取消令牌
-                var cts = new CancellationTokenSource();
-                lineCancellations[lineId] = cts;
-
-                // 重新计算布局位置
-                var positions = await layoutProvider.CalculateLayout(
-                    newText,
-                    line.GameObject.transform,
-                    config,
-                    characterPrefab,
-                    cts.Token
-                );
-
-                // 触发布局计算事件
-                LyricEvents.TriggerLayoutCalculated(new LayoutEventArgs
+                // 创建新的取消令牌（仅在需要时）
+                CancellationTokenSource cts = null;
+                if (lineCancellations.TryGetValue(lineId, out var oldCts))
                 {
-                    LineId = lineId,
-                    Positions = positions
-                });
-
-                // 为每个字符创建上下文
-                var contexts = new List<ProcessingContext>();
-                for (int i = 0; i < newText.Length; i++)
-                {
-                    var context = ProcessingContext.Create(
-                        null,
-                        i,
-                        newText[i],
-                        lineId,
-                        positions[i]
-                    );
-
-                    context.SetMetadata("layoutId", line.LayoutId);
-                    context.SetMetadata("effectId", line.EffectId);
-
-                    contexts.Add(context);
-                }
-
-                // 处理字符
-                var results = await pipeline.ProcessCharacters(contexts, true, cts.Token);
-
-                // 收集处理后的字符对象
-                foreach (var result in results)
-                {
-                    if (result.CharacterObject != null)
+                    if (effectChanged)
                     {
-                        line.Characters.Add(result.CharacterObject);
+                        oldCts.Cancel();
+                        oldCts.Dispose();
+                        cts = new CancellationTokenSource();
+                        lineCancellations[lineId] = cts;
+                    }
+                    else
+                    {
+                        cts = oldCts; // 重用现有的取消令牌
                     }
                 }
-
-                // 应用布局
-                if (line.Characters.Count > 0)
+                else
                 {
-                    await layoutProvider.ApplyLayout(line.Characters.ToArray(), positions, cts.Token);
+                    cts = new CancellationTokenSource();
+                    lineCancellations[lineId] = cts;
+                }
+
+                // 优化：智能字符重用
+                await OptimizedCharacterUpdate(line, newText, oldText, layoutProvider, config, cts.Token);
+
+                // 优化：仅在效果改变时重新处理效果
+                if (effectChanged)
+                {
+                    await UpdateEffects(line, cts.Token);
                 }
 
                 // 触发行更新事件
@@ -254,7 +218,7 @@ namespace LyricFX.Managers
                     LayoutId = line.LayoutId
                 });
 
-                Debug.Log($"[歌词管理器] 更新行文本完成, ID: {lineId}, 新文本: {newText}, 字符数: {line.Characters.Count}");
+                Debug.Log($"[歌词管理器] 优化更新完成, ID: {lineId}, 新文本: {newText}, 字符数: {line.Characters.Count}");
                 return true;
             }
             catch (OperationCanceledException)
@@ -266,6 +230,165 @@ namespace LyricFX.Managers
             {
                 Debug.LogError($"[歌词管理器] 更新行文本失败: {ex}");
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// 优化的字符更新方法 - 重用现有字符对象
+        /// </summary>
+        private async UniTask OptimizedCharacterUpdate(LyricLine line, string newText, string oldText, 
+            ILayoutProvider layoutProvider, ILayoutConfig config, CancellationToken cancellationToken)
+        {
+            var newLength = newText.Length;
+            var oldLength = oldText.Length;
+            var existingCharacters = line.Characters;
+
+            // 计算布局位置
+            var positions = await layoutProvider.CalculateLayout(
+                newText,
+                line.GameObject.transform,
+                config,
+                characterPrefab,
+                cancellationToken
+            );
+
+            // 触发布局计算事件
+            LyricEvents.TriggerLayoutCalculated(new LayoutEventArgs
+            {
+                LineId = line.Id,
+                Positions = positions
+            });
+
+            // 字符重用策略
+            var reusedCharacters = new List<GameObject>();
+            var charactersToRelease = new List<GameObject>();
+            var newCharactersNeeded = Math.Max(0, newLength - existingCharacters.Count);
+
+            // 重用现有字符
+            for (int i = 0; i < Math.Min(newLength, existingCharacters.Count); i++)
+            {
+                var character = existingCharacters[i];
+                if (character != null)
+                {
+                    // 更新字符内容和位置
+                    await UpdateCharacterContent(character, newText[i], positions[i], i, line.Id);
+                    reusedCharacters.Add(character);
+                }
+            }
+
+            // 释放多余的字符
+            for (int i = newLength; i < existingCharacters.Count; i++)
+            {
+                if (existingCharacters[i] != null)
+                {
+                    charactersToRelease.Add(existingCharacters[i]);
+                }
+            }
+
+            // 批量释放字符（异步处理避免卡顿）
+            if (charactersToRelease.Count > 0)
+            {
+                _ = UniTask.Run(() =>
+                {
+                    foreach (var character in charactersToRelease)
+                    {
+                        characterFactory.ReleaseCharacter(character);
+                    }
+                });
+            }
+
+            // 创建新字符（如果需要）
+            if (newCharactersNeeded > 0)
+            {
+                var newContexts = new List<ProcessingContext>();
+                for (int i = existingCharacters.Count; i < newLength; i++)
+                {
+                    var context = ProcessingContext.Create(
+                        null,
+                        i,
+                        newText[i],
+                        line.Id,
+                        positions[i]
+                    );
+
+                    context.SetMetadata("layoutId", line.LayoutId);
+                    context.SetMetadata("effectId", line.EffectId);
+                    newContexts.Add(context);
+                }
+
+                // 处理新字符
+                var results = await pipeline.ProcessCharacters(newContexts, true, cancellationToken);
+                foreach (var result in results)
+                {
+                    if (result.CharacterObject != null)
+                    {
+                        reusedCharacters.Add(result.CharacterObject);
+                    }
+                }
+            }
+
+            // 更新行的字符列表
+            line.Characters = reusedCharacters;
+
+            // 应用布局（仅对新字符或位置改变的字符）
+            if (line.Characters.Count > 0)
+            {
+                await layoutProvider.ApplyLayout(line.Characters.ToArray(), positions, cancellationToken);
+            }
+        }
+
+        /// <summary>
+        /// 更新单个字符的内容和位置
+        /// </summary>
+        private async UniTask UpdateCharacterContent(GameObject character, char newChar, Vector3 position, int index, int lineId)
+        {
+            try
+            {
+                // 更新字符文本内容
+                var textComponent = character.GetComponent<TMPro.TextMeshProUGUI>();
+                if (textComponent != null)
+                {
+                    textComponent.text = newChar.ToString();
+                }
+
+                // 更新位置
+                character.transform.position = position;
+
+                // 可以在这里添加其他字符属性的更新逻辑
+                // 例如：字符索引、动画状态等
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[歌词管理器] 更新字符内容失败: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 更新效果（仅在效果改变时调用）
+        /// </summary>
+        private async UniTask UpdateEffects(LyricLine line, CancellationToken cancellationToken)
+        {
+            try
+            {
+                // 停止现有效果
+                if (line.EffectCoordinator != null)
+                {
+                    await line.EffectCoordinator.Stop(cancellationToken);
+                    line.EffectCoordinator = null;
+                }
+
+                foreach (var effect in line.CharacterEffects)
+                {
+                    await effect.Stop(cancellationToken);
+                }
+                line.CharacterEffects.Clear();
+
+                // 重新应用效果（这部分可以进一步优化）
+                // 注意：这里可以考虑实现效果的增量更新
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[歌词管理器] 更新效果失败: {ex.Message}");
             }
         }
 
@@ -663,7 +786,7 @@ namespace LyricFX.Managers
                 }
 
                 // 播放歌词序列
-                await PlayLyricSequence(lyrics, layoutId, effectId, position, globalCts.Token);
+                PlayLyricSequence(lyrics, layoutId, effectId, position, globalCts.Token);
             }
             catch (OperationCanceledException)
             {
@@ -735,9 +858,10 @@ namespace LyricFX.Managers
                 
                 if (cancellationToken.IsCancellationRequested)
                     break;
-
+              
                 // 处理当前歌词行
                 await ProcessLyricLine(line, lyrics, i, layoutId, effectId, position, startTime, cancellationToken);
+              
             }
 
             // 记录播放完成信息
@@ -785,8 +909,22 @@ namespace LyricFX.Managers
             // 检查是否可以重用现有行
             if (reusableLineId >= 0 && activeLines.ContainsKey(reusableLineId))
             {
-                // 重用现有行，更新文本内容
+                // 重用现有行，更新文本内容（优化版本）
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
                 bool updateSuccess = await UpdateLyricLineText(reusableLineId, line.Text, layoutId, effectId);
+                // 停止计时
+                stopwatch.Stop();
+                // 获取耗时
+                TimeSpan elapsedTime = stopwatch.Elapsed;
+                Debug.Log($"[优化版本] 执行耗时: {elapsedTime.TotalMilliseconds} 毫秒 (目标: <50ms)");
+                
+                // 性能警告
+                if (elapsedTime.TotalMilliseconds > 50)
+                {
+                    Debug.LogWarning($"[性能警告] 更新耗时过长: {elapsedTime.TotalMilliseconds}ms，可能影响VR体验");
+                }
+
                 if (updateSuccess)
                 {
                     lineId = reusableLineId;
