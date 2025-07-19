@@ -214,7 +214,7 @@ namespace LyricFX.Managers
                 }
 
                 // 逐个处理字符
-                var results = await pipeline.ProcessCharacters(contexts, false, cts.Token);
+                var results = await pipeline.ProcessCharacters(contexts, true, cts.Token);
 
                 // 收集处理后的字符对象
                 foreach (var result in results)
@@ -575,7 +575,6 @@ namespace LyricFX.Managers
         /// </summary>
         private async UniTask PlayLyricSequence(List<LrcLine> lyrics, string layoutId, string effectId, Vector3 position, CancellationToken cancellationToken)
         {
-            // 使用实际时间计时，而不是理论时间
             float startTime = playSessionStartTime;
 
             for (int i = 0; i < lyrics.Count; i++)
@@ -584,153 +583,252 @@ namespace LyricFX.Managers
                     break;
 
                 var line = lyrics[i];
-
-                // 应用同步偏移
-                float adjustedTimestamp = (float)line.TimeStamp + syncOffset;
-
-                // 计算实际经过的时间
-                float elapsedTime = Time.realtimeSinceStartup - startTime;
-
-                // 计算需要等待的时间（基于实际时间）
-                float waitTime = adjustedTimestamp - elapsedTime;
-
-                // 记录调试信息
-                if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug)
-                {
-                    LyricFX.Utils.LyricFXDebugger.Instance.SetCurrentLyric(line.Text);
-                    string timeInfo = $"预期时间: {adjustedTimestamp:F3}s, 实际时间: {elapsedTime:F3}s, 等待: {waitTime:F3}s, 原始LRC时间: {line.TimeStamp:F3}s";
-                    LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint($"行准备: {timeInfo}");
-                }
-
+                Debug.Log("----------");
                 // 等待到播放时间
-                if (waitTime > 0)
+                await WaitForLyricTime(line, startTime, cancellationToken);
+                
+                if (cancellationToken.IsCancellationRequested)
+                    break;
+
+                // 处理当前歌词行
+                await ProcessLyricLine(line, lyrics, i, layoutId, effectId, position, startTime, cancellationToken);
+            }
+
+            // 记录播放完成信息
+            RecordPlaybackCompletion(lyrics);
+        }
+
+        /// <summary>
+        /// 等待到歌词播放时间
+        /// </summary>
+        private async UniTask WaitForLyricTime(LrcLine line, float startTime, CancellationToken cancellationToken)
+        {
+            float adjustedTimestamp = (float)line.TimeStamp + syncOffset;
+            float elapsedTime = Time.realtimeSinceStartup - startTime;
+            float waitTime = adjustedTimestamp - elapsedTime;
+
+            // 记录时间调试信息
+            RecordTimingDebugInfo(line, adjustedTimestamp, elapsedTime, waitTime);
+
+            if (waitTime > 0)
+            {
+                try
                 {
-                    try
-                    {
-                        await UniTask.Delay(TimeSpan.FromSeconds(waitTime), cancellationToken: cancellationToken);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        break;
-                    }
+                    await UniTask.Delay(TimeSpan.FromSeconds(waitTime), cancellationToken: cancellationToken);
                 }
-
-                // 记录实际播放时的时间，用于调试
-                float actualPlayTime = Time.realtimeSinceStartup - startTime;
-
-                if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug)
+                catch (OperationCanceledException)
                 {
-                    float timeDiff = actualPlayTime - adjustedTimestamp;
-                    string debugInfo = $"实际播放: {actualPlayTime:F3}s, 预期: {adjustedTimestamp:F3}s, 差异: {timeDiff:F3}s";
-                    LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint($"行播放: {debugInfo}");
-                }
-
-                // 异步清理之前的行，避免卡顿
-                _ = ClearPreviousLinesAsync();
-
-                if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug)
-                {
-                    LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint("开始创建当前行");
-                }
-
-                // 创建并播放当前行
-                int lineId = await CreateLyricLine(line.Text, layoutId, effectId, position);
-
-                if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug)
-                {
-                    LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint("行创建完成");
-                    LyricFX.Utils.LyricFXDebugger.Instance.RecordStageDuration("开始创建当前行", "行创建完成", "行创建耗时");
-                }
-
-                if (lineId >= 0)
-                {
-                    // 计算可用时间（到下一行歌词的时间）
-                    float availableDuration;
-                    if (i + 1 < lyrics.Count)
-                    {
-                        availableDuration = (float)(lyrics[i + 1].TimeStamp - line.TimeStamp);
-                    }
-                    else
-                    {
-                        // 最后一行，给一个默认时间
-                        availableDuration = 3.0f;
-                    }
-
-                    // 使用反射获取配置对象
-                    var config = GetConfigForEffect(effectId, availableDuration, line.Text.Length);
-
-                    // 记录配置调试信息
-                    if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug && config != null)
-                    {
-                        string configInfo = $"效果ID: {effectId}, 配置类型: {config.GetType().Name}, 可用时间: {availableDuration:F3}s";
-                        LyricFX.Utils.LyricFXDebugger.Instance.RecordEffectConfig(effectId, availableDuration, configInfo);
-                    }
-
-                    // 根据类型转换为对应的配置对象
-                    IEffectConfig effectConfig = null;
-                    ICoordinatorConfig coordinatorConfig = null;
-
-                    if (config is IEffectConfig eConfig)
-                    {
-                        effectConfig = eConfig;
-                    }
-                    else if (config is ICoordinatorConfig cConfig)
-                    {
-                        coordinatorConfig = cConfig;
-                    }
-
-                    await PlayLyricLine(lineId, effectConfig, coordinatorConfig);
-
-                    // 如果有下一行，计算显示时长
-                    if (i + 1 < lyrics.Count)
-                    {
-                        // 计算到下一行的时间（考虑偏移）
-                        float nextAdjustedTimestamp = (float)lyrics[i + 1].TimeStamp + syncOffset;
-                        float currentElapsedTime = Time.realtimeSinceStartup - startTime;
-                        float waitDuration = nextAdjustedTimestamp - currentElapsedTime;
-
-                        if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug)
-                        {
-                            string waitInfo = $"当前时间: {currentElapsedTime:F3}s, 下一行时间: {nextAdjustedTimestamp:F3}s, 等待: {waitDuration:F3}s";
-                            LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint($"等待下一行: {waitInfo}");
-                        }
-
-                        if (waitDuration > 0)
-                        {
-                            try
-                            {
-                                // 保持显示直到下一行时间
-                                await UniTask.Delay(TimeSpan.FromSeconds(waitDuration), cancellationToken: cancellationToken);
-                            }
-                            catch (OperationCanceledException)
-                            {
-                                break;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // 最后一行，显示一段默认时间
-                        if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug)
-                        {
-                            LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint("最后一行显示3秒");
-                        }
-
-                        try
-                        {
-                            await UniTask.Delay(3000, cancellationToken: cancellationToken);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            break;
-                        }
-                    }
+                    throw;
                 }
             }
 
+            // 记录实际播放时间
+            RecordActualPlayTime(startTime, adjustedTimestamp);
+        }
+
+        /// <summary>
+        /// 处理单行歌词
+        /// </summary>
+        private async UniTask ProcessLyricLine(LrcLine line, List<LrcLine> lyrics, int index, string layoutId, string effectId, Vector3 position, float startTime, CancellationToken cancellationToken)
+        {
+            // 异步清理之前的行
+            _ = ClearPreviousLinesAsync();
+
+            // 创建歌词行
+            int lineId = await CreateAndRecordLyricLine(line.Text, layoutId, effectId, position);
+
+            if (lineId >= 0)
+            {
+                // 获取效果配置并播放
+                await PlayLyricLineWithConfig(lineId, line, lyrics, index, effectId);
+                
+                // 等待到下一行或结束
+                await WaitForNextLine(lyrics, index, startTime, cancellationToken);
+            }
+        }
+
+        /// <summary>
+        /// 创建歌词行并记录调试信息
+        /// </summary>
+        private async UniTask<int> CreateAndRecordLyricLine(string text, string layoutId, string effectId, Vector3 position)
+        {
+            if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug)
+            {
+                LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint("开始创建当前行");
+            }
+
+            int lineId = await CreateLyricLine(text, layoutId, effectId, position);
+
+            if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug)
+            {
+                LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint("行创建完成");
+                LyricFX.Utils.LyricFXDebugger.Instance.RecordStageDuration("开始创建当前行", "行创建完成", "行创建耗时");
+            }
+
+            return lineId;
+        }
+
+        /// <summary>
+        /// 使用配置播放歌词行
+        /// </summary>
+        private async UniTask PlayLyricLineWithConfig(int lineId, LrcLine line, List<LrcLine> lyrics, int index, string effectId)
+        {
+            float availableDuration = CalculateAvailableDuration(lyrics, index);
+            var config = GetConfigForEffect(effectId, availableDuration, line.Text.Length);
+
+            // 记录配置调试信息
+            RecordEffectConfigDebugInfo(effectId, availableDuration, config);
+
+            // 转换配置对象
+            var (effectConfig, coordinatorConfig) = ConvertEffectConfig(config);
+
+            await PlayLyricLine(lineId, effectConfig, coordinatorConfig);
+        }
+
+        /// <summary>
+        /// 等待到下一行歌词或结束
+        /// </summary>
+        private async UniTask WaitForNextLine(List<LrcLine> lyrics, int currentIndex, float startTime, CancellationToken cancellationToken)
+        {
+            if (currentIndex + 1 < lyrics.Count)
+            {
+                await WaitForNextLyricLine(lyrics, currentIndex, startTime, cancellationToken);
+            }
+            else
+            {
+                await WaitForLastLine(cancellationToken);
+            }
+        }
+
+        /// <summary>
+        /// 等待到下一行歌词
+        /// </summary>
+        private async UniTask WaitForNextLyricLine(List<LrcLine> lyrics, int currentIndex, float startTime, CancellationToken cancellationToken)
+        {
+            float nextAdjustedTimestamp = (float)lyrics[currentIndex + 1].TimeStamp + syncOffset;
+            float currentElapsedTime = Time.realtimeSinceStartup - startTime;
+            float waitDuration = nextAdjustedTimestamp - currentElapsedTime;
+
+            if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug)
+            {
+                string waitInfo = $"当前时间: {currentElapsedTime:F3}s, 下一行时间: {nextAdjustedTimestamp:F3}s, 等待: {waitDuration:F3}s";
+                LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint($"等待下一行: {waitInfo}");
+            }
+
+            if (waitDuration > 0)
+            {
+                try
+                {
+                    await UniTask.Delay(TimeSpan.FromSeconds(waitDuration), cancellationToken: cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 等待最后一行显示时间
+        /// </summary>
+        private async UniTask WaitForLastLine(CancellationToken cancellationToken)
+        {
+            if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug)
+            {
+                LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint("最后一行显示3秒");
+            }
+
+            try
+            {
+                await UniTask.Delay(3000, cancellationToken: cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 计算可用时间
+        /// </summary>
+        private float CalculateAvailableDuration(List<LrcLine> lyrics, int currentIndex)
+        {
+            if (currentIndex + 1 < lyrics.Count)
+            {
+                return (float)(lyrics[currentIndex + 1].TimeStamp - lyrics[currentIndex].TimeStamp);
+            }
+            else
+            {
+                return 3.0f; // 最后一行默认时间
+            }
+        }
+
+        /// <summary>
+        /// 转换效果配置对象
+        /// </summary>
+        private (IEffectConfig effectConfig, ICoordinatorConfig coordinatorConfig) ConvertEffectConfig(object config)
+        {
+            IEffectConfig effectConfig = null;
+            ICoordinatorConfig coordinatorConfig = null;
+
+            if (config is IEffectConfig eConfig)
+            {
+                effectConfig = eConfig;
+            }
+            else if (config is ICoordinatorConfig cConfig)
+            {
+                coordinatorConfig = cConfig;
+            }
+
+            return (effectConfig, coordinatorConfig);
+        }
+
+        /// <summary>
+        /// 记录时间调试信息
+        /// </summary>
+        private void RecordTimingDebugInfo(LrcLine line, float adjustedTimestamp, float elapsedTime, float waitTime)
+        {
+            if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug)
+            {
+                LyricFX.Utils.LyricFXDebugger.Instance.SetCurrentLyric(line.Text);
+                string timeInfo = $"预期时间: {adjustedTimestamp:F3}s, 实际时间: {elapsedTime:F3}s, 等待: {waitTime:F3}s, 原始LRC时间: {line.TimeStamp:F3}s";
+                LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint($"行准备: {timeInfo}");
+            }
+        }
+
+        /// <summary>
+        /// 记录实际播放时间
+        /// </summary>
+        private void RecordActualPlayTime(float startTime, float adjustedTimestamp)
+        {
+            if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug)
+            {
+                float actualPlayTime = Time.realtimeSinceStartup - startTime;
+                float timeDiff = actualPlayTime - adjustedTimestamp;
+                string debugInfo = $"实际播放: {actualPlayTime:F3}s, 预期: {adjustedTimestamp:F3}s, 差异: {timeDiff:F3}s";
+                LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint($"行播放: {debugInfo}");
+            }
+        }
+
+        /// <summary>
+        /// 记录效果配置调试信息
+        /// </summary>
+        private void RecordEffectConfigDebugInfo(string effectId, float availableDuration, object config)
+        {
+            if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug && config != null)
+            {
+                string configInfo = $"效果ID: {effectId}, 配置类型: {config.GetType().Name}, 可用时间: {availableDuration:F3}s";
+                LyricFX.Utils.LyricFXDebugger.Instance.RecordEffectConfig(effectId, availableDuration, configInfo);
+            }
+        }
+
+        /// <summary>
+        /// 记录播放完成信息
+        /// </summary>
+        private void RecordPlaybackCompletion(List<LrcLine> lyrics)
+        {
             Debug.Log("[歌词管理器] 歌词序列播放完成");
 
-            // 记录歌词序列播放完成
             if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug)
             {
                 float totalPlaybackTime = Time.realtimeSinceStartup - playSessionStartTime;
