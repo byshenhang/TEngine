@@ -7,6 +7,7 @@ using GameLogic;
 using LyricFX.Core;
 using LyricFX.Core.Attributes;
 using LyricFX.Implementations.Effect;
+using LyricFX.Managers;
 using UnityEngine;
 
 namespace LyricFX.Implementations.Coordinator

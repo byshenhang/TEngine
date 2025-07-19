@@ -7,6 +7,7 @@ using System.Threading;
 using UnityEngine;
 using GameLogic;
 using LyricFX.Core.Attributes;
+using LyricFX.Managers;
 
 namespace LyricFX.Implementations.Coordinator
 {
@@ -233,39 +234,39 @@ namespace LyricFX.Implementations.Coordinator
         /// <param name="characterCount">字符数量</param>
         public void AdjustDuration(float availableDuration, int characterCount = 10)
         {
-            if (availableDuration <= 0)
-                return;
+            //if (availableDuration <= 0)
+            //    return;
                 
-            // 计算当前总时长
-            float totalDuration = GetTotalDuration(characterCount);
-            // 如果可用时间小于总时长，按比例缩放
-            if (availableDuration < totalDuration)
-            {
-                var oldTime = GetTotalDuration(characterCount);
+            //// 计算当前总时长
+            //float totalDuration = GetTotalDuration(characterCount);
+            //// 如果可用时间小于总时长，按比例缩放
+            //if (availableDuration < totalDuration)
+            //{
+            //    var oldTime = GetTotalDuration(characterCount);
 
-                float ratio = availableDuration / totalDuration;
+            //    float ratio = availableDuration / totalDuration;
                 
-                // 保持最小时间
-                float minDuration = 0.05f;
-                float minDelay = 0.02f;
+            //    // 保持最小时间
+            //    float minDuration = 0.05f;
+            //    float minDelay = 0.02f;
                 
-                // 计算新的时间，确保各阶段至少有最小时间
-                CharacterDelay = Mathf.Max(CharacterDelay * ratio, minDelay);
-                InDuration = Mathf.Max(InDuration * ratio, minDuration);
-                OutDuration = Mathf.Max(OutDuration * ratio, minDuration);
+            //    // 计算新的时间，确保各阶段至少有最小时间
+            //    CharacterDelay = Mathf.Max(CharacterDelay * ratio, minDelay);
+            //    InDuration = Mathf.Max(InDuration * ratio, minDuration);
+            //    OutDuration = Mathf.Max(OutDuration * ratio, minDuration);
                 
-                // 剩余时间分配给保持阶段
-                float totalCharacterDelay = CharacterDelay * (characterCount - 1);
-                float remainingTime = availableDuration - totalCharacterDelay - InDuration - OutDuration;
-                HoldDuration = Mathf.Max(remainingTime, 0);
+            //    // 剩余时间分配给保持阶段
+            //    float totalCharacterDelay = CharacterDelay * (characterCount - 1);
+            //    float remainingTime = availableDuration - totalCharacterDelay - InDuration - OutDuration;
+            //    HoldDuration = Mathf.Max(remainingTime, 0);
 
-                Debug.Log("修正时间 >> :" + GetTotalDuration(characterCount) + "  : 修正时间 >> : " + oldTime);
-            }
-            else
-            {
-                // 如果可用时间充足，增加保持时间
-                HoldDuration += (availableDuration - totalDuration);
-            }
+            //    Debug.Log("修正时间 >> :" + GetTotalDuration(characterCount) + "  : 修正时间 >> : " + oldTime);
+            //}
+            //else
+            //{
+            //    // 如果可用时间充足，增加保持时间
+            //    HoldDuration += (availableDuration - totalDuration);
+            //}
         }
 
        

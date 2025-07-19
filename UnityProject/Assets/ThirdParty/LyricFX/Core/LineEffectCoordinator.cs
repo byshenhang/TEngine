@@ -6,6 +6,7 @@ using UnityEngine;
 using TMPro;
 using System;
 using GameLogic;
+using LyricFX.Managers;
 
 namespace LyricFX.Core
 {

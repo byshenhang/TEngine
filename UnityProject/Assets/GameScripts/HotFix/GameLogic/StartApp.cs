@@ -67,7 +67,7 @@ namespace GameLogic
                 }
 
                 // 3. 启用调试模式
-                coordinator.EnableDebugger(false);
+                coordinator.EnableDebugger(true);
                 // 4. 设置同步偏移（可选）
                 coordinator.SetLyric(root.transform, prefabInstance, pool.transform);
                 coordinator.SetSyncOffset(0.1f); // 歌词提前0.1秒显示
@@ -113,7 +113,7 @@ namespace GameLogic
                 }
 
                 // 9. 开始同步播放
-                string effectID = "shake_character";
+                string effectID = "default_fade";
                 //coordinator.PlaySynchronized(new Vector3(90, 4, 105), effectID);
                 coordinator.PlaySynchronized(new Vector3(90, 4, 105), effectID, "multi_line");
                 Debug.Log("开始音频歌词同步播放");

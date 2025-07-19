@@ -42,7 +42,7 @@ namespace GameLogic
         public event Action OnPlaybackStarted;
         public event Action OnPlaybackStopped;
         public event Action<string> OnLyricLineChanged; // 当前歌词行变化
-        
+        public AudioClip playClip { private set; get; }
         protected override void OnInit()
         {
             base.OnInit();
@@ -552,7 +552,7 @@ namespace GameLogic
         {
             try
             {
-                return await _lyricFX.PlayLrcFile(lrcContent, position, null, 0f, effectId, layoutId);
+                return await _lyricFX.PlayLrcFile(lrcContent, position, 0f, effectId, layoutId);
             }
             catch (Exception ex)
             {
@@ -679,8 +679,8 @@ namespace GameLogic
                 }
                 
                 // 查找音频剪辑
-                var audioClip = GameModule.Resource.LoadAsset<AudioClip>(_currentAudioName);
-                if (audioClip == null)
+                playClip = GameModule.Resource.LoadAsset<AudioClip>(_currentAudioName);
+                if (playClip == null)
                 {
                     Log.Error($"AudioLyricCoordinator: 无法加载音频剪辑 '{_currentAudioName}'");
                     return false;
@@ -690,7 +690,7 @@ namespace GameLogic
                 Vector3 position = lyricPosition ?? Vector3.zero;
                 
                 // 启动音频播放任务
-                var audioTask = PlayAudioAsync(audioClip, startDelay);
+                var audioTask = PlayAudioAsync(playClip, startDelay);
                 
                 // 启动歌词播放任务
                 var lyricTask = PlayLyricAsync(_currentLyricContent, position, effectId, layoutId);

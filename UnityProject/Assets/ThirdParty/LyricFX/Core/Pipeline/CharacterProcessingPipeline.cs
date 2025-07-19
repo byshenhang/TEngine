@@ -96,5 +96,14 @@ namespace LyricFX.Core.Pipeline
             processors.Clear();
             Debug.Log("[字符管道] 已清空所有处理器");
         }
+        
+        /// <summary>
+        /// 释放资源
+        /// </summary>
+        public void Dispose()
+        {
+            Clear();
+            Debug.Log("[字符管道] 已释放资源");
+        }
     }
 }

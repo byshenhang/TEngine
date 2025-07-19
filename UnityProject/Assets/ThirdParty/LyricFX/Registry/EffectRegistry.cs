@@ -139,7 +139,6 @@ namespace LyricFX.Registry
             // 注册行级效果（需要协调器）
             RegisterCoordinatorEffect<LeftToRightFadeCoordinator>("left_to_right_fade", EffectScope.Line);
             RegisterCoordinatorEffect<RandomBatchFadeCoordinator>("random_batch_fade", EffectScope.Line);
-            RegisterCoordinatorEffect<BlurCoordinator>("random_blur", EffectScope.Line);
         }
 
         /// <summary>

@@ -51,6 +51,10 @@ namespace LyricFX.Managers
         // 行ID计数器
         private int lineIdCounter = 0;
 
+        // 反射缓存系统
+        private readonly Dictionary<string, object> configCache = new Dictionary<string, object>();
+        private readonly Dictionary<string, object> typeCache = new Dictionary<string, object>();
+
         // 管道实例
         private CharacterProcessingPipeline pipeline;
 
@@ -542,17 +546,15 @@ namespace LyricFX.Managers
                 
                 // 计算最大字符数和总字符数
                 int maxCharCount = 0;
-                int totalCharCount = 0;
                 
                 foreach (var line in lyrics)
                 {
                     int charCount = line.Text?.Length ?? 0;
                     maxCharCount = Mathf.Max(maxCharCount, charCount);
-                    totalCharCount += charCount;
                 }
                 
                 // 预估需要的字符数量（考虑同时显示的行数和缓冲）
-                int estimatedCharCount = Mathf.Max(maxCharCount * 3, totalCharCount / lyrics.Count * 5);
+                int estimatedCharCount = maxCharCount ;
                 
                 Debug.Log($"[歌词管理器] 开始预热对象池，预估字符数: {estimatedCharCount}, 最大单行字符数: {maxCharCount}");
                 
@@ -567,6 +569,7 @@ namespace LyricFX.Managers
             }
         }
 
+        private int nextPlayID;
         /// <summary>
         /// 播放歌词序列
         /// </summary>
@@ -757,47 +760,68 @@ namespace LyricFX.Managers
             }
             try
             {
-                // 获取效果提供器或协调器类型
+                // 检查类型缓存
+                var cacheKey = $"type_{effectId}";
                 Type targetType = null;
+                Type configType = null;
 
-                if (EffectRegistry.RequiresCoordinator(effectId))
+                if (typeCache.TryGetValue(cacheKey, out var cachedTypeInfo))
                 {
-                    // 获取协调器类型
-                    var metadata = EffectRegistry.GetEffectMetadata(effectId);
-                    if (metadata?.CoordinatorType != null)
-                    {
-                        targetType = metadata.CoordinatorType;
-                    }
+                    var typeInfo = ((Type, Type))cachedTypeInfo;
+                    targetType = typeInfo.Item1;
+                    configType = typeInfo.Item2;
                 }
                 else
                 {
-                    // 获取效果提供器类型
-                    var provider = EffectRegistry.GetEffectProvider(effectId);
-                    if (provider != null)
+                    // 获取效果提供器或协调器类型
+                    if (EffectRegistry.RequiresCoordinator(effectId))
                     {
-                        targetType = provider.GetType();
+                        // 获取协调器类型
+                        var metadata = EffectRegistry.GetEffectMetadata(effectId);
+                        if (metadata?.CoordinatorType != null)
+                        {
+                            targetType = metadata.CoordinatorType;
+                        }
                     }
-                }
+                    else
+                    {
+                        // 获取效果提供器类型
+                        var provider = EffectRegistry.GetEffectProvider(effectId);
+                        if (provider != null)
+                        {
+                            targetType = provider.GetType();
+                        }
+                    }
 
-                if (targetType == null)
-                {
-                    Debug.LogWarning($"[歌词管理器] 未找到效果类型: {effectId}");
-                    return null;
-                }
+                    if (targetType == null)
+                    {
+                        Debug.LogWarning($"[歌词管理器] 未找到效果类型: {effectId}");
+                        return null;
+                    }
 
-                // 查找配置特性
-                var configAttribute = targetType.GetCustomAttributes(typeof(LyricFX.Core.Attributes.EffectConfigAttribute), true);
-                Type configType = null;
+                    // 查找配置特性
+                    var configAttribute = targetType.GetCustomAttributes(typeof(LyricFX.Core.Attributes.EffectConfigAttribute), true);
 
-                // 如果有配置特性，使用特性中指定的配置类型
-                if (configAttribute != null && configAttribute.Length > 0)
-                {
-                    configType = (configAttribute[0] as LyricFX.Core.Attributes.EffectConfigAttribute)?.ConfigType;
+                    // 如果有配置特性，使用特性中指定的配置类型
+                    if (configAttribute != null && configAttribute.Length > 0)
+                    {
+                        configType = (configAttribute[0] as LyricFX.Core.Attributes.EffectConfigAttribute)?.ConfigType;
+                    }
+
+                    // 缓存类型信息
+                    typeCache[cacheKey] = (targetType, configType);
                 }
 
                 // 如果找到配置类型，创建实例并调整持续时间
                 if (configType != null)
                 {
+                    // 检查配置缓存
+                    var configCacheKey = $"{effectId}_{availableDuration:F3}_{characterCount}";
+                    if (configCache.TryGetValue(configCacheKey, out var cachedConfig))
+                    {
+                        return cachedConfig;
+                    }
+                    
                     var config = Activator.CreateInstance(configType) as IAdjustConfig;
 
                     if (config != null)
@@ -812,6 +836,9 @@ namespace LyricFX.Managers
                         }
                     }
 
+                    // 缓存配置对象
+                    configCache[configCacheKey] = config;
+                    
                     return config;
                 }
             }
@@ -820,6 +847,11 @@ namespace LyricFX.Managers
                 Debug.LogError($"[歌词管理器] 创建配置对象失败: {ex}");
             }
 
+            if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug)
+            {
+                LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint($"未找到效果配置类型: {effectId}");
+            }
+            
             return null;
         }
 
@@ -910,17 +942,12 @@ namespace LyricFX.Managers
                 LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint($"开始异步清理 {linesToClear.Count} 行歌词");
             }
             
-            // 分批清理，每批处理2-3行，避免一次性清理造成卡顿
-            for (int i = 0; i < linesToClear.Count; i += 2)
+            // VR优化：分批清理，每批处理1行，避免一次性清理造成卡顿
+            for (int i = 0; i < linesToClear.Count; i++)
             {
-                var batchEnd = Mathf.Min(i + 2, linesToClear.Count);
+                CleanupLine(linesToClear[i]);
                 
-                for (int j = i; j < batchEnd; j++)
-                {
-                    CleanupLine(linesToClear[j]);
-                }
-                
-                // 每清理一批就让出一帧，保持流畅性
+                // 每清理一行就让出一帧，保持VR环境流畅性
                 await UniTask.Yield();
             }
             
@@ -981,7 +1008,10 @@ namespace LyricFX.Managers
             // 清理所有行
             ClearPreviousLines();
 
-            Debug.Log("[歌词管理器] 停止所有活动");
+            // 清理缓存以释放内存
+            ClearCaches();
+
+            Debug.Log("[歌词管理器] 停止所有活动并清理缓存");
 
             // 记录结束会话
             if (LyricFX.Utils.LyricFXDebugger.Instance.EnableDebug)
@@ -990,6 +1020,36 @@ namespace LyricFX.Managers
                 LyricFX.Utils.LyricFXDebugger.Instance.RecordTimePoint($"歌词播放会话结束, 持续时间: {sessionDuration:F3}s");
                 LyricFX.Utils.LyricFXDebugger.Instance.EndSession("手动停止");
             }
+        }
+
+        /// <summary>
+        /// 清理缓存
+        /// </summary>
+        private void ClearCaches()
+        {
+            configCache.Clear();
+            typeCache.Clear();
+            Debug.Log("[歌词管理器] 已清理反射缓存");
+        }
+        
+        /// <summary>
+        /// 释放资源
+        /// </summary>
+        public void Dispose()
+        {
+            StopAll();
+            
+            characterFactory?.Dispose();
+            pipeline?.Dispose();
+            
+            globalCts?.Cancel();
+            globalCts?.Dispose();
+            globalCts = null;
+            
+            activeLines.Clear();
+            ClearCaches();
+            
+            Debug.Log("[歌词管理器] 已释放资源");
         }
 
         private void OnDestroy()

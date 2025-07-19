@@ -448,7 +448,7 @@ namespace GameLogic
         /// <param name="effectId">特效ID，为空则使用默认特效</param>
         /// <param name="layoutId">布局ID，为空则使用默认布局</param>
         /// <returns>是否播放成功</returns>
-        public async UniTask<bool> PlayLrcFile(string lrcContent, Vector3 position, AudioSource audioSource = null,float audioStartDelay = 0.1f, string effectId = null, string layoutId = null)
+        public async UniTask<bool> PlayLrcFile(string lrcContent, Vector3 position,float audioStartDelay = 0.1f, string effectId = null, string layoutId = null)
         {
             if (_lyricManager == null)
             {
@@ -481,22 +481,7 @@ namespace GameLogic
                 {
                     LyricFXDebugger.Instance.RecordTimePoint("LRC处理已开始");
                 }
-                
-                // 如果提供了音频源，则延迟播放音频
-                if (audioSource != null)
-                {
-                    // 延迟音频开始，以便为初始处理留出时间
-                    await UniTask.Delay(TimeSpan.FromSeconds(audioStartDelay), cancellationToken: _cts.Token);
-                    
-                    if (_enableDebugger)
-                    {
-                        LyricFXDebugger.Instance.RecordTimePoint("音频开始播放");
-                    }
-                    
-                    // 开始播放音频
-                    audioSource.Play();
-                }
-                
+              
                 // 等待LRC处理完成
                 await processTask;
                 

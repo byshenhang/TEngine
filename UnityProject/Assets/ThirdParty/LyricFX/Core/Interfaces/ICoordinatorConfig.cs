@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace GameLogic
+namespace LyricFX.Managers
 {
     public interface ICoordinatorConfig 
     {

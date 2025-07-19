@@ -5,7 +5,7 @@ using UnityEngine;
 namespace LyricFX.Managers
 {
     /// <summary>
-    /// ÐÐ×´Ì¬Ã¶¾Ù
+    /// ï¿½ï¿½×´Ì¬Ã¶ï¿½ï¿½
     /// </summary>
     public enum LineState
     {

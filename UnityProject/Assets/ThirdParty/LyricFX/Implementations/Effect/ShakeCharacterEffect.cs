@@ -49,6 +49,7 @@ namespace LyricFX.Implementations.Effect
                 return;
             }
             
+            // 在初始化时保存原始位置，确保是布局应用后的正确位置
             originalPosition = target.transform.localPosition;
             
             // 为每个字符生成一个随机抖动偏移方向向量
@@ -100,7 +101,7 @@ namespace LyricFX.Implementations.Effect
                 // 等待一帧确保布局已完全应用
                 await UniTask.Yield(cancellationToken);
                 
-                // 保存原始位置
+                // 在播放时重新保存原始位置，确保是布局应用后的正确位置
                 originalPosition = targetObject.transform.localPosition;
                 
                 // 设置初始状态
@@ -331,43 +332,43 @@ namespace LyricFX.Implementations.Effect
         
         public void AdjustDuration(float availableDuration, int characterCount)
         {
-            if (availableDuration <= 0)
-                return;
+            //if (availableDuration <= 0)
+            //    return;
                 
-            // 计算当前总时长
-            float totalDuration = GetTotalDuration(characterCount);
+            //// 计算当前总时长
+            //float totalDuration = GetTotalDuration(characterCount);
             
-            // 如果可用时间小于总时长，按比例缩放
-            if (availableDuration < totalDuration && totalDuration > 0)
-            {
-                float ratio = availableDuration / totalDuration;
+            //// 如果可用时间小于总时长，按比例缩放
+            //if (availableDuration < totalDuration && totalDuration > 0)
+            //{
+            //    float ratio = availableDuration / totalDuration;
                 
-                // 保持最小时间
-                float minDuration = 0.05f;
+            //    // 保持最小时间
+            //    float minDuration = 0.05f;
                 
-                // 按比例调整各阶段时间，确保不小于最小时间
-                ShakeDuration = Mathf.Max(ShakeDuration * ratio, minDuration);
-                HoldDuration = Mathf.Max(HoldDuration * ratio, minDuration);
-                FadeOutDuration = Mathf.Max(FadeOutDuration * ratio, minDuration);
+            //    // 按比例调整各阶段时间，确保不小于最小时间
+            //    ShakeDuration = Mathf.Max(ShakeDuration * ratio, minDuration);
+            //    HoldDuration = Mathf.Max(HoldDuration * ratio, minDuration);
+            //    FadeOutDuration = Mathf.Max(FadeOutDuration * ratio, minDuration);
                 
-                // 验证总持续时间是否符合期望
-                float adjustedTotal = ShakeDuration + HoldDuration + FadeOutDuration;
+            //    // 验证总持续时间是否符合期望
+            //    float adjustedTotal = ShakeDuration + HoldDuration + FadeOutDuration;
                 
-                // 如果调整后总时间超过了可用时间，从保持阶段减去多余时间
-                if (adjustedTotal > availableDuration)
-                {
-                    float excess = adjustedTotal - availableDuration;
-                    HoldDuration = Mathf.Max(HoldDuration - excess, 0.01f);
-                }
+            //    // 如果调整后总时间超过了可用时间，从保持阶段减去多余时间
+            //    if (adjustedTotal > availableDuration)
+            //    {
+            //        float excess = adjustedTotal - availableDuration;
+            //        HoldDuration = Mathf.Max(HoldDuration - excess, 0.01f);
+            //    }
                 
-                Debug.Log($"[ShakeEffectConfig] 调整持续时间: {ShakeDuration:F2}+{HoldDuration:F2}+{FadeOutDuration:F2}={GetTotalDuration(characterCount):F2}s");
-            }
-            else if (availableDuration > totalDuration)
-            {
-                // 如果可用时间充足，增加保持时间
-                HoldDuration += (availableDuration - totalDuration);
-                Debug.Log($"[ShakeEffectConfig] 增加保持时间: {HoldDuration:F2}s, 总时间={GetTotalDuration(characterCount):F2}s");
-            }
+            //    Debug.Log($"[ShakeEffectConfig] 调整持续时间: {ShakeDuration:F2}+{HoldDuration:F2}+{FadeOutDuration:F2}={GetTotalDuration(characterCount):F2}s");
+            //}
+            //else if (availableDuration > totalDuration)
+            //{
+            //    // 如果可用时间充足，增加保持时间
+            //    HoldDuration += (availableDuration - totalDuration);
+            //    Debug.Log($"[ShakeEffectConfig] 增加保持时间: {HoldDuration:F2}s, 总时间={GetTotalDuration(characterCount):F2}s");
+            //}
         }
 
         public float GetTotalDuration(int characterCount)

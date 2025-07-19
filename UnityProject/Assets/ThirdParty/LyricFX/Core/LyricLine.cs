@@ -6,7 +6,7 @@ using static LyricFX.Managers.LyricManager;
 
 namespace LyricFX.Managers
 {
-    // ÄÚ²¿Àà - ±íÊ¾Ò»ÐÐ¸è´Ê
+    // ï¿½Ú²ï¿½ï¿½ï¿½ - ï¿½ï¿½Ê¾Ò»ï¿½Ð¸ï¿½ï¿½
     public class LyricLine
     {
         public int Id { get; set; }
@@ -17,16 +17,16 @@ namespace LyricFX.Managers
         public GameObject Container => GameObject;
         public List<GameObject> Characters { get; set; }
 
-        // ÐÂÔö£ºÐÐ¼¶Ð­µ÷Æ÷Ö§³Ö
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¼ï¿½Ð­ï¿½ï¿½ï¿½ï¿½Ö§ï¿½ï¿½
         public ILineEffectCoordinator EffectCoordinator { get; set; }
 
-        // ÐÂÔö£º×Ö·û¼¶Ð§¹ûÁÐ±í
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½Ð§ï¿½ï¿½ï¿½Ð±ï¿½
         public List<ILyricEffect> CharacterEffects { get; set; }
 
-        // ÐÂÔö£ºÐÐ¼¶×´Ì¬¹ÜÀí
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¼ï¿½×´Ì¬ï¿½ï¿½ï¿½ï¿½
         public LineState State { get; set; }
 
-        // ÐÂÔö£º½ø¶ÈÊôÐÔ
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         public float Progress => EffectCoordinator?.Progress ?? 0f;
 
         public LyricLine()

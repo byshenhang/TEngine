@@ -185,7 +185,7 @@ namespace LyricFX.Factory
             if (pendingRecycleQueue.Count == 0) return;
             
             var processCount = 0;
-            const int maxProcessPerFrame = 3; // 每帧最多处理3个对象
+            const int maxProcessPerFrame = 2; // VR优化：每帧最多处理2个对象
             
             while (pendingRecycleQueue.Count > 0 && processCount < maxProcessPerFrame)
             {
@@ -225,7 +225,7 @@ namespace LyricFX.Factory
         /// </summary>
         private GameObject CreateCharacterObject()
         {
-            GameObject obj;
+            GameObject obj = null;
             
             if (characterPrefab != null)
             {
@@ -233,27 +233,8 @@ namespace LyricFX.Factory
             }
             else
             {
-                // 如果没有预制体，创建一个带TextMeshPro的对象
-                obj = new GameObject("Character");
-                obj.transform.SetParent(poolContainer);
-                
-                // 添加RectTransform组件并设置基本属性
-                var rectTransform = obj.AddComponent<RectTransform>();
-                rectTransform.sizeDelta = new Vector2(50, 50); // 设置字符大小
-                rectTransform.anchorMin = new Vector2(0, 0.5f); // 左中锚点
-                rectTransform.anchorMax = new Vector2(0, 0.5f); // 左中锚点
-                rectTransform.pivot = new Vector2(0, 0.5f); // 左中心为轴点
-                
-                var textComponent = obj.AddComponent<TextMeshProUGUI>();
-                textComponent.alignment = TextAlignmentOptions.Center;
-                textComponent.fontSize = 36;
-                
-                // 设置TextMeshPro的RectTransform填充整个字符对象
-                var textRect = textComponent.rectTransform;
-                textRect.anchorMin = Vector2.zero;
-                textRect.anchorMax = Vector2.one;
-                textRect.offsetMin = Vector2.zero;
-                textRect.offsetMax = Vector2.zero;
+                Debug.LogError("Miss characterPrefab Object");
+                return null;
             }
             
             obj.SetActive(false);
@@ -323,8 +304,8 @@ namespace LyricFX.Factory
                     characterStates[character] = CharacterState.Available;
                 }
                 
-                // 每创建5个对象让出一帧，避免卡顿
-                if (i % 5 == 0)
+                // VR优化：每创建2个对象让出一帧，避免卡顿
+                if (i % 2 == 0)
                     await UniTask.Yield();
             }
             
@@ -479,9 +460,18 @@ namespace LyricFX.Factory
             Debug.Log("[字符工厂] 对象池已清空");
         }
         
-        private void OnDestroy()
+        /// <summary>
+        /// 释放资源
+        /// </summary>
+        public void Dispose()
         {
             ClearPool();
+            Debug.Log("[字符工厂] 已释放资源");
+        }
+        
+        private void OnDestroy()
+        {
+            Dispose();
         }
     }
 }

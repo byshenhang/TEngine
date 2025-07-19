@@ -300,33 +300,33 @@ namespace LyricFX.Implementations.Effect
         {
             if (availableDuration <= 0)
                 return;
-                
+
             // 计算当前总时长
             float totalDuration = GetTotalDuration(characterCount);
-            
+
             // 如果可用时间小于总时长，按比例缩放
             if (availableDuration < totalDuration && totalDuration > 0)
             {
                 float ratio = availableDuration / totalDuration;
-                
+
                 // 保持最小时间
                 float minDuration = 0.05f;
-                
+
                 // 按比例调整各阶段时间，确保不小于最小时间
                 FadeInDuration = Mathf.Max(FadeInDuration * ratio, minDuration);
                 HoldDuration = Mathf.Max(HoldDuration * ratio, minDuration);
                 FadeOutDuration = Mathf.Max(FadeOutDuration * ratio, minDuration);
-                
+
                 // 验证总持续时间是否符合期望
                 float adjustedTotal = FadeInDuration + HoldDuration + FadeOutDuration;
-                
+
                 // 如果调整后总时间超过了可用时间，从保持阶段减去多余时间
                 if (adjustedTotal > availableDuration)
                 {
                     float excess = adjustedTotal - availableDuration;
                     HoldDuration = Mathf.Max(HoldDuration - excess, 0.01f);
                 }
-                
+
                 Debug.Log($"[FadeEffectConfig] 调整持续时间: {FadeInDuration:F2}+{HoldDuration:F2}+{FadeOutDuration:F2}={GetTotalDuration(characterCount):F2}s");
             }
             else if (availableDuration > totalDuration)
