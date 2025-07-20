@@ -27,7 +27,6 @@ namespace GameLogic
         private bool _enableDebugger = false;
         
         // 当前播放信息
-        private string _currentAudioName = "";
         private string _currentLyricContent = "";
         private float _syncOffset = 0f;
         private float _pausedTime = 0f;
@@ -474,7 +473,6 @@ namespace GameLogic
                 StopAll();
                 
                 // 记录当前播放信息
-                _currentAudioName = audioClip.name;
                 _currentLyricContent = lrcContent;
                 
                 // 启动音频播放任务
@@ -637,9 +635,9 @@ namespace GameLogic
                 }
                 
                 // 保存当前播放信息
-                _currentAudioName = audioClip.name;
                 _currentLyricContent = lrcContent;
-                
+                playClip = audioClip;
+
                 if (_enableDebugger)
                 {
                     Log.Info($"AudioLyricCoordinator: 已准备音频 '{audioClip.name}' 和歌词资源");
@@ -647,7 +645,7 @@ namespace GameLogic
                 
                 return true;
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 Log.Error($"AudioLyricCoordinator: 准备资源失败: {ex}");
                 return false;
@@ -672,17 +670,16 @@ namespace GameLogic
                     return false;
                 }
                 
-                if (string.IsNullOrEmpty(_currentAudioName) || string.IsNullOrEmpty(_currentLyricContent))
+                if (string.IsNullOrEmpty(_currentLyricContent))
                 {
                     Log.Error("AudioLyricCoordinator: 未准备音频或歌词资源");
                     return false;
                 }
                 
                 // 查找音频剪辑
-                playClip = GameModule.Resource.LoadAsset<AudioClip>(_currentAudioName);
                 if (playClip == null)
                 {
-                    Log.Error($"AudioLyricCoordinator: 无法加载音频剪辑 '{_currentAudioName}'");
+                    Log.Error($"AudioLyricCoordinator: 无法加载音频剪辑 ");
                     return false;
                 }
                 
@@ -912,7 +909,6 @@ namespace GameLogic
             }
             
             // 清理播放状态
-            _currentAudioName = "";
             _currentLyricContent = "";
             _syncOffset = 0f;
             _pausedTime = 0f;

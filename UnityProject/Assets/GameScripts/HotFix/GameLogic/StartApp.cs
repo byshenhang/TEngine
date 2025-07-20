@@ -1,8 +1,10 @@
 using Cysharp.Threading.Tasks;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 
 namespace GameLogic
@@ -11,6 +13,9 @@ namespace GameLogic
     {
         private Button button;
         private Text text;
+        public string audioURL = "https://music.163.com/song/media/outer/url?id=1403318151.mp3"; // 替换成你的在线音频地址
+        private AudioClip loadclip;
+
         void Start()
         {
             button = GetComponentInChildren<Button>();
@@ -21,6 +26,7 @@ namespace GameLogic
                 text.text += "-触发点击"; 
                 PlayAsync().Forget();
             });
+            StartCoroutine(DownloadAudioToLocal(audioURL));
         }
 
 
@@ -47,7 +53,8 @@ namespace GameLogic
 
                 // 2. 准备音频和歌词资源
                 //var audioClip = GameModule.Resource.LoadAsset<AudioClip>("XUNZHANG_AUDIO");
-                var audioClip = GameModule.Resource.LoadAsset<AudioClip>("KIDDO - My 100_AUDIO");
+                //var audioClip = GameModule.Resource.LoadAsset<AudioClip>("KIDDO - My 100_AUDIO");
+                var audioClip = loadclip;
                 //var lrcText = GameModule.Resource.LoadAsset<TextAsset>("XUNZHANG").text;
                 var lrcText = GameModule.Resource.LoadAsset<TextAsset>("My 100 - KIDDO LRC").text;
                 text.text += "-加载音频";
@@ -129,6 +136,61 @@ namespace GameLogic
                 Debug.LogError($"AudioLyricCoordinator同步播放过程中发生错误: {ex}");
             }
         }
-      
+
+        IEnumerator DownloadAudioToLocal(string url)
+        {
+            string fileName = Path.GetFileName(new System.Uri(url).AbsolutePath);
+            var audioFolder = Path.Combine(Application.persistentDataPath, "AudioCache");
+            string localPath = Path.Combine(audioFolder, fileName);
+
+            if (!Directory.Exists(audioFolder))
+            {
+                Directory.CreateDirectory(audioFolder);
+            }
+
+
+            if (!File.Exists(localPath))
+            {
+
+                using (UnityWebRequest uwr = UnityWebRequest.Get(url))
+                {
+                    yield return uwr.SendWebRequest();
+
+                    if (uwr.result != UnityWebRequest.Result.Success)
+                    {
+                        Debug.LogError("下载失败: " + uwr.error);
+                        yield break;
+                    }
+
+                    File.WriteAllBytes(localPath, uwr.downloadHandler.data);
+                    Debug.Log("下载完成: " + localPath);
+                }
+
+            }
+
+
+
+            string fileUrl = "file://" + localPath;
+
+            using (UnityWebRequest uwr = UnityWebRequestMultimedia.GetAudioClip(fileUrl, AudioType.MPEG))
+            {
+                yield return uwr.SendWebRequest();
+
+                if (uwr.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogError("加载失败: " + uwr.error);
+                    yield break;
+                }
+
+                loadclip = DownloadHandlerAudioClip.GetContent(uwr);
+            }
+
+
+        }
+
+
+
+
+
     }
 }
