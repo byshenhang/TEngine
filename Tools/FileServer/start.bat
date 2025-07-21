@@ -1,1 +1,2 @@
-server -p 8081 -cors 
+cd .\Data
+server -p 8081 -cors
