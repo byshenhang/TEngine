@@ -70,8 +70,17 @@ namespace YooAsset
             _webRequest = DownloadSystemHelper.NewUnityWebRequestGet(_requestURL);
             DownloadHandlerBuffer handler = new DownloadHandlerBuffer();
             _webRequest.downloadHandler = handler;
+            _webRequest.certificateHandler = new BypassCertificate();
             _webRequest.disposeDownloadHandlerOnDispose = true;
             _requestOperation = _webRequest.SendWebRequest();
+        }
+    }
+
+    class BypassCertificate : CertificateHandler
+    {
+        protected override bool ValidateCertificate(byte[] certificateData)
+        {
+            return true; // 信任所有证书
         }
     }
 }
