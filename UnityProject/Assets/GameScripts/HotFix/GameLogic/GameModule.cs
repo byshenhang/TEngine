@@ -135,6 +135,13 @@ public class GameModule
     public static AudioLyricCoordinator AUDIO_LYRIC => _audioLyricCoordinator ??= AudioLyricCoordinator.Instance;
 
     private static AudioLyricCoordinator _audioLyricCoordinator;
+    
+    /// <summary>
+    /// 获取HTTP服务器模块。
+    /// </summary>
+    public static HTTPServerModule HTTPServer => _httpServer ??= HTTPServerModule.Instance;
+
+    private static HTTPServerModule _httpServer;
 
     ///// <summary>
     ///// 获取XR交互模块。
@@ -188,6 +195,7 @@ public class GameModule
 
         _lyric = null;
         _audioLyricCoordinator = null;
+        _httpServer = null;
 
         // 战斗模块作为Singleton由GameApp.Release处理
         _combat = null;

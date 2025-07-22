@@ -17,6 +17,31 @@ public class RuntimeHTTPServer : MonoBehaviour
     private bool isRunning = false;
     private string uploadPath;
     
+    #region 公共属性
+    
+    /// <summary>
+    /// 服务器是否正在运行
+    /// </summary>
+    public bool IsRunning => isRunning;
+    
+    /// <summary>
+    /// 获取上传路径
+    /// </summary>
+    /// <returns>上传目录路径</returns>
+    public string GetUploadPath() => uploadPath;
+    
+    /// <summary>
+    /// 获取局域网URL
+    /// </summary>
+    /// <returns>局域网访问URL</returns>
+    public string GetLANURL()
+    {
+        string localIP = GetLocalIPAddress();
+        return !string.IsNullOrEmpty(localIP) ? $"http://{localIP}:{port}/" : "";
+    }
+    
+    #endregion
+    
     void Start()
     {
         // 设置上传路径为persistentDataPath/Upload（运行时可写目录）
@@ -150,6 +175,7 @@ public class RuntimeHTTPServer : MonoBehaviour
                     // 获取文件列表
                     HandleGetFileList(request, response);
                 }
+
                 else
                 {
                     // 404
@@ -393,6 +419,7 @@ public class RuntimeHTTPServer : MonoBehaviour
         }
     }
     
+
     private string FormatFileSize(long bytes)
     {
         if (bytes == 0) return "0 B";
