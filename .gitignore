@@ -33,3 +33,15 @@ Tools/GameEventSourceGenerator/SourceGenerator/obj/Debug/SourceGenerator.Assembl
 Tools/GameEventSourceGenerator/SourceGenerator/obj/Debug/SourceGenerator.assets.cache
 Tools/GameEventSourceGenerator/SourceGenerator/obj/Debug/SourceGenerator.csproj.AssemblyReference.cache
 Tools/GameEventSourceGenerator/SourceGenerator/obj/Debug/SourceGenerator.GeneratedMSBuildEditorConfig.editorconfig
+UnityProject/Assets/Settings/URP-Default.asset
+UnityProject/Assets/XR/XRGeneralSettingsPerBuildTarget.asset
+UnityProject/Assets/XR/Settings/OpenXR Package Settings.asset
+UnityProject/Packages/manifest.json
+UnityProject/Packages/packages-lock.json
+UnityProject/ProjectSettings/EditorBuildSettings.asset
+UnityProject/ProjectSettings/PackageManagerSettings.asset
+UnityProject/ProjectSettings/ProjectVersion.txt
+UnityProject/ProjectSettings/ShaderGraphSettings.asset
+UnityProject/UserSettings/AndroidLogcatSettings.asset
+UnityProject/UserSettings/EditorUserSettings.asset
+UnityProject/UserSettings/Layouts/CurrentMaximizeLayout.dwlt
