@@ -5,6 +5,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.Networking;
 
 public class RuntimeHTTPServer : MonoBehaviour
 {
@@ -195,27 +196,14 @@ public class RuntimeHTTPServer : MonoBehaviour
     {
         try
         {
-            string htmlFilePath = Path.Combine(Application.streamingAssetsPath, "upload.html");
-            
-            if (File.Exists(htmlFilePath))
+            string html = LoadUploadPageContent();
+            if (!string.IsNullOrEmpty(html))
             {
-                string html = File.ReadAllText(htmlFilePath, Encoding.UTF8);
-                byte[] buffer = Encoding.UTF8.GetBytes(html);
-                response.ContentType = "text/html; charset=utf-8";
-                response.ContentLength64 = buffer.Length;
-                response.OutputStream.Write(buffer, 0, buffer.Length);
+                SendHtmlResponse(response, html);
             }
             else
             {
-                // 如果HTML文件不存在，返回简单的错误页面
-                string errorHtml = @"<!DOCTYPE html>
-<html><head><title>Error</title></head>
-<body><h1>Upload page not found</h1>
-<p>Please ensure upload.html exists in StreamingAssets directory.</p></body></html>";
-                byte[] buffer = Encoding.UTF8.GetBytes(errorHtml);
-                response.ContentType = "text/html; charset=utf-8";
-                response.ContentLength64 = buffer.Length;
-                response.OutputStream.Write(buffer, 0, buffer.Length);
+                SendUploadPageNotFoundError(response);
             }
         }
         catch (Exception ex)
@@ -223,6 +211,130 @@ public class RuntimeHTTPServer : MonoBehaviour
             Debug.LogError($"Error loading upload page: {ex.Message}");
             response.StatusCode = 500;
             SendTextResponse(response, "Internal server error");
+            response.OutputStream.Close();
+        }
+    }
+    
+    private string LoadUploadPageContent()
+    {
+        string filePath = Path.Combine(Application.streamingAssetsPath, "upload.html");
+        Debug.Log($"[RuntimeHTTPServer] StreamingAssets路径: {filePath}");
+        
+        try
+        {
+            // Android平台需要使用UnityWebRequest访问StreamingAssets
+            if (Application.platform == RuntimePlatform.Android)
+            {
+                return LoadUploadPageFromAndroid(filePath);
+            }
+            else
+            {
+                // 其他平台使用传统文件访问方式
+                return LoadUploadPageFromFile(filePath);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[RuntimeHTTPServer] 加载upload.html异常: {ex.Message}");
+            return null;
+        }
+    }
+    
+    private string LoadUploadPageFromAndroid(string filePath)
+    {
+        try
+        {
+            Debug.Log($"[RuntimeHTTPServer] Android平台，使用UnityWebRequest访问: {filePath}");
+            
+            // 创建UnityWebRequest
+             using (UnityWebRequest request = UnityWebRequest.Get(filePath))
+             {
+                 // 同步等待请求完成
+                 var operation = request.SendWebRequest();
+                 while (!operation.isDone)
+                 {
+                     System.Threading.Thread.Sleep(10);
+                 }
+                 
+                 if (request.result == UnityWebRequest.Result.Success)
+                {
+                    string content = request.downloadHandler.text;
+                    Debug.Log($"[RuntimeHTTPServer] Android平台成功读取upload.html，内容长度: {content.Length}");
+                    return content;
+                }
+                else
+                {
+                    Debug.LogError($"[RuntimeHTTPServer] Android平台UnityWebRequest失败: {request.error}");
+                    return null;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[RuntimeHTTPServer] Android平台读取upload.html异常: {ex.Message}");
+            return null;
+        }
+    }
+    
+    private string LoadUploadPageFromFile(string filePath)
+    {
+        try
+        {
+            if (File.Exists(filePath))
+            {
+                string content = File.ReadAllText(filePath, Encoding.UTF8);
+                Debug.Log($"[RuntimeHTTPServer] 成功从文件读取upload.html: {filePath}");
+                return content;
+            }
+            else
+            {
+                Debug.LogError($"[RuntimeHTTPServer] 文件不存在: {filePath}");
+                return null;
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[RuntimeHTTPServer] 读取文件失败 {filePath}: {ex.Message}");
+            return null;
+        }
+    }
+    
+    private void SendHtmlResponse(HttpListenerResponse response, string html)
+    {
+        try
+        {
+            byte[] buffer = Encoding.UTF8.GetBytes(html);
+            response.ContentType = "text/html; charset=utf-8";
+            response.ContentLength64 = buffer.Length;
+            response.OutputStream.Write(buffer, 0, buffer.Length);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error sending HTML response: {ex.Message}");
+        }
+        finally
+        {
+            response.OutputStream.Close();
+        }
+    }
+    
+    private void SendUploadPageNotFoundError(HttpListenerResponse response)
+    {
+        try
+        {
+            string errorHtml = @"<!DOCTYPE html>
+<html><head><title>Error</title></head>
+<body><h1>Upload page not found</h1>
+<p>Please ensure upload.html exists in StreamingAssets directory.</p>
+<p>Streaming Assets Path: " + Application.streamingAssetsPath + @"</p></body></html>";
+            byte[] buffer = Encoding.UTF8.GetBytes(errorHtml);
+            response.ContentType = "text/html; charset=utf-8";
+            response.ContentLength64 = buffer.Length;
+            response.OutputStream.Write(buffer, 0, buffer.Length);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error sending error response: {ex.Message}");
         }
         finally
         {

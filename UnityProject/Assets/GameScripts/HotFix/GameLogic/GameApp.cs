@@ -64,9 +64,13 @@ public partial class GameApp
                ,OnLoadSuccessAsync
            );
 
-        UniTask.Delay(1000).ContinueWith(() =>
+
+        Log.Info($"准备进入打开ManiUI: {scene.name}");
+        await UniTask.Delay(1000).ContinueWith(() =>
         {
+            Log.Info($"打开BattleMainUI: {scene.name}");
             GameModule.UI3D.ShowUI3D<BattleMainUI>(new Vector3(88f, 2f, 93f), Quaternion.identity).Forget();
+            Log.Info($"结束打开BattleMainUI: {scene.name}");
         });
 
         Log.Info($"场景切换完成: {scene.name}");
