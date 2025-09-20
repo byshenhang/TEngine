@@ -139,6 +139,13 @@ namespace LyricFX.Factory
         /// </summary>
         private void RecycleCharacterImmediate(GameObject character)
         {
+            // 检查对象是否有效
+            if (character == null)
+            {
+                Debug.LogWarning("[字符工厂] 尝试回收空的字符对象");
+                return;
+            }
+            
             lock (stateLock)
             {
                 // 检查对象状态
@@ -160,18 +167,29 @@ namespace LyricFX.Factory
                 if (characterPool.Count >= maxPoolSize)
                 {
                     characterStates.Remove(character);
-                    GameObject.Destroy(character);
+                    if (character != null) // 再次检查对象有效性
+                    {
+                        GameObject.Destroy(character);
+                    }
                     Debug.Log($"[字符工厂] 池已满，销毁对象，当前池容量：{characterPool.Count}");
                 }
                 else
                 {
                     // 否则放回池中
-                    character.SetActive(false);
-                    character.transform.SetParent(poolContainer);
-                    characterPool.Push(character);
-                    characterStates[character] = CharacterState.Available;
-                    // 记录性能监控
-                    LyricFX.Utils.PerformanceMonitor.Instance.RecordCharacterRecycle();
+                    if (character != null && character.transform != null)
+                    {
+                        character.SetActive(false);
+                        character.transform.SetParent(poolContainer);
+                        characterPool.Push(character);
+                        characterStates[character] = CharacterState.Available;
+                        // 记录性能监控
+                        LyricFX.Utils.PerformanceMonitor.Instance.RecordCharacterRecycle();
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[字符工厂] 字符对象已被销毁，无法放回池中");
+                        characterStates.Remove(character);
+                    }
                 }
             }
         }
@@ -183,6 +201,9 @@ namespace LyricFX.Factory
         {
             // 避免重复处理
             if (pendingRecycleQueue.Count == 0) return;
+            
+            // 确保在主线程中执行
+            await UniTask.SwitchToMainThread();
             
             var processCount = 0;
             const int maxProcessPerFrame = 2; // VR优化：每帧最多处理2个对象
@@ -248,7 +269,14 @@ namespace LyricFX.Factory
         {
             try
             {
-                // 重置变换
+                // 检查对象是否有效
+                if (character == null || character.transform == null)
+                {
+                    Debug.LogWarning("[字符工厂] 尝试重置无效的字符对象");
+                    return;
+                }
+                
+                // 重置Transform
                 character.transform.localPosition = Vector3.zero;
                 character.transform.localRotation = Quaternion.identity;
                 character.transform.localScale = Vector3.one;

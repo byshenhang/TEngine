@@ -560,12 +560,18 @@ namespace GameLogic.AudioReactor
         {
             try
             {
-                var tasks = _registeredReactors.Values.Select(reactor => reactor.ReleaseAsync()).ToArray();
-                await UniTask.WhenAll(tasks);
+                // 过滤掉已销毁的反应器，避免访问已销毁对象
+                var validReactors = _registeredReactors.Values.Where(reactor => reactor != null).ToList();
+                var tasks = validReactors.Select(reactor => reactor.ReleaseAsync()).ToArray();
+                
+                if (tasks.Length > 0)
+                {
+                    await UniTask.WhenAll(tasks);
+                }
                 
                 if (_enableDebugger)
                 {
-                    Log.Info($"AudioReactorManager: 已释放 {_registeredReactors.Count} 个音频反应器");
+                    Log.Info($"AudioReactorManager: 已释放 {validReactors.Count} 个音频反应器（总计 {_registeredReactors.Count} 个）");
                 }
             }
             catch (Exception ex)
