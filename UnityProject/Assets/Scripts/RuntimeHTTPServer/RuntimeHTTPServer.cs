@@ -365,13 +365,16 @@ public class RuntimeHTTPServer : MonoBehaviour
             
             foreach (var file in uploadedFiles)
             {
-                // 验证文件类型，只允许MP3文件
+                // 验证文件类型，允许MP3和LRC文件
                 string extension = Path.GetExtension(file.FileName).ToLower();
-                if (extension != ".mp3")
+                if (extension != ".mp3" && extension != ".lrc")
                 {
-                    Debug.LogWarning($"Rejected non-MP3 file: {file.FileName}");
+                    Debug.LogWarning($"Rejected unsupported file: {file.FileName} (only MP3 and LRC files are allowed)");
                     continue;
                 }
+                
+                string fileType = extension == ".mp3" ? "音频" : "歌词";
+                Debug.Log($"{fileType}文件上传: {file.FileName} ({file.Data.Length} bytes)");
                 
                 string fileName = SanitizeFileName(file.FileName);
                 string filePath = Path.Combine(uploadPath, fileName);
