@@ -18,15 +18,16 @@ namespace GameLogic
 
         void Start()
         {
-            button = GetComponentInChildren<Button>();
-            text = GetComponentInChildren<Text>();
-            text.text += "-注册绑定";
-            button.onClick.AddListener( () =>
-            {
-                text.text += "-触发点击"; 
-                PlayAsync().Forget();
-            });
-            StartCoroutine(DownloadAudioToLocal(audioURL));
+            //GameModule.UI3D.ShowUI3DAtAnchor<BattleMainUI>("MainUI", null);
+            //button = GetComponentInChildren<Button>();
+            //text = GetComponentInChildren<Text>();
+            //text.text += "-注册绑定";
+            //button.onClick.AddListener( () =>
+            //{
+            //    text.text += "-触发点击"; 
+            //    PlayAsync().Forget();
+            //});
+            //StartCoroutine(DownloadAudioToLocal(audioURL));
         }
 
 
@@ -53,8 +54,8 @@ namespace GameLogic
 
                 // 2. 准备音频和歌词资源
                 //var audioClip = GameModule.Resource.LoadAsset<AudioClip>("XUNZHANG_AUDIO");
-                //var audioClip = GameModule.Resource.LoadAsset<AudioClip>("KIDDO - My 100_AUDIO");
-                var audioClip = loadclip;
+                var audioClip = GameModule.Resource.LoadAsset<AudioClip>("KIDDO - My 100_AUDIO");
+                //var audioClip = loadclip;
                 //var lrcText = GameModule.Resource.LoadAsset<TextAsset>("XUNZHANG").text;
                 var lrcText = GameModule.Resource.LoadAsset<TextAsset>("My 100 - KIDDO LRC").text;
                 text.text += "-加载音频";
@@ -187,9 +188,6 @@ namespace GameLogic
 
 
         }
-
-
-
 
 
     }
