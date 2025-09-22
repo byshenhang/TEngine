@@ -9,28 +9,28 @@ using TextAsset = UnityEngine.TextAsset;
 
 public class LrcSubtitleManager : MonoBehaviour
 {
-    public Text subtitleText;  // ×ÖÄ»ÏÔÊ¾µÄ Text ×é¼ş
-    public TextAsset lrcFileText;  // ×ÖÄ»ÏÔÊ¾µÄ Text ×é¼ş
-    //public AudioSource audioSource;  // ÒôÆµµÄ AudioSource
-    public AudioClip audioClip;  // ÒôÆµÎÄ¼ş
-    public Font subtitleFont;  // ×ÖÌåÎÄ¼ş
+    public Text subtitleText;  // å­—å¹•æ˜¾ç¤ºçš„ Text ç»„ä»¶
+    public TextAsset lrcFileText;  // å­—å¹•æ˜¾ç¤ºçš„ Text ç»„ä»¶
+    //public AudioSource audioSource;  // éŸ³é¢‘çš„ AudioSource
+    public AudioClip audioClip;  // éŸ³é¢‘æ–‡ä»¶
+    public Font subtitleFont;  // å­—ä½“æ–‡ä»¶
     public AudioSourcePlus sourcePlus;
-    private List<LrcLine> lrcLines = new List<LrcLine>();  // ´æ´¢½âÎöºóµÄ LRC ×ÖÄ»ÄÚÈİ
-    private int currentSubtitleIndex = 0;  // µ±Ç°×ÖÄ»µÄË÷Òı
+    private List<LrcLine> lrcLines = new List<LrcLine>();  // å­˜å‚¨è§£æåçš„ LRC å­—å¹•å†…å®¹
+    private int currentSubtitleIndex = 0;  // å½“å‰å­—å¹•çš„ç´¢å¼•
 
     void Start()
     {
-        // ÉèÖÃ×ÖÄ»µÄ×ÖÌå
+        // è®¾ç½®å­—å¹•çš„å­—ä½“
         //subtitleText.font = subtitleFont;
 
-        // ¼ÓÔØ²¢½âÎö LRC ÎÄ¼ş
+        // åŠ è½½å¹¶è§£æ LRC æ–‡ä»¶
         LoadLrcFile();
 
-        // ²¥·ÅÒôÆµ
+        // æ’­æ”¾éŸ³é¢‘
         //audioSource.clip = audioClip;
         //audioSource.Play();
 
-        // ¿ªÊ¼²¥·Å×ÖÄ»
+        // å¼€å§‹æ’­æ”¾å­—å¹•
         StartCoroutine(PlaySubtitles());
     }
 
@@ -42,7 +42,7 @@ public class LrcSubtitleManager : MonoBehaviour
         {
             if (line.StartsWith("[") && line.Contains("]"))
             {
-                // ÌáÈ¡Ê±¼ä´ÁºÍ×ÖÄ»
+                // æå–æ—¶é—´æˆ³å’Œå­—å¹•
                 string timeString = line.Substring(1, line.IndexOf(']') - 1);
                 string text = line.Substring(line.IndexOf(']') + 1).Trim();
 
@@ -75,7 +75,7 @@ public class LrcSubtitleManager : MonoBehaviour
             yield return null;
         }
 
-        // ²¥·ÅÍê±ÏºóÇå¿Õ×ÖÄ»
+        // æ’­æ”¾å®Œæ¯•åæ¸…ç©ºå­—å¹•
         subtitleText.text = "";
     }
 

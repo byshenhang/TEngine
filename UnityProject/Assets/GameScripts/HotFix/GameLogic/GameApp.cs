@@ -69,7 +69,7 @@ public partial class GameApp
         await UniTask.Delay(1000).ContinueWith(() =>
         {
             Log.Info($"打开BattleMainUI: {scene.name}");
-            GameModule.UI3D.ShowUI3D<BattleMainUI>(new Vector3(88f, 2f, 93f), Quaternion.identity).Forget();
+            GameModule.UI3D.ShowUI3D<BattleMainUI>(new Vector3(88f, 5f, 93f), Quaternion.identity).Forget();
             Log.Info($"结束打开BattleMainUI: {scene.name}");
         });
 
