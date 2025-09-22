@@ -288,8 +288,10 @@ namespace LyricFX.Managers
             // 批量释放字符（异步处理避免卡顿）
             if (charactersToRelease.Count > 0)
             {
-                _ = UniTask.Run(() =>
+                _ = UniTask.Run(async () =>
                 {
+                    // 切换到主线程执行Unity API调用
+                    await UniTask.SwitchToMainThread();
                     foreach (var character in charactersToRelease)
                     {
                         characterFactory.ReleaseCharacter(character);

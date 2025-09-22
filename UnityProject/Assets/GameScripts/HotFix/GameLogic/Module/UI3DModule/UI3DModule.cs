@@ -651,11 +651,11 @@ namespace GameLogic
         /// </summary>
         public void OnUpdate()
         {
-            var target = GameObject.Find("BattleMainUI");
-            if (target)
-            {
-                var com = target.GetComponent<StartApp>() ?? target.AddComponent<StartApp>();
-            }
+            //var target = GameObject.Find("BattleMainUI");
+            //if (target)
+            //{
+            //    var com = target.GetComponent<StartApp>() ?? target.AddComponent<StartApp>();
+            //}
 
             // 更新所有活动窗口
             foreach (var window in _activeWindows.Values)
