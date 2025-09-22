@@ -9,6 +9,9 @@ using System.Collections.Generic;
 using System.IO;
 using TMPro;
 using AudioType = UnityEngine.AudioType;
+using System.Net;
+using System.Net.Sockets;
+using System;
 
 namespace GameLogic
 {
@@ -20,6 +23,10 @@ namespace GameLogic
         private ScrollRect _scrollView;
         private Transform _content;
         private GameObject _itemTemplate;
+        private Button _btn_share;
+
+        private GameObject _shareWindow;
+        private TextMeshProUGUI _shareIPText;
 
         public string LRCFile = "";
         private List<string> audioFiles = new List<string>();
@@ -161,6 +168,15 @@ namespace GameLogic
                 Debug.Log("[BattleMainUI] Item Template 已隐藏");
                 
                 Debug.Log("[BattleMainUI] ScriptGenerator 初始化完成!");
+
+
+                _shareIPText = FindChildComponent<TextMeshProUGUI>("ShareInternet/m_text_ip");
+
+                _btn_share = FindChildComponent<Button>("m_btn_share");
+                _btn_share.onClick.AddListener(OnClick_shareBtn);
+
+                _shareWindow = FindChildComponent<Transform>("ShareInternet").gameObject;
+                _shareWindow.SetActive(false);
             }
             catch (System.Exception ex)
             {
@@ -168,7 +184,14 @@ namespace GameLogic
                 throw; // 重新抛出异常以便上层处理
             }
         }
-        
+
+        private void OnClick_shareBtn()
+        {
+            _shareWindow.SetActive(!_shareWindow.activeSelf);
+            _scrollView.gameObject.SetActive(false);
+            _shareIPText.text = GetLocalIPAddress();
+        }
+
         /// <summary>
         /// 打印子对象层级结构
         /// </summary>
@@ -318,7 +341,22 @@ namespace GameLogic
             // 创建UI列表项
             CreateAudioListItems();
         }
-        
+
+
+        public string GetLocalIPAddress()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    return ip.ToString();
+                }
+            }
+            throw new System.Exception("No network adapters with an IPv4 address in the system!");
+        }
+
+
         /// <summary>
         /// 清空音频列表UI
         /// </summary>
