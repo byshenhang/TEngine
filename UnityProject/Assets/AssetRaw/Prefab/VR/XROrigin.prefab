@@ -960,7 +960,7 @@ GameObject:
   - component: {fileID: 5976451859020202607}
   - component: {fileID: 2613977570457546598}
   m_Layer: 0
-  m_Name: XR Origin (XR Rig)
+  m_Name: XROrigin
   m_TagString: Untagged
   m_Icon: {fileID: -1412012063857583412, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0

@@ -32,156 +32,43 @@ namespace GameLogic
         private List<string> audioFiles = new List<string>();
         private string uploadPath;
 
+        /// <summary>
+        /// 初始化BattleMainUI的关键UI组件与状态，移除冗余判空与调试输出，仅保留精简的组件查找与事件绑定。
+        /// </summary>
         protected override void ScriptGenerator()
         {
             try
             {
-                Debug.Log("[BattleMainUI] ScriptGenerator 开始初始化组件...");
-                
-                // 打印当前GameObject信息
-                if (gameObject == null)
-                {
-                    Debug.LogError("[BattleMainUI] gameObject 为空!");
-                    return;
-                }
-                Debug.Log($"[BattleMainUI] 当前GameObject: {gameObject.name}, 激活状态: {gameObject.activeInHierarchy}");
-                
-                // 打印子对象层级结构
-                LogChildrenHierarchy(transform, 0, 3);
-                
-                // 查找调试按钮
-                Debug.Log("[BattleMainUI] 开始查找 m_btn_debug 按钮...");
-                _btn_debug = FindChildComponent<Button>("m_btn_debug");
-                if (_btn_debug == null)
-                {
-                    Debug.LogError("[BattleMainUI] 找不到 m_btn_debug 按钮组件!");
-                    // 尝试其他可能的路径
-                    var debugTransform = FindChild("m_btn_debug");
-                    if (debugTransform != null)
-                    {
-                        Debug.Log($"[BattleMainUI] 找到 m_btn_debug Transform，但没有Button组件: {debugTransform.name}");
-                        var button = debugTransform.GetComponent<Button>();
-                        Debug.Log($"[BattleMainUI] Button组件状态: {(button != null ? "存在" : "不存在")}");
-                    }
-                    return;
-                }
-                Debug.Log($"[BattleMainUI] m_btn_debug 按钮组件找到成功: {_btn_debug.name}");
-                _btn_debug.onClick.AddListener(OnClick_debugBtn);
-                
-                // 查找滚动视图
-                Debug.Log("[BattleMainUI] 开始查找 Scroll View...");
-                _scrollView = FindChildComponent<ScrollRect>("Scroll View");
-                if (_scrollView == null)
-                {
-                    Debug.LogError("[BattleMainUI] 找不到 Scroll View 组件!");
-                    // 尝试查找Transform
-                    var scrollTransform = FindChild("Scroll View");
-                    if (scrollTransform != null)
-                    {
-                        Debug.Log($"[BattleMainUI] 找到 Scroll View Transform: {scrollTransform.name}");
-                        var scrollRect = scrollTransform.GetComponent<ScrollRect>();
-                        Debug.Log($"[BattleMainUI] ScrollRect组件状态: {(scrollRect != null ? "存在" : "不存在")}");
-                    }
-                    return;
-                }
-                Debug.Log($"[BattleMainUI] Scroll View 组件找到成功: {_scrollView.name}");
-                
-                // 查找内容容器
-                Debug.Log("[BattleMainUI] 开始查找 Scroll View/Viewport/Content...");
-                _content = FindChildComponent<Transform>("Scroll View/Viewport/Content");
-                if (_content == null)
-                {
-                    Debug.LogError("[BattleMainUI] 找不到 Scroll View/Viewport/Content 组件!");
-                    // 逐级查找
-                    var viewport = FindChild("Scroll View/Viewport");
-                    if (viewport != null)
-                    {
-                        Debug.Log($"[BattleMainUI] 找到 Viewport: {viewport.name}");
-                        var content = viewport.Find("Content");
-                        if (content != null)
-                        {
-                            Debug.Log($"[BattleMainUI] 找到 Content: {content.name}");
-                            _content = content;
-                        }
-                        else
-                        {
-                            Debug.LogError("[BattleMainUI] Viewport下没有找到Content!");
-                        }
-                    }
-                    else
-                    {
-                        Debug.LogError("[BattleMainUI] 没有找到Viewport!");
-                    }
-                    
-                    if (_content == null) return;
-                }
-                Debug.Log($"[BattleMainUI] Content 组件找到成功: {_content.name}");
-                
-                // 查找模板项
-                Debug.Log("[BattleMainUI] 开始查找 Scroll View/Viewport/Content/Item...");
-                Transform itemTransform = FindChildComponent<Transform>("Scroll View/Viewport/Content/Item");
-                if (itemTransform == null)
-                {
-                    Debug.LogError("[BattleMainUI] 找不到 Scroll View/Viewport/Content/Item 组件!");
-                    // 在Content下直接查找
-                    if (_content != null)
-                    {
-                        var item = _content.Find("Item");
-                        if (item != null)
-                        {
-                            Debug.Log($"[BattleMainUI] 在Content下找到 Item: {item.name}");
-                            itemTransform = item;
-                        }
-                        else
-                        {
-                            Debug.LogError("[BattleMainUI] Content下没有找到Item!");
-                            // 打印Content的所有子对象
-                            Debug.Log($"[BattleMainUI] Content子对象数量: {_content.childCount}");
-                            for (int i = 0; i < _content.childCount; i++)
-                            {
-                                var child = _content.GetChild(i);
-                                Debug.Log($"[BattleMainUI] Content子对象[{i}]: {child.name}");
-                            }
-                        }
-                    }
-                    
-                    if (itemTransform == null) return;
-                }
+                // 可选：调试按钮存在则绑定
+                _btn_debug = FindChildComponent<Button>("m_btn_debug") ?? FindChild("m_btn_debug")?.GetComponent<Button>();
+                _btn_debug?.onClick.AddListener(OnClick_debugBtn);
+        
+                // 必需组件：直接查找与使用
+                _scrollView = FindChildComponent<ScrollRect>("Scroll View") ?? FindChild("Scroll View")?.GetComponent<ScrollRect>();
+                _content = FindChildComponent<Transform>("Scroll View/Viewport/Content")
+                           ?? FindChild("Scroll View/Viewport")?.Find("Content");
+                var itemTransform = FindChildComponent<Transform>("Scroll View/Viewport/Content/Item")
+                                    ?? _content?.Find("Item");
                 _itemTemplate = itemTransform.gameObject;
-                if (_itemTemplate == null)
-                {
-                    Debug.LogError("[BattleMainUI] Item Transform 的 gameObject 为空!");
-                    return;
-                }
-                Debug.Log($"[BattleMainUI] Item Template 组件找到成功: {_itemTemplate.name}");
-                
+        
                 // 初始化上传路径
                 uploadPath = Path.Combine(Application.persistentDataPath, "Upload");
-                Debug.Log($"[BattleMainUI] 上传路径初始化: {uploadPath}");
-                
-                // 初始化时隐藏Scroll View
+        
+                // 初始化时隐藏Scroll View与模板Item
                 _scrollView.gameObject.SetActive(false);
-                Debug.Log("[BattleMainUI] Scroll View 已隐藏");
-                
-                // 隐藏模板Item
                 _itemTemplate.SetActive(false);
-                Debug.Log("[BattleMainUI] Item Template 已隐藏");
-                
-                Debug.Log("[BattleMainUI] ScriptGenerator 初始化完成!");
-
-
+        
+                // 分享窗口与按钮
                 _shareIPText = FindChildComponent<TextMeshProUGUI>("ShareInternet/m_text_ip");
-
                 _btn_share = FindChildComponent<Button>("m_btn_share");
-                _btn_share.onClick.AddListener(OnClick_shareBtn);
-
+                _btn_share?.onClick.AddListener(OnClick_shareBtn);
                 _shareWindow = FindChildComponent<Transform>("ShareInternet").gameObject;
                 _shareWindow.SetActive(false);
             }
-            catch (System.Exception ex)
+            catch
             {
-                Debug.LogError($"[BattleMainUI] ScriptGenerator 初始化过程中发生异常: {ex.Message}\n堆栈跟踪: {ex.StackTrace}");
-                throw; // 重新抛出异常以便上层处理
+                // 保持原有异常抛出行为
+                throw;
             }
         }
 

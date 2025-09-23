@@ -19,7 +19,7 @@ public partial class GameApp
     private static List<Assembly> _hotfixAssembly;
 
     /// <summary>
-    /// 热更域App主入口。
+    /// 热更域App主入口
     /// </summary>
     /// <param name="objects"></param>
     public static void Entrance(object[] objects)
@@ -56,7 +56,7 @@ public partial class GameApp
     {
         // 延迟一帧确保锚点已注册
         var scene = await GameModule.Scene.LoadSceneAsync(
-               "Demo01",                           // 场景定位地址
+               "MainCity",                           // 场景定位地址
                LoadSceneMode.Single,             // 单场景模式（替换当前场景）
                false,                            // 不挂起加载
                100,                              // 优先级
@@ -68,8 +68,9 @@ public partial class GameApp
         Log.Info($"准备进入打开ManiUI: {scene.name}");
         await UniTask.Delay(1000).ContinueWith(() =>
         {
-            Log.Info($"打开BattleMainUI: {scene.name}");
-            GameModule.UI3D.ShowUI3D<BattleMainUI>(new Vector3(88f, 5f, 93f), Quaternion.identity).Forget();
+            //Log.Info($"打开BattleMainUI: {scene.name}");
+            //GameModule.UI3D.ShowUI3D<BattleMainUI>(new Vector3(88f, 5f, 93f), Quaternion.identity).Forget();
+            var XRPlayer = GameModule.Resource.LoadGameObject("XROrigin");
             Log.Info($"结束打开BattleMainUI: {scene.name}");
         });
 

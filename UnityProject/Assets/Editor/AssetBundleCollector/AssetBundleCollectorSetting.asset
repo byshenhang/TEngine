@@ -201,6 +201,19 @@ MonoBehaviour:
         FilterRuleName: CollectAll
         AssetTags: 
         UserData: 
+    - GroupName: Prefab
+      GroupDesc: 
+      AssetTags: 
+      ActiveRuleName: EnableGroup
+      Collectors:
+      - CollectPath: Assets/AssetRaw/Prefab
+        CollectorGUID: c0997faa96fe1a248814d06d726a2097
+        CollectorType: 0
+        AddressRuleName: AddressByFileName
+        PackRuleName: PackDirectory
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: 
   - PackageName: OtherPackage
     PackageDesc: 
     EnableAddressable: 1
