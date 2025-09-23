@@ -12,7 +12,7 @@ using UnityEngine.SceneManagement;
 
 
 /// <summary>
-/// 游戏App。
+/// 游戏App
 /// </summary>
 public partial class GameApp
 {
@@ -88,6 +88,7 @@ public partial class GameApp
 
     private static  void OnLoadSuccessAsync(float obj)
     {
+
     }
 
     private static void Release()

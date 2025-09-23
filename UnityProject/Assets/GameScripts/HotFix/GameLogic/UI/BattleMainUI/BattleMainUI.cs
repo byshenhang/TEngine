@@ -1,75 +1,174 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.Networking;
-using TEngine;
-using LyricFX.Managers;
 using Cysharp.Threading.Tasks;
-using TelePresent.AudioSyncPro;
 using System.Collections.Generic;
 using System.IO;
 using TMPro;
 using AudioType = UnityEngine.AudioType;
 using System.Net;
 using System.Net.Sockets;
-using System;
 
 namespace GameLogic
 {
     [Window(UILayer.UI)]
     class BattleMainUI : UI3DWindow
     {
-        #region 脚本工具生成的代码
         private Button _btn_debug;
         private ScrollRect _scrollView;
         private Transform _content;
         private GameObject _itemTemplate;
         private Button _btn_share;
+        private Button _btn_scene;
 
-        private GameObject _shareWindow;
-        private TextMeshProUGUI _shareIPText;
+         private GameObject _shareWindow;
+         private TextMeshProUGUI _shareIPText;
 
-        public string LRCFile = "";
-        private List<string> audioFiles = new List<string>();
-        private string uploadPath;
+        // SceneWindow 相关
+        private GameObject _sceneWindow;
+        private Transform _sceneContent;
+        private GameObject _sceneItemTemplate;
+
+         public string LRCFile = "";
+         private List<string> audioFiles = new List<string>();
+         private string uploadPath;
+
+         /// <summary>
+         /// 初始化BattleMainUI的关键UI组件与状态，移除冗余判空与调试输出，仅保留精简的组件查找与事件绑定。
+         /// </summary>
+         protected override void ScriptGenerator()
+         {
+             try
+             {
+                 // 可选：调试按钮存在则绑定
+                 _btn_debug = FindChildComponent<Button>("m_btn_debug") ?? FindChild("m_btn_debug")?.GetComponent<Button>();
+                 _btn_debug?.onClick.AddListener(OnClick_debugBtn);
+                // 场景按钮存在则绑定
+                _btn_scene = FindChildComponent<Button>("m_btn_scene") ?? FindChild("m_btn_scene")?.GetComponent<Button>();
+                _btn_scene?.onClick.AddListener(OnClick_sceneBtn);
+         
+                 // 必需组件：直接查找与使用
+                 _scrollView = FindChildComponent<ScrollRect>("Scroll View") ?? FindChild("Scroll View")?.GetComponent<ScrollRect>();
+                 _content = FindChildComponent<Transform>("Scroll View/Viewport/Content")
+                            ?? FindChild("Scroll View/Viewport")?.Find("Content");
+                 var itemTransform = FindChildComponent<Transform>("Scroll View/Viewport/Content/Item")
+                                     ?? _content?.Find("Item");
+                 _itemTemplate = itemTransform.gameObject;
+         
+                 // 初始化上传路径
+                 uploadPath = Path.Combine(Application.persistentDataPath, "Upload");
+         
+                 // 初始化时隐藏Scroll View与模板Item
+                 _scrollView.gameObject.SetActive(false);
+                 _itemTemplate.SetActive(false);
+         
+                 // 分享窗口与按钮
+                 _shareIPText = FindChildComponent<TextMeshProUGUI>("ShareInternet/m_text_ip");
+                 _btn_share = FindChildComponent<Button>("m_btn_share");
+                 _btn_share?.onClick.AddListener(OnClick_shareBtn);
+                 _shareWindow = FindChildComponent<Transform>("ShareInternet").gameObject;
+                 _shareWindow.SetActive(false);
+
+                // SceneWindow 结构
+                var sceneWinTf = FindChildComponent<Transform>("SceneWindow") ?? FindChild("SceneWindow");
+                _sceneWindow = sceneWinTf?.gameObject;
+                _sceneContent = FindChildComponent<Transform>("SceneWindow/Viewport/Content")
+                                 ?? sceneWinTf?.Find("Viewport/Content");
+                var sceneItemTf = FindChildComponent<Transform>("SceneWindow/Viewport/Content/Item")
+                                   ?? _sceneContent?.Find("Item");
+                _sceneItemTemplate = sceneItemTf?.gameObject;
+
+                // 初始隐藏SceneWindow与模板
+                _sceneWindow?.SetActive(false);
+                _sceneItemTemplate?.SetActive(false);
+             }
+             catch
+             {
+                 // 保持原有异常抛出行为
+                 throw;
+             }
+         }
+ 
+        /// <summary>
+        /// 场景选择按钮点击：打开/关闭 SceneWindow，并在打开时刷新场景项。
+        /// </summary>
+        private void OnClick_sceneBtn()
+        {
+            if (_sceneWindow == null || _sceneContent == null || _sceneItemTemplate == null) return;
+            bool active = _sceneWindow.activeSelf;
+            _sceneWindow.SetActive(!active);
+            if (!active)
+            {
+                RefreshSceneItems();
+            }
+        }
 
         /// <summary>
-        /// 初始化BattleMainUI的关键UI组件与状态，移除冗余判空与调试输出，仅保留精简的组件查找与事件绑定。
+        /// 刷新 SceneWindow 内的场景Item列表，来源于 SceneConfig.SceneItems
         /// </summary>
-        protected override void ScriptGenerator()
+        private void RefreshSceneItems()
         {
-            try
+            // 清除旧项（保留模板）
+            for (int i = _sceneContent.childCount - 1; i >= 0; i--)
             {
-                // 可选：调试按钮存在则绑定
-                _btn_debug = FindChildComponent<Button>("m_btn_debug") ?? FindChild("m_btn_debug")?.GetComponent<Button>();
-                _btn_debug?.onClick.AddListener(OnClick_debugBtn);
-        
-                // 必需组件：直接查找与使用
-                _scrollView = FindChildComponent<ScrollRect>("Scroll View") ?? FindChild("Scroll View")?.GetComponent<ScrollRect>();
-                _content = FindChildComponent<Transform>("Scroll View/Viewport/Content")
-                           ?? FindChild("Scroll View/Viewport")?.Find("Content");
-                var itemTransform = FindChildComponent<Transform>("Scroll View/Viewport/Content/Item")
-                                    ?? _content?.Find("Item");
-                _itemTemplate = itemTransform.gameObject;
-        
-                // 初始化上传路径
-                uploadPath = Path.Combine(Application.persistentDataPath, "Upload");
-        
-                // 初始化时隐藏Scroll View与模板Item
-                _scrollView.gameObject.SetActive(false);
-                _itemTemplate.SetActive(false);
-        
-                // 分享窗口与按钮
-                _shareIPText = FindChildComponent<TextMeshProUGUI>("ShareInternet/m_text_ip");
-                _btn_share = FindChildComponent<Button>("m_btn_share");
-                _btn_share?.onClick.AddListener(OnClick_shareBtn);
-                _shareWindow = FindChildComponent<Transform>("ShareInternet").gameObject;
-                _shareWindow.SetActive(false);
+                var child = _sceneContent.GetChild(i);
+                if (child.gameObject != _sceneItemTemplate)
+                {
+                    GameObject.Destroy(child.gameObject);
+                }
             }
-            catch
+
+            // 生成新项
+            foreach (var si in SceneConfig.SceneItems)
             {
-                // 保持原有异常抛出行为
-                throw;
+                var go = GameObject.Instantiate(_sceneItemTemplate, _sceneContent);
+                go.SetActive(true);
+
+                // 设置图标
+                var icon = go.transform.Find("Icon")?.GetComponent<Image>();
+                if (icon != null)
+                {
+                    var sprite = GameModule.Resource.LoadAsset<Sprite>(si.ImagePath);
+                    if (sprite == null)
+                    {
+                        var tex = GameModule.Resource.LoadAsset<Texture2D>(si.ImagePath);
+                        if (tex != null)
+                        {
+                            sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+                        }
+                    }
+                    if (sprite != null) icon.sprite = sprite;
+                }
+
+                // 设置名称（兼容 TextMeshProUGUI / Text）
+                var nameTf = go.transform.Find("Name");
+                var tmp = nameTf?.GetComponent<TextMeshProUGUI>();
+                if (tmp != null) tmp.text = si.ShowName;
+                var ugui = nameTf?.GetComponent<Text>();
+                if (ugui != null) ugui.text = si.ShowName;
+
+                // 绑定点击事件
+                var btn = go.GetComponent<Button>() ?? go.GetComponentInChildren<Button>();
+                if (btn != null)
+                {
+                    var captured = si;
+                    btn.onClick.AddListener(() => OnSceneItemClick(captured));
+                }
             }
+        }
+
+        /// <summary>
+        /// 场景Item点击：加载对应场景。
+        /// </summary>
+        private async void OnSceneItemClick(SceneItem item)
+        {
+            await GameModule.Scene.LoadSceneAsync(
+                item.ScenePath,
+                UnityEngine.SceneManagement.LoadSceneMode.Single,
+                false,
+                100,
+                true,
+                null
+            );
         }
 
         private void OnClick_shareBtn()
@@ -78,26 +177,6 @@ namespace GameLogic
             _scrollView.gameObject.SetActive(false);
             _shareIPText.text = GetLocalIPAddress();
         }
-
-        /// <summary>
-        /// 打印子对象层级结构
-        /// </summary>
-        private void LogChildrenHierarchy(Transform parent, int currentDepth, int maxDepth)
-        {
-            if (currentDepth > maxDepth || parent == null) return;
-            
-            string indent = new string(' ', currentDepth * 2);
-            Debug.Log($"[BattleMainUI] {indent}├─ {parent.name} (激活: {parent.gameObject.activeInHierarchy})");
-            
-            for (int i = 0; i < parent.childCount; i++)
-            {
-                Transform child = parent.GetChild(i);
-                LogChildrenHierarchy(child, currentDepth + 1, maxDepth);
-            }
-        }
-        #endregion
-
-        #region 事件
 
 
         private async UniTask PlayAsync()
@@ -379,7 +458,7 @@ namespace GameLogic
                     else
                     {
                         Debug.LogWarning($"未找到歌词文件: {fileName}.lrc，将使用默认歌词");
-                        return "[00:00.00]正在播放: " + fileName;
+                        return "[00:00.00]正在播放: "  fileName;
                     }
                 }
 #else
@@ -393,7 +472,7 @@ namespace GameLogic
                 else
                 {
                     Debug.LogWarning($"未找到歌词文件: {fileName}.lrc，将使用默认歌词");
-                    return "[00:00.00]正在播放: " + fileName;
+                    return "[00:00.00]正在播放: "  + fileName;
                 }
 #endif
             }
@@ -485,7 +564,6 @@ namespace GameLogic
                 Debug.LogError($"AudioLyricCoordinator同步播放过程中发生错误: {ex}");
             }
         }
-        #endregion
 
     }
 }
