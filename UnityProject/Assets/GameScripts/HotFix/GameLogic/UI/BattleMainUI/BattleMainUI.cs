@@ -50,7 +50,7 @@ namespace GameLogic
                 // 场景按钮存在则绑定
                 _btn_scene = FindChildComponent<Button>("m_btn_scene") ?? FindChild("m_btn_scene")?.GetComponent<Button>();
                 _btn_scene?.onClick.AddListener(OnClick_sceneBtn);
-         
+
                  // 必需组件：直接查找与使用
                  _scrollView = FindChildComponent<ScrollRect>("Scroll View") ?? FindChild("Scroll View")?.GetComponent<ScrollRect>();
                  _content = FindChildComponent<Transform>("Scroll View/Viewport/Content")
@@ -58,7 +58,7 @@ namespace GameLogic
                  var itemTransform = FindChildComponent<Transform>("Scroll View/Viewport/Content/Item")
                                      ?? _content?.Find("Item");
                  _itemTemplate = itemTransform.gameObject;
-         
+
                  // 初始化上传路径
                  uploadPath = Path.Combine(Application.persistentDataPath, "Upload");
          
