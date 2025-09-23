@@ -8,9 +8,13 @@ using AudioType = UnityEngine.AudioType;
 using System.Net;
 using System.Net.Sockets;
 using TEngine;
+using UnityEngine.Networking;
 
 namespace GameLogic
 {
+    /// <summary>
+    /// BattleMainUI 负责主战斗界面的UI逻辑，包括音频列表、分享窗口与场景选择等功能。
+    /// </summary>
     [Window(UILayer.UI)]
     class BattleMainUI : UI3DWindow
     {
@@ -21,17 +25,17 @@ namespace GameLogic
         private Button _btn_share;
         private Button _btn_scene;
 
-         private GameObject _shareWindow;
-         private TextMeshProUGUI _shareIPText;
+        private GameObject _shareWindow;
+        private TextMeshProUGUI _shareIPText;
 
         // SceneWindow 相关
         private GameObject _sceneWindow;
         private Transform _sceneContent;
         private GameObject _sceneItemTemplate;
 
-         public string LRCFile = "";
-         private List<string> audioFiles = new List<string>();
-         private string uploadPath;
+        public string LRCFile = "";
+        private List<string> audioFiles = new List<string>();
+        private string uploadPath;
 
          /// <summary>
          /// 初始化BattleMainUI的关键UI组件与状态，移除冗余判空与调试输出，仅保留精简的组件查找与事件绑定。
@@ -40,9 +44,9 @@ namespace GameLogic
          {
              try
              {
-                 // 可选：调试按钮存在则绑定
-                 _btn_debug = FindChildComponent<Button>("m_btn_debug") ?? FindChild("m_btn_debug")?.GetComponent<Button>();
-                 _btn_debug?.onClick.AddListener(OnClick_debugBtn);
+                // 可选：调试按钮存在则绑定
+                _btn_debug = FindChildComponent<Button>("m_btn_debug") ?? FindChild("m_btn_debug")?.GetComponent<Button>();
+                _btn_debug?.onClick.AddListener(OnClick_debugBtn);
                 // 场景按钮存在则绑定
                 _btn_scene = FindChildComponent<Button>("m_btn_scene") ?? FindChild("m_btn_scene")?.GetComponent<Button>();
                 _btn_scene?.onClick.AddListener(OnClick_sceneBtn);
@@ -188,6 +192,9 @@ namespace GameLogic
             });
         }
 
+        /// <summary>
+        /// 分享按钮点击事件：切换分享窗口显示，并显示本机IP，隐藏调试列表。
+        /// </summary>
         private void OnClick_shareBtn()
         {
             _shareWindow.SetActive(!_shareWindow.activeSelf);
@@ -375,7 +382,7 @@ namespace GameLogic
                     else
                     {
                         Debug.LogWarning($"未找到歌词文件: {fileName}.lrc，将使用默认歌词");
-                        return "[00:00.00]正在播放: "  fileName;
+                        return "[00:00.00]正在播放: " + fileName;
                     }
                 }
 #else
@@ -389,7 +396,7 @@ namespace GameLogic
                 else
                 {
                     Debug.LogWarning($"未找到歌词文件: {fileName}.lrc，将使用默认歌词");
-                    return "[00:00.00]正在播放: "  + fileName;
+                    return "[00:00.00]正在播放: " + fileName;
                 }
 #endif
             }
