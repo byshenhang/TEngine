@@ -68,9 +68,18 @@ public partial class GameApp
         Log.Info($"准备进入打开ManiUI: {scene.name}");
         await UniTask.Delay(1000).ContinueWith(() =>
         {
-            //Log.Info($"打开BattleMainUI: {scene.name}");
-            //GameModule.UI3D.ShowUI3D<BattleMainUI>(new Vector3(88f, 5f, 93f), Quaternion.identity).Forget();
+            // 加载XR玩家对象
             var XRPlayer = GameModule.Resource.LoadGameObject("XROrigin");
+
+            // 计算在XR玩家前方的UI位置与朝向（优先使用主摄像机）
+            var cam = Camera.main ?? XRPlayer.GetComponentInChildren<Camera>();
+            var forward = cam != null ? cam.transform.forward : XRPlayer.transform.forward;
+            var origin = cam != null ? cam.transform.position : XRPlayer.transform.position;
+            var uiPos = origin + forward * 6.0f + new Vector3(0,2,0); // 距离玩家2米处
+            var uiRot = Quaternion.LookRotation(forward, Vector3.up);
+
+            // 在XR玩家前方展示BattleMainUI（UI3D）
+            GameModule.UI3D.ShowUI3D<BattleMainUI>(uiPos, uiRot, null).Forget();
             Log.Info($"结束打开BattleMainUI: {scene.name}");
         });
 
