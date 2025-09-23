@@ -206,41 +206,33 @@ namespace GameLogic
         /// <returns>是否初始化成功</returns>
         public async UniTask<bool> AutoInitializeAsync()
         {
-            try
+            _globalAudioSource = GameObject.Find("SyncAudioSource").GetComponent<AudioSource>();
+            if (_audioReactorManager == null)
             {
-                _globalAudioSource = GameObject.Find("SyncAudioSource").GetComponent<AudioSource>();
-                if (_audioReactorManager == null)
-                {
-                    Log.Error("AudioLyricCoordinator: AudioReactorManager未初始化");
-                    return false;
-                }
-                
-                // 设置全局音频源
-                await SetGlobalAudioSourceAsync(_globalAudioSource);
-
-
-                // 自动发现并注册音频反应器
-                int discoveredCount = await DiscoverAudioReactorsAsync();
-                if (discoveredCount == 0)
-                {
-                    Log.Error("AudioLyricCoordinator: 未发现任何音频反应器组件");
-                    return false;
-                }
-
-                // 启用所有音频反应器
-                bool enableSuccess = await _audioReactorManager.EnableAllReactorsAsync();
-                if (!enableSuccess)
-                {
-                    Log.Warning("AudioLyricCoordinator: 部分音频反应器启用失败");
-                }
-                
-                return await InternalInitializeAsync();
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"AudioLyricCoordinator: 自动初始化失败: {ex.Message}");
+                Log.Error("AudioLyricCoordinator: AudioReactorManager未初始化");
                 return false;
             }
+                
+            // 设置全局音频源
+            await SetGlobalAudioSourceAsync(_globalAudioSource);
+
+
+            // 自动发现并注册音频反应器
+            int discoveredCount = await DiscoverAudioReactorsAsync();
+            if (discoveredCount == 0)
+            {
+                Log.Error("AudioLyricCoordinator: 未发现任何音频反应器组件");
+                return false;
+            }
+
+            // 启用所有音频反应器
+            bool enableSuccess = await _audioReactorManager.EnableAllReactorsAsync();
+            if (!enableSuccess)
+            {
+                Log.Warning("AudioLyricCoordinator: 部分音频反应器启用失败");
+            }
+                
+            return await InternalInitializeAsync();
         }
         
         /// <summary>
