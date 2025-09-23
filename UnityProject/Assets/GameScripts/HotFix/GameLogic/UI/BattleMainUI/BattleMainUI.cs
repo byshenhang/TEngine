@@ -321,7 +321,7 @@ namespace GameLogic
                 }
             }
         }
-        
+
         /// <summary>
         /// 音频项点击事件
         /// </summary>
@@ -329,21 +329,36 @@ namespace GameLogic
         {
             Debug.Log($"点击音频文件: {fileName}");
             Debug.Log($"文件路径: {filePath}");
-            
-           
-            // 使用UnityWebRequest加载音频文件
+
+            // ① 先读取元数据（filePath 在 persistentDataPath 下 → Android 零权限）
+            try
+            {
+                var meta = AudioTagUtil.ReadMetaFromFile(filePath, fileName);
+                var artists = meta.Artists != null ? string.Join(", ", meta.Artists) : "(unknown)";
+                Debug.Log($"[META] Title: {meta.Title} | Artist: {artists} | Album: {meta.Album} | Year: {meta.Year}");
+                Debug.Log($"[META] Duration(tag): {meta.Duration} | {meta.SampleRate} Hz / {meta.Channels} ch / {meta.BitrateKbps} kbps");
+
+                // 如果你 UI 上要显示作者/封面，这里把 meta 传给你的 UI 组件即可：
+                // e.g. ShowMetaOnUI(meta);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"读取元数据失败（不影响播放）: {ex.Message}");
+            }
+
+            // ② 再按原逻辑加载 AudioClip 并播放
             using (var request = UnityEngine.Networking.UnityWebRequestMultimedia.GetAudioClip($"file://{filePath}", AudioType.MPEG))
             {
                 await request.SendWebRequest();
-                    
+
                 if (request.result == UnityEngine.Networking.UnityWebRequest.Result.Success)
                 {
                     AudioClip audioClip = UnityEngine.Networking.DownloadHandlerAudioClip.GetContent(request);
                     audioClip.name = fileName;
-                        
+
                     Debug.Log($"成功加载音频: {fileName}, 长度: {audioClip.length}秒");
-                        
-                    // 开始播放音频（这里可以调用原来的PlayAsync逻辑，但需要传入加载的audioClip）
+
+                    // 开始播放（保持你的原有逻辑）
                     await PlayAudioWithLyrics(audioClip, fileName);
                 }
                 else
@@ -351,9 +366,9 @@ namespace GameLogic
                     Debug.LogError($"加载音频失败: {request.error}");
                 }
             }
-            
         }
-        
+
+
         /// <summary>
         /// 加载歌词文件
         /// </summary>
@@ -478,7 +493,7 @@ namespace GameLogic
             Debug.Log($"播放开始后对象池状态: {GameModule.LYRIC_FX.GetPoolStatus()}");
             Debug.Log($"当前播放状态: {(coordinator.IsPlaying() ? "播放中" : "已停止")}");
            
-        }
+       }
 
     }
 }
