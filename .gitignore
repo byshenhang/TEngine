@@ -45,3 +45,6 @@ UnityProject/ProjectSettings/ShaderGraphSettings.asset
 UnityProject/UserSettings/AndroidLogcatSettings.asset
 UnityProject/UserSettings/EditorUserSettings.asset
 UnityProject/UserSettings/Layouts/CurrentMaximizeLayout.dwlt
+*.dwlt
+UnityProject/UserSettings/Layouts/CurrentMaximizeLayout.dwlt
+UnityProject/UserSettings/Layouts/default-2022.dwlt

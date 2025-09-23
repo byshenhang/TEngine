@@ -41,10 +41,6 @@ public partial class GameApp
     {
         GameEvent.Get<ILoginUI>().ShowLoginUI();
 
-        //GameModule.UI.ShowUIAsync<BattleMainUI>();
-        //GameModule.UI3D.ShowUI3D<BattleMainUI>(Vector3.zero, Quaternion.identity, null);
-        // UI3D调用移到场景加载完成后，避免锚点未注册的问题
-        // GameModule.UI3D.ShowUI3DAtAnchor<BattleMainUI>("MainUI", null);
         ShowMainSceneUIAsync();
     }
     

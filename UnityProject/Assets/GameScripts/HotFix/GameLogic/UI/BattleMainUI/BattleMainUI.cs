@@ -179,9 +179,10 @@ namespace GameLogic
             {
                 // 加载XR玩家对象
                 var XRPlayer = GameModule.Resource.LoadGameObject("XROrigin");
-                XRPlayer.transform.position = new Vector3(88.46f, 2.769f, 85.48f);
+                // XRPlayer.transform.position = new Vector3(88.46f, 2.769f, 85.48f);
+                XRPlayer.transform.position = Vector3.zero;
                 // 计算在XR玩家前方的UI位置与朝向（优先使用主摄像机）
-                var cam = Camera.main ?? XRPlayer.GetComponentInChildren<Camera>();
+                var cam =  XRPlayer.GetComponentInChildren<Camera>();
                 var forward = cam != null ? cam.transform.forward : XRPlayer.transform.forward;
                 var origin = cam != null ? cam.transform.position : XRPlayer.transform.position;
                 var uiPos = origin + forward * 6.0f + new Vector3(0, 2, 0); // 距离玩家2米处
