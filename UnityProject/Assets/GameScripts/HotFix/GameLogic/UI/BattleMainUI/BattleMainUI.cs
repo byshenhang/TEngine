@@ -494,7 +494,7 @@ namespace GameLogic
 
             // 9. 开始同步播放
             string effectID = "default_fade";
-            coordinator.PlaySynchronized(new Vector3(90, 4, 105), effectID, "multi_line");
+            coordinator.PlaySynchronized(new Vector3(0, 1.7f, 8.0f), effectID, "multi_line");
             Debug.Log($"开始音频歌词同步播放: {fileName}");
 
             // 显示优化后的对象池状态

@@ -215,7 +215,7 @@ namespace TEngine
 
             await initializationOperation.ToUniTask();
 
-            Log.Info($"Init resource package version : {initializationOperation?.Status}");
+            Log.Info($"Init resource package version : {initializationOperation?.Status}"); 
 
             return initializationOperation;
         }
