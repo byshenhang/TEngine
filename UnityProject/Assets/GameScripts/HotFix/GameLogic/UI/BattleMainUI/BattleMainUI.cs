@@ -1,14 +1,15 @@
-using UnityEngine;
-using UnityEngine.UI;
 using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
 using System.IO;
-using TMPro;
-using AudioType = UnityEngine.AudioType;
 using System.Net;
 using System.Net.Sockets;
 using TEngine;
+using TMPro;
+using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.Rendering;
+using UnityEngine.UI;
+using AudioType = UnityEngine.AudioType;
 
 namespace GameLogic
 {
@@ -37,13 +38,13 @@ namespace GameLogic
         private List<string> audioFiles = new List<string>();
         private string uploadPath;
 
-         /// <summary>
-         /// 初始化BattleMainUI的关键UI组件与状态，移除冗余判空与调试输出，仅保留精简的组件查找与事件绑定。
-         /// </summary>
-         protected override void ScriptGenerator()
-         {
-             try
-             {
+        /// <summary>
+        /// 初始化BattleMainUI的关键UI组件与状态，移除冗余判空与调试输出，仅保留精简的组件查找与事件绑定。
+        /// </summary>
+        protected override void ScriptGenerator()
+        {
+            try
+            {
                 // 可选：调试按钮存在则绑定
                 _btn_debug = FindChildComponent<Button>("m_btn_debug") ?? FindChild("m_btn_debug")?.GetComponent<Button>();
                 _btn_debug?.onClick.AddListener(OnClick_debugBtn);
@@ -51,27 +52,27 @@ namespace GameLogic
                 _btn_scene = FindChildComponent<Button>("m_btn_scene") ?? FindChild("m_btn_scene")?.GetComponent<Button>();
                 _btn_scene?.onClick.AddListener(OnClick_sceneBtn);
 
-                 // 必需组件：直接查找与使用
-                 _scrollView = FindChildComponent<ScrollRect>("Scroll View") ?? FindChild("Scroll View")?.GetComponent<ScrollRect>();
-                 _content = FindChildComponent<Transform>("Scroll View/Viewport/Content")
-                            ?? FindChild("Scroll View/Viewport")?.Find("Content");
-                 var itemTransform = FindChildComponent<Transform>("Scroll View/Viewport/Content/Item")
-                                     ?? _content?.Find("Item");
-                 _itemTemplate = itemTransform.gameObject;
+                // 必需组件：直接查找与使用
+                _scrollView = FindChildComponent<ScrollRect>("Scroll View") ?? FindChild("Scroll View")?.GetComponent<ScrollRect>();
+                _content = FindChildComponent<Transform>("Scroll View/Viewport/Content")
+                           ?? FindChild("Scroll View/Viewport")?.Find("Content");
+                var itemTransform = FindChildComponent<Transform>("Scroll View/Viewport/Content/Item")
+                                    ?? _content?.Find("Item");
+                _itemTemplate = itemTransform.gameObject;
 
-                 // 初始化上传路径
-                 uploadPath = Path.Combine(Application.persistentDataPath, "Upload");
-         
-                 // 初始化时隐藏Scroll View与模板Item
-                 _scrollView.gameObject.SetActive(false);
-                 _itemTemplate.SetActive(false);
-         
-                 // 分享窗口与按钮
-                 _shareIPText = FindChildComponent<TextMeshProUGUI>("ShareInternet/m_text_ip");
-                 _btn_share = FindChildComponent<Button>("m_btn_share");
-                 _btn_share?.onClick.AddListener(OnClick_shareBtn);
-                 _shareWindow = FindChildComponent<Transform>("ShareInternet").gameObject;
-                 _shareWindow.SetActive(false);
+                // 初始化上传路径
+                uploadPath = Path.Combine(Application.persistentDataPath, "Upload");
+
+                // 初始化时隐藏Scroll View与模板Item
+                _scrollView.gameObject.SetActive(false);
+                _itemTemplate.SetActive(false);
+
+                // 分享窗口与按钮
+                _shareIPText = FindChildComponent<TextMeshProUGUI>("ShareInternet/m_text_ip");
+                _btn_share = FindChildComponent<Button>("m_btn_share");
+                _btn_share?.onClick.AddListener(OnClick_shareBtn);
+                _shareWindow = FindChildComponent<Transform>("ShareInternet").gameObject;
+                _shareWindow.SetActive(false);
 
                 // SceneWindow 结构
                 var sceneWinTf = FindChildComponent<Transform>("SceneWindow") ?? FindChild("SceneWindow");
@@ -85,14 +86,14 @@ namespace GameLogic
                 // 初始隐藏SceneWindow与模板
                 _sceneWindow?.SetActive(false);
                 _sceneItemTemplate?.SetActive(false);
-             }
-             catch
-             {
-                 // 保持原有异常抛出行为
-                 throw;
-             }
-         }
- 
+            }
+            catch
+            {
+                // 保持原有异常抛出行为
+                throw;
+            }
+        }
+
         /// <summary>
         /// 场景选择按钮点击：打开/关闭 SceneWindow，并在打开时刷新场景项。
         /// </summary>
@@ -101,6 +102,10 @@ namespace GameLogic
             if (_sceneWindow == null || _sceneContent == null || _sceneItemTemplate == null) return;
             bool active = _sceneWindow.activeSelf;
             _sceneWindow.SetActive(!active);
+
+            _shareWindow.SetActive(false);
+            _scrollView.gameObject.SetActive(false);
+
             if (!active)
             {
                 RefreshSceneItems();
@@ -182,7 +187,7 @@ namespace GameLogic
                 // XRPlayer.transform.position = new Vector3(88.46f, 2.769f, 85.48f);
                 XRPlayer.transform.position = Vector3.zero;
                 // 计算在XR玩家前方的UI位置与朝向（优先使用主摄像机）
-                var cam =  XRPlayer.GetComponentInChildren<Camera>();
+                var cam = XRPlayer.GetComponentInChildren<Camera>();
                 var forward = cam != null ? cam.transform.forward : XRPlayer.transform.forward;
                 var origin = cam != null ? cam.transform.position : XRPlayer.transform.position;
                 var uiPos = origin + forward * 6.0f + new Vector3(0, 2, 0); // 距离玩家2米处
@@ -200,7 +205,8 @@ namespace GameLogic
         {
             _shareWindow.SetActive(!_shareWindow.activeSelf);
             _scrollView.gameObject.SetActive(false);
-            _shareIPText.text = GetLocalIPAddress();
+            _sceneWindow.gameObject.SetActive(false);
+            _shareIPText.text = GetLocalIPAddress() + ":8080";
         }
 
         /// <summary>
@@ -210,14 +216,15 @@ namespace GameLogic
         {
             bool isActive = _scrollView.gameObject.activeSelf;
             _scrollView.gameObject.SetActive(!isActive);
-            
+            _sceneWindow.gameObject.SetActive(false);
+            _shareWindow.SetActive(false);
             if (!isActive)
             {
                 // 激活时刷新音频文件列表
                 RefreshAudioFileList();
             }
         }
-        
+
         /// <summary>
         /// 刷新音频文件列表
         /// </summary>
@@ -225,10 +232,10 @@ namespace GameLogic
         {
             // 清空现有列表
             ClearAudioList();
-            
+
             // 读取上传目录中的音频文件
             LoadAudioFiles();
-            
+
             // 创建UI列表项
             CreateAudioListItems();
         }
@@ -264,7 +271,7 @@ namespace GameLogic
             }
             audioFiles.Clear();
         }
-        
+
         /// <summary>
         /// 从上传目录加载音频文件
         /// </summary>
@@ -291,7 +298,7 @@ namespace GameLogic
                 Debug.LogError($"加载音频文件失败: {ex.Message}");
             }
         }
-        
+
         /// <summary>
         /// 创建音频列表UI项
         /// </summary>
@@ -301,17 +308,35 @@ namespace GameLogic
             {
                 GameObject item = GameObject.Instantiate(_itemTemplate, _content);
                 item.SetActive(true);
-                
+
                 // 获取文件名（不包含路径和扩展名）
                 string fileName = Path.GetFileNameWithoutExtension(audioFile);
-                
+
+                var meta = AudioTagUtil.ReadMetaFromFile(audioFile, fileName);
+                var artists = meta.Artists != null ? string.Join(", ", meta.Artists) : "(unknown)";
+                Debug.Log($"[META] Title: {meta.Title} | Artist: {artists} | Album: {meta.Album} | Year: {meta.Year}");
+                Debug.Log($"[META] Duration(tag): {meta.Duration} | {meta.SampleRate} Hz / {meta.Channels} ch / {meta.BitrateKbps} kbps");
+
                 // 设置文本
-                TextMeshProUGUI text = item.GetComponentInChildren<TextMeshProUGUI>();
-                if (text != null)
-                {
-                    text.text = fileName;
-                }
-                
+                TextMeshProUGUI name = item.transform.Find("Content/Name").GetComponent<TextMeshProUGUI>();
+                TextMeshProUGUI artist = item.transform.Find("Content/Artist").GetComponent<TextMeshProUGUI>();
+                TextMeshProUGUI time = item.transform.Find("Content/Time").GetComponent<TextMeshProUGUI>();
+                Image icon = item.transform.Find("Content/Icon").GetComponent<Image>();
+
+                name.text = meta.Title;
+                artist.text = meta.Artists[0];
+                time.text = meta.Duration.ToString(@"mm\:ss");
+
+                var texture = AudioTagUtil.CoverToTexture(meta.CoverBytes);
+                Sprite sprite = Sprite.Create(
+                    texture,
+                    new Rect(0, 0, texture.width, texture.height),
+                    new Vector2(0.5f, 0.5f),
+                    100f
+                );
+
+                icon.sprite = sprite;
+
                 // 设置按钮点击事件
                 Button button = item.GetComponentInChildren<Button>();
                 if (button != null)
@@ -329,24 +354,7 @@ namespace GameLogic
         {
             Debug.Log($"点击音频文件: {fileName}");
             Debug.Log($"文件路径: {filePath}");
-
-            // ① 先读取元数据（filePath 在 persistentDataPath 下 → Android 零权限）
-            try
-            {
-                var meta = AudioTagUtil.ReadMetaFromFile(filePath, fileName);
-                var artists = meta.Artists != null ? string.Join(", ", meta.Artists) : "(unknown)";
-                Debug.Log($"[META] Title: {meta.Title} | Artist: {artists} | Album: {meta.Album} | Year: {meta.Year}");
-                Debug.Log($"[META] Duration(tag): {meta.Duration} | {meta.SampleRate} Hz / {meta.Channels} ch / {meta.BitrateKbps} kbps");
-
-                // 如果你 UI 上要显示作者/封面，这里把 meta 传给你的 UI 组件即可：
-                // e.g. ShowMetaOnUI(meta);
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogWarning($"读取元数据失败（不影响播放）: {ex.Message}");
-            }
-
-            // ② 再按原逻辑加载 AudioClip 并播放
+            // 按原逻辑加载 AudioClip 并播放
             using (var request = UnityEngine.Networking.UnityWebRequestMultimedia.GetAudioClip($"file://{filePath}", AudioType.MPEG))
             {
                 await request.SendWebRequest();
@@ -378,7 +386,7 @@ namespace GameLogic
             {
                 // 根据音频文件名查找对应的.lrc文件
                 string lrcFilePath = Path.Combine(uploadPath, fileName + ".lrc");
-                
+
 #if UNITY_ANDROID && !UNITY_EDITOR
                 // Android平台使用UnityWebRequest读取文件
                 using (var request = UnityWebRequest.Get($"file://{lrcFilePath}"))
@@ -417,7 +425,7 @@ namespace GameLogic
                 return "[00:00.00]正在播放: " + fileName;
             }
         }
-        
+
         /// <summary>
         /// 使用指定音频和歌词进行播放
         /// </summary>
@@ -427,9 +435,9 @@ namespace GameLogic
             var root = GameObject.Find("InstanceRoot");
             var pool = GameObject.Find("InstancePool");
 
-         
+
             Debug.Log($"开始播放音频: {fileName}");
-                    
+
             // 1. 获取协调器实例
             var coordinator = GameModule.AUDIO_LYRIC;
             if (coordinator == null)
@@ -443,7 +451,7 @@ namespace GameLogic
 
             // 3. 启用调试模式
             coordinator.EnableDebugger(true);
-                
+
             // 4. 设置同步偏移（可选）
             coordinator.SetLyric(root.transform, prefabInstance, pool.transform);
             coordinator.SetSyncOffset(0.1f); // 歌词提前0.1秒显示
@@ -492,8 +500,8 @@ namespace GameLogic
             // 显示优化后的对象池状态
             Debug.Log($"播放开始后对象池状态: {GameModule.LYRIC_FX.GetPoolStatus()}");
             Debug.Log($"当前播放状态: {(coordinator.IsPlaying() ? "播放中" : "已停止")}");
-           
-       }
+
+        }
 
     }
 }
