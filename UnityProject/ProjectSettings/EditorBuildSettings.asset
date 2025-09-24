@@ -8,9 +8,6 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Launcher.unity
     guid: 4b824d72048473c49813536826362ec6
-  - enabled: 1
-    path: Assets/Scenes/New Scene.unity
-    guid: f76989bd7ea9eb949939c991daa7ada8
   m_configObjects:
     Unity.XR.PICO.LivePreview.Settings: {fileID: 11400000, guid: f7e4681063a41f84aaac66c6429b41a0, type: 2}
     Unity.XR.PXR.Settings: {fileID: 11400000, guid: ea40ccead13c64c4280707f34ea37756, type: 2}

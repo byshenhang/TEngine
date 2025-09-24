@@ -66,7 +66,7 @@ public partial class GameApp
         {
             // 加载XR玩家对象
             var XRPlayer = GameModule.Resource.LoadGameObject("XROrigin");
-
+            Log.Info($"XRPlayer: {XRPlayer.name}");
             // 计算在XR玩家前方的UI位置与朝向（优先使用主摄像机）
             var cam = Camera.main ?? XRPlayer.GetComponentInChildren<Camera>();
             var forward = cam != null ? cam.transform.forward : XRPlayer.transform.forward;
