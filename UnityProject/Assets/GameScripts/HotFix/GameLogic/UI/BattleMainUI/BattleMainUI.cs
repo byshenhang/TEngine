@@ -25,6 +25,7 @@ namespace GameLogic
         private GameObject _itemTemplate;
         private Button _btn_share;
         private Button _btn_scene;
+        private Button _btn_effect;
 
         private GameObject _shareWindow;
         private TextMeshProUGUI _shareIPText;
@@ -34,9 +35,19 @@ namespace GameLogic
         private Transform _sceneContent;
         private GameObject _sceneItemTemplate;
 
+        // EffectWindow 相关
+        private GameObject _effectWindow;
+        private Transform _effectContent;
+        private GameObject _effectItemTemplate;
+        private TextMeshProUGUI _currentSelectText;
+
         public string LRCFile = "";
         private List<string> audioFiles = new List<string>();
         private string uploadPath;
+        
+        // 效果相关
+        private const string EFFECT_PREFS_KEY = "SelectedTextEffect";
+        private string _currentSelectedEffect = "default_fade";
 
         /// <summary>
         /// 初始化BattleMainUI的关键UI组件与状态，移除冗余判空与调试输出，仅保留精简的组件查找与事件绑定。
@@ -51,6 +62,10 @@ namespace GameLogic
                 // 场景按钮存在则绑定
                 _btn_scene = FindChildComponent<Button>("m_btn_scene") ?? FindChild("m_btn_scene")?.GetComponent<Button>();
                 _btn_scene?.onClick.AddListener(OnClick_sceneBtn);
+                
+                // 效果按钮存在则绑定
+                _btn_effect = FindChildComponent<Button>("m_btn_effect") ?? FindChild("m_btn_effect")?.GetComponent<Button>();
+                _btn_effect?.onClick.AddListener(OnClick_effectBtn);
 
                 // 必需组件：直接查找与使用
                 _scrollView = FindChildComponent<ScrollRect>("Scroll View") ?? FindChild("Scroll View")?.GetComponent<ScrollRect>();
@@ -86,6 +101,24 @@ namespace GameLogic
                 // 初始隐藏SceneWindow与模板
                 _sceneWindow?.SetActive(false);
                 _sceneItemTemplate?.SetActive(false);
+
+                // EffectWindow 结构
+                var effectWinTf = FindChildComponent<Transform>("EffectWindow") ?? FindChild("EffectWindow");
+                _effectWindow = effectWinTf?.gameObject;
+                _effectContent = FindChildComponent<Transform>("EffectWindow/Viewport/Content")
+                                 ?? effectWinTf?.Find("Viewport/Content");
+                var effectItemTf = FindChildComponent<Transform>("EffectWindow/Viewport/Content/Item")
+                                   ?? _effectContent?.Find("Item");
+                _effectItemTemplate = effectItemTf?.gameObject;
+                _currentSelectText = FindChildComponent<TextMeshProUGUI>("EffectWindow/CurrentSelect")
+                                     ?? effectWinTf?.Find("CurrentSelect")?.GetComponent<TextMeshProUGUI>();
+
+                // 初始隐藏EffectWindow与模板
+                _effectWindow?.SetActive(false);
+                _effectItemTemplate?.SetActive(false);
+
+                // 加载保存的效果设置
+                LoadSavedEffectSettings();
             }
             catch
             {
@@ -105,10 +138,30 @@ namespace GameLogic
 
             _shareWindow.SetActive(false);
             _scrollView.gameObject.SetActive(false);
+            _effectWindow?.SetActive(false);
 
             if (!active)
             {
                 RefreshSceneItems();
+            }
+        }
+
+        /// <summary>
+        /// 效果选择按钮点击：打开/关闭 EffectWindow，并在打开时刷新效果项。
+        /// </summary>
+        private void OnClick_effectBtn()
+        {
+            if (_effectWindow == null || _effectContent == null || _effectItemTemplate == null) return;
+            bool active = _effectWindow.activeSelf;
+            _effectWindow.SetActive(!active);
+
+            _shareWindow.SetActive(false);
+            _scrollView.gameObject.SetActive(false);
+            _sceneWindow?.SetActive(false);
+
+            if (!active)
+            {
+                RefreshEffectItems();
             }
         }
 
@@ -167,6 +220,81 @@ namespace GameLogic
         }
 
         /// <summary>
+        /// 刷新 EffectWindow 内的效果Item列表，来源于 EffectConfig.SceneItems
+        /// </summary>
+        private void RefreshEffectItems()
+        {
+            // 清除旧项（保留模板）
+            for (int i = _effectContent.childCount - 1; i >= 0; i--)
+            {
+                var child = _effectContent.GetChild(i);
+                if (child.gameObject != _effectItemTemplate)
+                {
+                    GameObject.Destroy(child.gameObject);
+                }
+            }
+
+            // 更新当前选择显示
+            if (_currentSelectText != null)
+            {
+                var currentEffect = EffectConfig.SceneItems.Find(e => e.EffectValue == _currentSelectedEffect);
+                _currentSelectText.text = $"当前效果: {currentEffect?.ShowName ?? "默认效果"}";
+            }
+
+            // 生成新项
+            foreach (var effectItem in EffectConfig.SceneItems)
+            {
+                var go = GameObject.Instantiate(_effectItemTemplate, _effectContent);
+                go.SetActive(true);
+
+                // 设置名称
+                var nameTf = go.transform.Find("Name");
+                var tmp = nameTf?.GetComponent<TextMeshProUGUI>();
+                if (tmp != null) tmp.text = effectItem.ShowName;
+
+                // 设置选中状态的视觉效果
+                var isSelected = effectItem.EffectValue == _currentSelectedEffect;
+                var backgroundImg = go.transform.Find("Background")?.GetComponent<Image>();
+                if (backgroundImg != null)
+                {
+                    backgroundImg.color = isSelected ? new Color(0.2f, 0.6f, 1f, 0.8f) : Color.white;
+                }
+
+                // 绑定点击事件
+                var btn = go.GetComponent<Button>() ?? go.GetComponentInChildren<Button>();
+                if (btn != null)
+                {
+                    var captured = effectItem;
+                    btn.onClick.AddListener(() => OnEffectItemClick(captured));
+                }
+            }
+        }
+
+        /// <summary>
+        /// 效果Item点击：选择对应效果并保存到PlayerPrefs。
+        /// </summary>
+        private void OnEffectItemClick(EffectItem effectItem)
+        {
+            _currentSelectedEffect = effectItem.EffectValue;
+            PlayerPrefs.SetString(EFFECT_PREFS_KEY, _currentSelectedEffect);
+            PlayerPrefs.Save();
+
+            Debug.Log($"选择文字效果: {effectItem.ShowName} ({effectItem.EffectValue})");
+
+            // 刷新UI显示
+            RefreshEffectItems();
+        }
+
+        /// <summary>
+        /// 加载保存的效果设置
+        /// </summary>
+        private void LoadSavedEffectSettings()
+        {
+            _currentSelectedEffect = PlayerPrefs.GetString(EFFECT_PREFS_KEY, "default_fade");
+            Debug.Log($"加载保存的文字效果: {_currentSelectedEffect}");
+        }
+
+        /// <summary>
         /// 场景Item点击：加载对应场景。
         /// </summary>
         private async void OnSceneItemClick(SceneItem item)
@@ -206,6 +334,7 @@ namespace GameLogic
             _shareWindow.SetActive(!_shareWindow.activeSelf);
             _scrollView.gameObject.SetActive(false);
             _sceneWindow.gameObject.SetActive(false);
+            _effectWindow?.SetActive(false);
             _shareIPText.text = GetLocalIPAddress() + ":8080";
         }
 
@@ -218,6 +347,7 @@ namespace GameLogic
             _scrollView.gameObject.SetActive(!isActive);
             _sceneWindow.gameObject.SetActive(false);
             _shareWindow.SetActive(false);
+            _effectWindow?.SetActive(false);
             if (!isActive)
             {
                 // 激活时刷新音频文件列表
@@ -496,9 +626,9 @@ namespace GameLogic
             }
 
             // 9. 开始同步播放
-            string effectID = "default_fade";
+            string effectID = _currentSelectedEffect;
             coordinator.PlaySynchronized(new Vector3(0, 1.7f, 8.0f), effectID, "multi_line");
-            Debug.Log($"开始音频歌词同步播放: {fileName}");
+            Debug.Log($"开始音频歌词同步播放: {fileName}，使用效果: {effectID}");
 
             // 显示优化后的对象池状态
             Debug.Log($"播放开始后对象池状态: {GameModule.LYRIC_FX.GetPoolStatus()}");
