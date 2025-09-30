@@ -220,11 +220,13 @@ namespace LyricFX.Implementations.Coordinator
         /// <returns>总持续时间</returns>
         public float GetTotalDuration(int characterCount = 10)
         {
-            // 估算字符延迟总时间（默认假设10个字符）
-            float totalCharacterDelay = CharacterDelay * (characterCount - 1);
+            if (characterCount <= 0) return InDuration + HoldDuration + OutDuration;
             
-            // 总时间 = 字符延迟总时间 + 最后一个字符的淡入时间 + 保持时间 + 淡出时间
-            return totalCharacterDelay + InDuration + HoldDuration + OutDuration;
+            // 字符延迟阶段：(字符数-1) * 延迟时间 + 最后一个字符的淡入时间
+            float fadeInPhase = (characterCount - 1) * CharacterDelay + InDuration;
+            
+            // 总时间 = 淡入阶段 + 保持时间 + 淡出时间
+            return fadeInPhase + HoldDuration + OutDuration;
         }
         
         /// <summary>
@@ -234,39 +236,30 @@ namespace LyricFX.Implementations.Coordinator
         /// <param name="characterCount">字符数量</param>
         public void AdjustDuration(float availableDuration, int characterCount = 10)
         {
-            //if (availableDuration <= 0)
-            //    return;
+            if (availableDuration <= 0.1f) // 最小时间保护
+                return;
                 
-            //// 计算当前总时长
-            //float totalDuration = GetTotalDuration(characterCount);
-            //// 如果可用时间小于总时长，按比例缩放
-            //if (availableDuration < totalDuration)
-            //{
-            //    var oldTime = GetTotalDuration(characterCount);
-
-            //    float ratio = availableDuration / totalDuration;
+            float currentTotal = GetTotalDuration(characterCount);
+            
+            if (availableDuration < currentTotal)
+            {
+                // 时间不足，按比例缩放所有参数
+                float scale = availableDuration / currentTotal;
+                scale = Mathf.Max(scale, 0.2f); // 最小缩放比例，避免过度压缩
                 
-            //    // 保持最小时间
-            //    float minDuration = 0.05f;
-            //    float minDelay = 0.02f;
+                // 设置最小值保护
+                CharacterDelay = Mathf.Max(CharacterDelay * scale, 0.02f);
+                InDuration = Mathf.Max(InDuration * scale, 0.1f);
+                HoldDuration = Mathf.Max(HoldDuration * scale, 0.2f);
+                OutDuration = Mathf.Max(OutDuration * scale, 0.1f);
                 
-            //    // 计算新的时间，确保各阶段至少有最小时间
-            //    CharacterDelay = Mathf.Max(CharacterDelay * ratio, minDelay);
-            //    InDuration = Mathf.Max(InDuration * ratio, minDuration);
-            //    OutDuration = Mathf.Max(OutDuration * ratio, minDuration);
-                
-            //    // 剩余时间分配给保持阶段
-            //    float totalCharacterDelay = CharacterDelay * (characterCount - 1);
-            //    float remainingTime = availableDuration - totalCharacterDelay - InDuration - OutDuration;
-            //    HoldDuration = Mathf.Max(remainingTime, 0);
-
-            //    Debug.Log("修正时间 >> :" + GetTotalDuration(characterCount) + "  : 修正时间 >> : " + oldTime);
-            //}
-            //else
-            //{
-            //    // 如果可用时间充足，增加保持时间
-            //    HoldDuration += (availableDuration - totalDuration);
-            //}
+                Debug.Log($"[LeftToRightFadeConfig] 时间调整: {currentTotal:F2}s -> {GetTotalDuration(characterCount):F2}s (目标: {availableDuration:F2}s)");
+            }
+            else
+            {
+                // 时间充足，延长保持时间
+                HoldDuration += (availableDuration - currentTotal);
+            }
         }
 
        

@@ -13,8 +13,8 @@ using UnityEngine;
 namespace LyricFX.Implementations.Coordinator
 {
     /// <summary>
-    /// 随机批量淡入淡出协调器
-    /// 实现随机字符分批显示（一次最多5个），最后整体淡出的效果
+    /// 随机批量显示协调器
+    /// 实现随机字符分批显示（一次最多5个），简化版本无淡入淡出效果
     /// </summary>
     [EffectConfig(typeof(RandomBatchFadeConfig))]
     public class RandomBatchFadeCoordinator : LineEffectCoordinator
@@ -22,11 +22,7 @@ namespace LyricFX.Implementations.Coordinator
         // 配置参数
         private int maxBatchSize = 5;           // 每批最多显示的字符数
         private float batchInterval = 0.3f;     // 批次间隔时间
-        private float fadeInDuration = 0.5f;    // 单个字符淡入时间
         private float holdDuration = 2.0f;      // 保持显示时间
-        private float fadeOutDuration = 1.0f;   // 整体淡出时间
-        private AnimationCurve fadeInCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
-        private AnimationCurve fadeOutCurve = AnimationCurve.EaseInOut(0, 1, 1, 0);
         
         // 运行时数据
         private List<DefaultFadeEffect> characterEffects = new List<DefaultFadeEffect>();
@@ -42,24 +38,15 @@ namespace LyricFX.Implementations.Coordinator
             {
                 maxBatchSize = batchConfig.MaxBatchSize;
                 batchInterval = batchConfig.BatchInterval;
-                fadeInDuration = batchConfig.InDuration;
                 holdDuration = batchConfig.HoldDuration;
-                fadeOutDuration = batchConfig.OutDuration;
-                
-                if (batchConfig.FadeInCurve != null)
-                    fadeInCurve = batchConfig.FadeInCurve;
-                    
-                if (batchConfig.FadeOutCurve != null)
-                    fadeOutCurve = batchConfig.FadeOutCurve;
             }
             
-            // 为每个字符创建独立的淡入淡出效果
-            characterEffects.Clear();
-            for (int i = 0; i < characterObjects.Count; i++)
+            // 初始化所有字符为隐藏状态
+            for (int i = 0; i < textComponents.Count; i++)
             {
-                var charEffect = new DefaultFadeEffect();
-                await charEffect.Initialize(characterObjects[i], null, cancellationToken);
-                characterEffects.Add(charEffect);
+                var color = textComponents[i].color;
+                color.a = 0f;
+                textComponents[i].color = color;
             }
             
             // 初始化剩余字符索引列表
@@ -68,6 +55,8 @@ namespace LyricFX.Implementations.Coordinator
             {
                 remainingIndices.Add(i);
             }
+            
+            await UniTask.Yield(cancellationToken);
         }
         
         /// <summary>
@@ -75,14 +64,11 @@ namespace LyricFX.Implementations.Coordinator
         /// </summary>
         protected override async UniTask CoordinateEffects(CancellationToken cancellationToken)
         {
-            // 第一阶段：随机分批淡入显示
-            await RandomBatchFadeIn(cancellationToken);
+            // 第一阶段：随机分批显示
+            await RandomBatchShow(cancellationToken);
             
             // 第二阶段：保持显示
             await UniTask.Delay(TimeSpan.FromSeconds(holdDuration), cancellationToken: cancellationToken);
-            
-            // 第三阶段：整体淡出
-            await FadeOutAll(cancellationToken);
             
             // 标记完成
             UpdateProgress(1.0f);
@@ -90,9 +76,9 @@ namespace LyricFX.Implementations.Coordinator
         }
         
         /// <summary>
-        /// 随机分批淡入显示
+        /// 随机分批显示
         /// </summary>
-        private async UniTask RandomBatchFadeIn(CancellationToken cancellationToken)
+        private async UniTask RandomBatchShow(CancellationToken cancellationToken)
         {
             var random = new System.Random();
             int totalBatches = Mathf.CeilToInt((float)characterObjects.Count / maxBatchSize);
@@ -112,20 +98,16 @@ namespace LyricFX.Implementations.Coordinator
                     remainingIndices.RemoveAt(randomIndex);
                 }
                 
-                // 同时淡入当前批次的所有字符
-                var fadeInTasks = new List<UniTask>();
+                // 直接显示当前批次的所有字符
                 foreach (int charIndex in batchIndices)
                 {
-                    fadeInTasks.Add(FadeInCharacter(charIndex, cancellationToken));
+                    ShowCharacter(charIndex);
                 }
                 
-                // 等待当前批次完成
-                await UniTask.WhenAll(fadeInTasks);
-                
-                // 更新进度（淡入阶段占总进度的70%）
+                // 更新进度（显示阶段占总进度的80%）
                 currentBatch++;
-                float fadeInProgress = (float)currentBatch / totalBatches * 0.7f;
-                UpdateProgress(fadeInProgress);
+                float showProgress = (float)currentBatch / totalBatches * 0.8f;
+                UpdateProgress(showProgress);
                 
                 // 如果还有剩余字符，等待批次间隔
                 if (remainingIndices.Count > 0)
@@ -136,172 +118,72 @@ namespace LyricFX.Implementations.Coordinator
         }
         
         /// <summary>
-        /// 淡入单个字符
+        /// 直接显示单个字符
         /// </summary>
-        private async UniTask FadeInCharacter(int charIndex, CancellationToken cancellationToken)
+        private void ShowCharacter(int charIndex)
         {
-            var textComponent = textComponents[charIndex];
-            var startColor = textComponent.color;
-            startColor.a = 0f;
-            textComponent.color = startColor;
-            
-            float elapsedTime = 0f;
-            
-            while (elapsedTime < fadeInDuration && !cancellationToken.IsCancellationRequested)
+            if (charIndex >= 0 && charIndex < textComponents.Count)
             {
-                float progress = elapsedTime / fadeInDuration;
-                float curveValue = fadeInCurve.Evaluate(progress);
-                
-                var currentColor = startColor;
-                currentColor.a = curveValue;
-                textComponent.color = currentColor;
-                
-                elapsedTime += Time.deltaTime;
-                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
-            }
-            
-            // 确保最终状态
-            if (!cancellationToken.IsCancellationRequested)
-            {
-                var finalColor = startColor;
-                finalColor.a = 1f;
-                textComponent.color = finalColor;
-            }
-        }
-        
-        /// <summary>
-        /// 整体淡出所有字符
-        /// </summary>
-        private async UniTask FadeOutAll(CancellationToken cancellationToken)
-        {
-            // 获取所有字符的当前颜色
-            var startColors = new Color[textComponents.Count];
-            for (int i = 0; i < textComponents.Count; i++)
-            {
-                startColors[i] = textComponents[i].color;
-            }
-            
-            float elapsedTime = 0f;
-            
-            while (elapsedTime < fadeOutDuration && !cancellationToken.IsCancellationRequested)
-            {
-                float progress = elapsedTime / fadeOutDuration;
-                float curveValue = fadeOutCurve.Evaluate(progress);
-                
-                // 同时更新所有字符的透明度
-                for (int i = 0; i < textComponents.Count; i++)
-                {
-                    var currentColor = startColors[i];
-                    currentColor.a = curveValue;
-                    textComponents[i].color = currentColor;
-                }
-                
-                // 更新进度（淡出阶段占总进度的30%，从70%到100%）
-                float fadeOutProgress = 0.7f + progress * 0.3f;
-                UpdateProgress(fadeOutProgress);
-                
-                elapsedTime += Time.deltaTime;
-                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
-            }
-            
-            // 确保最终状态
-            if (!cancellationToken.IsCancellationRequested)
-            {
-                for (int i = 0; i < textComponents.Count; i++)
-                {
-                    var finalColor = startColors[i];
-                    finalColor.a = 0f;
-                    textComponents[i].color = finalColor;
-                }
+                var textComponent = textComponents[charIndex];
+                var color = textComponent.color;
+                color.a = 1f;
+                textComponent.color = color;
             }
         }
     }
     
     /// <summary>
-    /// 随机批量淡入淡出配置
+    /// 随机分批显示效果配置
     /// </summary>
-    [Serializable]
-    public class RandomBatchFadeConfig : ICoordinatorConfig, IAdjustConfig
+    [System.Serializable]
+    public class RandomBatchFadeConfig : ICoordinatorConfig
     {
         [Header("批次设置")]
         [Range(1, 10)]
-        public int MaxBatchSize = 5;            // 每批最多显示的字符数
+        public int MaxBatchSize = 3;
         
         [Range(0.1f, 2.0f)]
-        public float BatchInterval = 0.1f;      // 批次间隔时间
+        public float BatchInterval = 0.3f;
 
-        public float InDuration { get; set; } = 0.5f;
-        public float OutDuration { get; set; } = 1.0f;
         public float HoldDuration { get; set; } = 2.0f;
-
-        [Header("动画曲线")]
-        public AnimationCurve FadeInCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
-        public AnimationCurve FadeOutCurve = AnimationCurve.EaseInOut(0, 1, 1, 0);
 
         public float GetTotalDuration(int characterCount)
         {
-            // 计算批次数
-            int totalBatches = Mathf.CeilToInt((float)characterCount / MaxBatchSize);
+            if (characterCount <= 0) return HoldDuration;
             
-            // 批次显示总时间 = (批次-1)的间隔 + 最后一个批次淡入时间
-            float fadeInPhaseTime = (totalBatches - 1) * BatchInterval + InDuration;
+            // 计算批次数量
+            int batchCount = Mathf.CeilToInt((float)characterCount / MaxBatchSize);
             
-            // 总时间 = 淡入阶段 + 保持阶段 + 淡出阶段
-            return fadeInPhaseTime + HoldDuration + OutDuration;
+            // 批次阶段时间：(批次数-1) × 间隔时间
+            float batchPhaseTime = (batchCount - 1) * BatchInterval;
+            
+            // 总时间 = 批次阶段时间 + 保持时间
+            return batchPhaseTime + HoldDuration;
         }
 
         public void AdjustDuration(float availableDuration, int characterCount)
         {
-            if (availableDuration <= 0)
+            if (availableDuration <= 0.1f) // 最小时间保护
                 return;
             
-            // 计算当前总时长
-            float totalDuration = GetTotalDuration(characterCount);
+            // 简化调整逻辑：按比例缩放所有时间参数
+            float currentTotal = GetTotalDuration(characterCount);
             
-            // 如果可用时间小于总时长，需要缩减时间
-            if (availableDuration < totalDuration)
+            if (availableDuration < currentTotal)
             {
-                float ratio = availableDuration / totalDuration;
-                Debug.Log($"[RandomBatchFadeConfig] 需要缩减时间至 {availableDuration:F2}s，原来总时间 {totalDuration:F2}s，缩放比例 {ratio:F2}");
+                // 时间不足，按比例缩放
+                float scale = availableDuration / currentTotal;
+                scale = Mathf.Max(scale, 0.2f); // 最小缩放比例，避免过度压缩
                 
-                // 设置最小值
-                float minDuration = 0.05f;
-                float minInterval = 0.02f;
+                BatchInterval = Mathf.Max(BatchInterval * scale, 0.05f);
+                HoldDuration = Mathf.Max(HoldDuration * scale, 0.2f);
                 
-                // 按比例缩放时间，保证最小值
-                BatchInterval = Mathf.Max(BatchInterval * ratio, minInterval);
-                InDuration = Mathf.Max(InDuration * ratio, minDuration);
-                OutDuration = Mathf.Max(OutDuration * ratio, minDuration);
-                
-                // 计算批次淡入总时间
-                int totalBatches = Mathf.CeilToInt((float)characterCount / MaxBatchSize);
-                float batchPhaseDuration = (totalBatches - 1) * BatchInterval + InDuration;
-                
-                // 剩余时间给保持阶段
-                HoldDuration = Mathf.Max(availableDuration - batchPhaseDuration - OutDuration, 0f);
-                
-                // 如果时间实在太紧，可以减少批次数
-                if (batchPhaseDuration + OutDuration > availableDuration)
-                {
-                    // 减少批次导致每批字符数增多
-                    MaxBatchSize = Mathf.Max(Mathf.CeilToInt((float)characterCount / Mathf.FloorToInt(availableDuration / BatchInterval)), 1);
-                    Debug.Log($"[RandomBatchFadeConfig] 时间过紧，增加每批字符数至 {MaxBatchSize}");
-                    
-                    // 重新计算批次时间
-                    totalBatches = Mathf.CeilToInt((float)characterCount / MaxBatchSize);
-                    batchPhaseDuration = (totalBatches - 1) * BatchInterval + InDuration;
-                    
-                    // 再次调整保持时间
-                    HoldDuration = Mathf.Max(availableDuration - batchPhaseDuration - OutDuration, 0f);
-                }
-                
-                Debug.Log($"[RandomBatchFadeConfig] 调整后: 批间隔={BatchInterval:F2}s, 淡入={InDuration:F2}s, 保持={HoldDuration:F2}s, 淡出={OutDuration:F2}s, 总时间={GetTotalDuration(characterCount):F2}s");
+                Debug.Log($"[RandomBatchFadeConfig] 时间调整: {currentTotal:F2}s -> {GetTotalDuration(characterCount):F2}s (目标: {availableDuration:F2}s)");
             }
-            else if (availableDuration > totalDuration)
+            else
             {
-                // 如果时间充足，增加保持时间
-                HoldDuration += (availableDuration - totalDuration);
-                Debug.Log($"[RandomBatchFadeConfig] 时间充足，增加保持时间至 {HoldDuration:F2}s，总时间={GetTotalDuration(characterCount):F2}s");
+                // 时间充足，延长保持时间
+                HoldDuration += (availableDuration - currentTotal);
             }
         }
     }
