@@ -11,7 +11,6 @@ Shader "Skybox/Cubemap Extended"
 		[Gamma] _TintColor( "Cubemap Tint Color", Color ) = ( 0.5, 0.5, 0.5, 1 )
 		_CubemapPosition( "Cubemap Position", Float ) = 0
 		[StyledCategory(Rotation Settings)] _Rotationn( "[ Rotationn ]", Float ) = 1
-		[Toggle( _ENABLEROTATION_ON )] _EnableRotation( "Enable Rotation", Float ) = 0
 		[IntRange][Space(10)] _Rotation( "Rotation", Range( 0, 360 ) ) = 0
 		_RotationSpeed( "Rotation Speed", Float ) = 1
 		[StyledCategory(Fog Settings)] _Fogg( "[ Fogg ]", Float ) = 1
@@ -65,7 +64,6 @@ Shader "Skybox/Cubemap Extended"
 			#include "UnityShaderVariables.cginc"
 			#define ASE_NEEDS_VERT_POSITION
 			#pragma shader_feature_local _ENABLEFOG_ON
-			#pragma shader_feature_local _ENABLEROTATION_ON
 
 
 			struct appdata
@@ -130,11 +128,9 @@ Shader "Skybox/Cubemap Extended"
 				float3 appendResult81_g1 = (float3(break84_g1.x , 0.0 , break84_g1.z));
 				float3 VertexPosOtherAxis82_g1 = appendResult81_g1;
 				half Angle44_g1 = ( 1.0 - radians( ( _Rotation + ( _Time.y * _RotationSpeed ) ) ) );
-				#ifdef _ENABLEROTATION_ON
+
 				float3 staticSwitch1164 = ( ( VertexPosRotationAxis50_g1 + ( VertexPosOtherAxis82_g1 * cos( Angle44_g1 ) ) + ( cross( float3( 0, 1, 0 ) , VertexPosOtherAxis82_g1 ) * sin( Angle44_g1 ) ) ) + appendResult1208 );
-				#else
-				float3 staticSwitch1164 = ( appendResult1220 + appendResult1208 );
-				#endif
+				
 				float3 vertexToFrag774 = staticSwitch1164;
 				o.ase_texcoord1.xyz = vertexToFrag774;
 				
