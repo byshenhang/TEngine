@@ -28,24 +28,24 @@ namespace GameLogic
                 ScenePath = "MainCity",
                 ImagePath = "MainCity_Show",
             },
-            new SceneItem()
-            {
-                ShowName = "寂静森林-白天",
-                ScenePath = "Demo Day",
-                ImagePath = "Demo Day_Show",
-            },
+            // new SceneItem()
+            // {
+            //     ShowName = "寂静森林-白天",
+            //     ScenePath = "Demo Day",
+            //     ImagePath = "Demo Day_Show",
+            // },
             new SceneItem()
             {
                 ShowName = "寂静森林-晚上",
                 ScenePath = "Demo Night",
                 ImagePath = "Demo Night_Show",
             },
-            new SceneItem()
-            {
-                ShowName = "寂静森林-混合",
-                ScenePath = "Demo Blend",
-                ImagePath = "Demo Blend_Show",
-            },
+            // new SceneItem()
+            // {
+            //     ShowName = "寂静森林-混合",
+            //     ScenePath = "Demo Blend",
+            //     ImagePath = "Demo Blend_Show",
+            // },
         };
 
     }
