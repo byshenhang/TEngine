@@ -446,6 +446,9 @@ namespace GameLogic
                 return;
             }
 
+            GameModule.LYRIC_FX.StopAll();
+
+
             // 2. 加载对应的歌词文件
             string lrcText = await LoadLyricsAsync(fileName);
 

@@ -66,6 +66,12 @@ namespace GameLogic
             // 停止所有播放
             StopAll();
             
+            // 清理所有音频反应器
+            if (_audioReactorManager != null)
+            {
+                CleanupAllAudioReactorsAsync().Forget();
+            }
+            
             // 清理资源
             if (_cts != null)
             {
@@ -126,7 +132,7 @@ namespace GameLogic
                 Log.Error("AudioLyricCoordinator: AudioReactorManager未初始化");
                 return 0;
             }
-            
+            await CleanupAllAudioReactorsAsync();
             int discoveredCount = await _audioReactorManager.AutoDiscoverReactorsAsync();
             
             if (_enableDebugger)
@@ -355,6 +361,37 @@ namespace GameLogic
             }
             
             return success;
+        }
+        
+        /// <summary>
+        /// 清理所有已注册的音频反应器
+        /// 这个方法会注销并释放所有当前注册的音频反应器，通常用于场景切换或重置时的批量清理
+        /// </summary>
+        /// <returns>清理任务，返回是否全部清理成功</returns>
+        public async UniTask<bool> CleanupAllAudioReactorsAsync()
+        {
+            if (_audioReactorManager == null)
+            {
+                Log.Error("AudioLyricCoordinator: AudioReactorManager未初始化");
+                return false;
+            }
+            
+            try
+            {
+                bool success = await _audioReactorManager.CleanupAllReactorsAsync();
+                
+                if (_enableDebugger)
+                {
+                    Log.Info($"AudioLyricCoordinator: 清理所有音频反应器 - {(success ? "成功" : "失败")}");
+                }
+                
+                return success;
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"AudioLyricCoordinator: 清理所有音频反应器失败: {ex.Message}");
+                return false;
+            }
         }
         
         /// <summary>
